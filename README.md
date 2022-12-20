@@ -1,4 +1,4 @@
-[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![License GPL 3][badge-license]][copying]
 
 # Clojure Tree-Sitter Mode
 
@@ -19,3 +19,7 @@ TODO
 Copyright © 2022 Danny Freeman and [contributors][].
 
 Distributed under the GNU General Public License; type <kbd>C-h C-c</kbd> to view it.
+
+[badge-license]: https://img.shields.io/badge/license-GPL_3-green.svg
+[COPYING]: http://www.gnu.org/copyleft/gpl.html
+[contributors]: https://github.com/clojure-emacs/clojure-mode/contributors
