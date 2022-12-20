@@ -1,0 +1,11 @@
+# temporary files
+*~
+*\#*\#
+*.\#*
+
+# Emacs byte-compiled files
+*.elc
+.cask
+elpa*
+/clojure-ts-mode-autoloads.el
+/clojure-ts-mode-pkg.el
