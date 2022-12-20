@@ -26,20 +26,21 @@ For now, users must do it themselves manually, which requires that a c compiler 
 
 To start, clone [tree-sitter-clojure](https://github.com/dannyfreeman/tree-sitter-clojure).
 
-The run the following code (depending on your OS) from the tree-sitter-clojure repository on your machine.
+Then run the following code (depending on your OS) from the tree-sitter-clojure repository on your machine.
+(A C compiler like GCC is required)
 
 ### Linux
 ```bash
-mkdir -f dist
+mkdir -p dist
 cc -c -I./src src/parser.c -o "parser.o"
-cc -fPIC -shared src/parser.o -o "dist/libtree-sitter-clojure.so
+cc -fPIC -shared src/parser.o -o "dist/libtree-sitter-clojure.so"
 ```
 
 ### OS X
 ```bash
-mkdir -f dist
+mkdir -p dist
 cc -c -I./src src/parser.c -o "parser.o"
-cc -fPIC -shared src/parser.o -o "dist/libtree-sitter-clojure.dylib
+cc -fPIC -shared src/parser.o -o "dist/libtree-sitter-clojure.dylib"
 ```
 
 ### Windows
