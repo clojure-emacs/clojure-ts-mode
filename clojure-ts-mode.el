@@ -368,26 +368,27 @@ Requires Emacs 29 and libtree-sitter-clojure.so available somewhere in
                   (deref quote metadata definition variable type doc regex tagged-literals)))
     ;(setq-local treesit-simple-indent-rules clojure-ts-mode--indent-rules)
     (treesit-major-mode-setup)
+    (treesit-inspect-mode)
     ;(clojure-mode-variables)
     ;(add-hook 'paredit-mode-hook #'clojure-paredit-setup)
     ;(add-hook 'electric-indent-function #'clojure-mode--electric-indent-function)
     ))
 
-;; We won't autoload this right now, users can opt in by requiring this library or adding
-;; clojure-ts-mode to (auto|interpreter)-mode-alist
-(progn
-  (add-hook 'clojure-ts-mode-hook 'treesit-inspect-mode)
-  (add-to-list 'auto-mode-alist
-               '("\\.\\(clj\\|cljd\\|dtm\\|edn\\)\\'" . clojure-ts-mode))
-  ;; TODO: Create clojurec-ts-mode and clojurescript-ts-mode
-  (add-to-list 'auto-mode-alist '("\\.cljc\\'" . clojure-ts-mode))
-  (add-to-list 'auto-mode-alist '("\\.cljs\\'" . clojure-ts-mode))
-  ;; boot build scripts are Clojure source files
-  (add-to-list 'auto-mode-alist '("\\(?:build\\|profile\\)\\.boot\\'" . clojure-ts-mode))
-  ;; babashka scripts are Clojure source files
-  (add-to-list 'interpreter-mode-alist '("bb" . clojure-ts-mode))
-  ;; nbb scripts are ClojureScript source files
-  (add-to-list 'interpreter-mode-alist '("nbb" . clojure-ts-mode)))
+;; Redirect clojure-mode to clojure-ts-mode if clojure-mode is present
+(if (require 'clojure-mode nil 'noerror)
+    (progn
+      (add-to-list 'major-mode-remap-alist '(clojure-mode . clojure-ts-mode))
+      (add-to-list 'major-mode-remap-alist '(clojurescript-mode . clojure-ts-mode))
+      (add-to-list 'major-mode-remap-alist '(clojurec-mode . clojure-ts-mode)))
+  (progn
+    (add-to-list 'auto-mode-alist
+                 '("\\.\\(clj\\|cljd\\|cljc\\|cljs\\|dtm\\|edn\\)\\'" . clojure-ts-mode))
+    ;; boot build scripts are Clojure source files
+    (add-to-list 'auto-mode-alist '("\\(?:build\\|profile\\)\\.boot\\'" . clojure-ts-mode))
+    ;; babashka scripts are Clojure source files
+    (add-to-list 'interpreter-mode-alist '("bb" . clojure-ts-mode))
+    ;; nbb scripts are ClojureScript source files
+    (add-to-list 'interpreter-mode-alist '("nbb" . clojure-ts-mode))))
 
 (provide 'clojure-ts-mode)
 
