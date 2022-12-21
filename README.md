@@ -81,4 +81,4 @@ Distributed under the GNU General Public License; type <kbd>C-h C-c</kbd> to vie
 
 [badge-license]: https://img.shields.io/badge/license-GPL_3-green.svg
 [COPYING]: http://www.gnu.org/copyleft/gpl.html
-[contributors]: https://github.com/clojure-emacs/clojure-mode/contributors
+[contributors]: https://github.com/clojure-emacs/clojure-ts-mode/contributors
