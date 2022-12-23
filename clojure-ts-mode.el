@@ -174,11 +174,13 @@
 
 (defconst clojure--definition-keyword-regexp
   (rx
-   (or (group line-start (or "ns" "fn") line-end)
+   line-start
+   (or (group (or "ns" "fn"))
        (group "def"
               (+ (or alnum
                      ;; What are valid characters for symbols? is a negative match better?
-                     "-" "_" "!" "@" "#" "$" "%" "^" "&" "*" "|" "?" "<" ">" "+" "=" ":"))))))
+                     "-" "_" "!" "@" "#" "$" "%" "^" "&" "*" "|" "?" "<" ">" "+" "=" ":"))))
+   line-end))
 
 (defconst clojure--variable-keyword-regexp
   (rx line-start (or "def" "defonce") line-end))
