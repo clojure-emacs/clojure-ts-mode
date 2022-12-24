@@ -332,16 +332,16 @@
 
 ;; (defvar clojure-ts-mode--indent-rules
 ;;   '((clojure
-;;      ((parent-is "source")
-;;       parent-bol 0)
-
-;;      ((query ((list_lit :anchor (sym_lit))))
-;;       parent-bol 2)
-
-;;      ((or (parent-is "list_lit")
-;;           (parent-is "vec_lit")
-;;           (parent-is "map_lit"))
-;;       parent-bol 1))))
+;;      ((parent-is "source") parent-bol 0)
+;;      ((parent-is "set_lit") parent-bol 2)
+;;      ((parent-is "vec_lit") parent-bol 1)
+;;      ((parent-is "map_lit") parent-bol 1)
+;;      ;; Lists beginning with a symbol indent 2 spaces (usally a function call)
+;;      ((query "(list_lit . (sym_lit) _* @indent)") parent-bol 2)
+;;      ;; All other lists indent 1 space
+;;      ((parent-is "list_lit") parent-bol 1))))
+     ;; Need to deal with deref, tagged literals.
+     
 
 (defvar clojure-ts-mode-map
   (let ((map (make-sparse-keymap)))
