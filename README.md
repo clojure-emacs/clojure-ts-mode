@@ -24,7 +24,7 @@ The tree-sitter clojure shared library must be available to Emacs.
 clojure-ts-mode will not automatically install this (yet).
 For now, users must do it themselves manually, which requires that a c compiler be installed.
 
-To start, clone [tree-sitter-clojure](https://github.com/dannyfreeman/tree-sitter-clojure).
+To start, clone [tree-sitter-clojure](https://github.com/sogaiu/tree-sitter-clojure).
 
 Then run the following code (depending on your OS) from the tree-sitter-clojure repository on your machine.
 (A C compiler like GCC is required)
