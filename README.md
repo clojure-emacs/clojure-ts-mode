@@ -8,6 +8,10 @@ highlighting), indentation, and navigation support for the
 [tree-sitter-clojure](https://github.com/sogaiu/tree-sitter-clojure)
 [tree-sitter](https://tree-sitter.github.io/tree-sitter/) grammar.
 
+## Warning
+
+This library is still under development. Breaking changes should be expected.
+
 ## Installation
 
 ### Emacs 29
