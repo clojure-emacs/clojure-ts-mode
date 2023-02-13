@@ -18,16 +18,33 @@ More information on this can be found in the Emacs repository:
 - [Emacs tree-sitter starter-guide](https://git.savannah.gnu.org/cgit/emacs.git/tree/admin/notes/tree-sitter/starter-guide?h=emacs-29)
 - [Emacs install instructions](https://git.savannah.gnu.org/cgit/emacs.git/tree/INSTALL.REPO).
 
+### Install clojure-ts-mode
+
+This package is not yet avaialble through package.el.
+You can install it by cloning the repository and adding it to your load path.
+
+```bash
+git clone https://github.com/clojure-emacs/clojure-ts-mode.git
+```
+
+```emacs-lisp
+(add-to-list 'load-path "~/path/to/clojure-ts-mode/")
+```
+
+Once installed, evaluate clojure-ts-mode.el and you should be ready to go.
+
 ### Install libtree-sitter-clojure shared library
 
 The tree-sitter clojure shared library must be available to Emacs.
-clojure-ts-mode will not automatically install this (yet).
-For now, users must do it themselves manually, which requires that a c compiler be installed.
+If you have `git` and a c compiler (`cc`) available on your system's `PATH`, **then these steps are not necessary**.
+clojure-ts-mode will install the grammar when you first open a Clojure file.
+
+If clojure-ts-mode fails to automatically install the grammar, you have the option to install it manually.
+All you need is `git` and a c compiler (gcc works well).
 
 To start, clone [tree-sitter-clojure](https://github.com/sogaiu/tree-sitter-clojure).
 
 Then run the following code (depending on your OS) from the tree-sitter-clojure repository on your machine.
-(A C compiler like GCC is required)
 
 #### Linux
 
@@ -59,19 +76,6 @@ Then tell Emacs where to find the shared library by adding something like this t
 
 OR you can move the `libtree-sitter-clojure.so`/`libtree-sitter-clojure.dylib` to a directory named `tree-sitter`
 under your `user-emacs-directory`.
-
-### Install clojure-ts-mode
-
-This package is not yet avaialble through package.el.
-You can install it by cloning the repository and adding it to your load path.
-
-```bash
-git clone https://github.com/clojure-emacs/clojure-ts-mode.git
-```
-
-```emacs-lisp
-(add-to-list 'load-path "~/path/to/clojure-ts-mode/")
-```
 
 ## License
 

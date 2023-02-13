@@ -341,12 +341,18 @@
 ;;      ;; All other lists indent 1 space
 ;;      ((parent-is "list_lit") parent-bol 1))))
      ;; Need to deal with deref, tagged literals.
-     
+
 
 (defvar clojure-ts-mode-map
   (let ((map (make-sparse-keymap)))
     ;(set-keymap-parent map clojure-mode-map)
     map))
+
+;;;###autolaod
+(add-to-list
+ 'treesit-language-source-alist
+ '(clojure "https://github.com/sogaiu/tree-sitter-clojure.git"))
+
 
 ;;;###autoload
 (define-derived-mode clojure-ts-mode prog-mode "Clojure[TS]"
@@ -355,6 +361,8 @@ Requires Emacs 29 and libtree-sitter-clojure.so available somewhere in
 `treesit-extra-load-path'.
 
 \\{clojure-ts-mode-map}"
+  (unless (treesit-language-available-p 'clojure nil)
+    (treesit-install-language-grammar 'clojure))
   (when (treesit-ready-p 'clojure)
     (treesit-parser-create 'clojure)
     (setq-local treesit-font-lock-settings clojure--treesit-settings)
