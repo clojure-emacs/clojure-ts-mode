@@ -24,7 +24,20 @@ More information on this can be found in the Emacs repository:
 
 ### Install clojure-ts-mode
 
-This package is not yet avaialble through package.el.
+In the future this package will be available through MELPA and Non-GNU ELPA.
+
+#### package-vc
+
+Emacs 29 also includes `package-vc-install`, so you can run
+
+``` emacs-lisp
+(package-vc-install "https://github.com/clojure-emacs/clojure-ts-mode")
+```
+
+to install this package from source.
+
+#### Manual installation
+
 You can install it by cloning the repository and adding it to your load path.
 
 ```bash
