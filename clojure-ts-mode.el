@@ -349,7 +349,6 @@
  'treesit-language-source-alist
  '(clojure "https://github.com/sogaiu/tree-sitter-clojure.git"))
 
-
 ;;;###autoload
 (define-derived-mode clojure-ts-mode prog-mode "Clojure[TS]"
   "Major mode for editing Clojure code.
@@ -365,10 +364,7 @@ Requires Emacs 29 and libtree-sitter-clojure.so available somewhere in
     (setq-local treesit-font-lock-settings clojure--treesit-settings)
     (setq-local treesit-defun-prefer-top-level t
                 treesit-defun-tactic 'top-level
-                treesit-defun-type-regexp (cons (rx (or "list_lit" "vec_lit" "map_lit"))
-                                                (lambda (node)
-                                                  (message "Node: %s" (treesit-node-text node t))
-                                                  t)))
+                treesit-defun-type-regexp (rx (or "list_lit" "vec_lit" "map_lit")))
     (setq-local treesit-font-lock-feature-list
                 '((comment string char number)
                   (keyword constant symbol bracket builtin)
