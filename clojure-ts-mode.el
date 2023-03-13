@@ -363,6 +363,7 @@ Requires Emacs 29 and libtree-sitter-clojure.so available somewhere in
 \\{clojure-ts-mode-map}"
   (unless (treesit-language-available-p 'clojure nil)
     (treesit-install-language-grammar 'clojure))
+  (setq-local comment-start ";")
   (when (treesit-ready-p 'clojure)
     (treesit-parser-create 'clojure)
     (setq-local treesit-font-lock-settings clojure--treesit-settings)
