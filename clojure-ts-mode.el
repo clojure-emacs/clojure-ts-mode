@@ -1,6 +1,6 @@
 ;;; clojure-ts-mode.el --- Major mode for Clojure code -*- lexical-binding: t; -*-
 
-;; Copyright © 2022-2022 Danny Freeman
+;; Copyright © 2022-2023 Danny Freeman
 ;;
 ;; Authors: Danny Freeman <danny@dfreeman.email>
 ;; Maintainer: Danny Freeman <danny@dfreeman.email>

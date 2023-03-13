@@ -96,7 +96,7 @@ under your `user-emacs-directory`.
 
 ## License
 
-Copyright © 2022 Danny Freeman and [contributors][].
+Copyright © 2022-2023 Danny Freeman and [contributors][].
 
 Distributed under the GNU General Public License; type <kbd>C-h C-c</kbd> to view it.
 
