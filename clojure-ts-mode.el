@@ -327,18 +327,17 @@
    '((derefing_lit
       marker: "@" @font-lock-warning-face))))
 
-;; (defvar clojure-ts-mode--indent-rules
-;;   '((clojure
-;;      ((parent-is "source") parent-bol 0)
-;;      ((parent-is "set_lit") parent-bol 2)
-;;      ((parent-is "vec_lit") parent-bol 1)
-;;      ((parent-is "map_lit") parent-bol 1)
-;;      ;; Lists beginning with a symbol indent 2 spaces (usally a function call)
-;;      ((query "(list_lit . (sym_lit) _* @indent)") parent-bol 2)
-;;      ;; All other lists indent 1 space
-;;      ((parent-is "list_lit") parent-bol 1))))
-     ;; Need to deal with deref, tagged literals.
-
+(defvar clojure-ts-mode--fixed-indent-rules
+  ;; This is in contrast to semantic rules
+  ;; fixed-indent-rules come from https://tonsky.me/blog/clojurefmt/
+  '((clojure
+     ((parent-is "source") parent-bol 0)
+     ;; Lists beginning with a symbol indent 2 spaces (usually a function/macro call)
+     ((query "(list_lit . (sym_lit) _* @indent)") parent 2)
+     ((or (parent-is "vec_lit")
+          (parent-is "map_lit")
+          (parent-is "list_lit")) parent 1)
+     ((parent-is "set_lit") parent 2))))
 
 (defvar clojure-ts-mode-map
   (let ((map (make-sparse-keymap)))
@@ -374,7 +373,8 @@ Requires Emacs 29 and libtree-sitter-clojure.so available somewhere in
                 '((comment string char number)
                   (keyword constant symbol bracket builtin)
                   (deref quote metadata definition variable type doc regex tagged-literals)))
-    ;(setq-local treesit-simple-indent-rules clojure-ts-mode--indent-rules)
+    (setq-local treesit-simple-indent-rules clojure-ts-mode--fixed-indent-rules)
+    (setq treesit--indent-verbose t)
     (treesit-major-mode-setup)
     (treesit-inspect-mode)
     ;(clojure-mode-variables)
