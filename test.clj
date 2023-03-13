@@ -29,6 +29,7 @@
 ;; examples of valid namespace definitions
 (comment
   (ns .validns)
+ 
   (ns =validns)
   (ns .ValidNs=<>?+|?*.)
   (ns ValidNs<>?+|?*.b*ar.ba*z)
