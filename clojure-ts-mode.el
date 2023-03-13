@@ -239,10 +239,7 @@
 
    :feature 'symbol
    :language 'clojure
-   '((sym_ns) @font-lock-type-face
-     ;; (sym_name) @default
-     ;; (sym_lit delimiter: _ :? @default)
-     )
+   '((sym_ns) @font-lock-type-face)
 
    ;; How does this work for defns nested in other forms, not at the top level?
    ;; Should I match against the source node to only hit the top level? Can that be expressed?
