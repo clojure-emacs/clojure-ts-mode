@@ -394,15 +394,15 @@ Requires Emacs 29 and libtree-sitter-clojure.so available somewhere in
       (add-to-list 'major-mode-remap-alist '(clojure-mode . clojure-ts-mode))
       (add-to-list 'major-mode-remap-alist '(clojurescript-mode . clojure-ts-mode))
       (add-to-list 'major-mode-remap-alist '(clojurec-mode . clojure-ts-mode)))
-  (progn
-    (add-to-list 'auto-mode-alist
-                 '("\\.\\(clj\\|cljd\\|cljc\\|cljs\\|dtm\\|edn\\)\\'" . clojure-ts-mode))
-    ;; boot build scripts are Clojure source files
-    (add-to-list 'auto-mode-alist '("\\(?:build\\|profile\\)\\.boot\\'" . clojure-ts-mode))
-    ;; babashka scripts are Clojure source files
-    (add-to-list 'interpreter-mode-alist '("bb" . clojure-ts-mode))
-    ;; nbb scripts are ClojureScript source files
-    (add-to-list 'interpreter-mode-alist '("nbb" . clojure-ts-mode))))
+  ;; clojure-mode is not present
+  (add-to-list 'auto-mode-alist
+               '("\\.\\(clj\\|cljd\\|cljc\\|cljs\\|dtm\\|edn\\)\\'" . clojure-ts-mode))
+  ;; boot build scripts are Clojure source files
+  (add-to-list 'auto-mode-alist '("\\(?:build\\|profile\\)\\.boot\\'" . clojure-ts-mode))
+  ;; babashka scripts are Clojure source files
+  (add-to-list 'interpreter-mode-alist '("bb" . clojure-ts-mode))
+  ;; nbb scripts are ClojureScript source files
+  (add-to-list 'interpreter-mode-alist '("nbb" . clojure-ts-mode)))
 
 (provide 'clojure-ts-mode)
 
