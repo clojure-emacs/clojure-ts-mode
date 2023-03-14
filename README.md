@@ -12,6 +12,8 @@ highlighting), indentation, and navigation support for the
 
 This library is still under development. Breaking changes should be expected.
 
+You can track the current progress towards an initial release [here](https://github.com/clojure-emacs/clojure-ts-mode/issues/1).
+
 ## Installation
 
 ### Emacs 29
