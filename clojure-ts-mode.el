@@ -52,6 +52,11 @@
 ;;; Code:
 (require 'treesit)
 
+(defconst clojure-ts-mode-version
+  (eval-when-compile
+    (lm-version (or load-file-name buffer-file-name)))
+  "The current version of `clojure-ts-mode'.")
+
 (defconst clojure-ts-mode--builtin-dynamic-var-regexp
   (eval-and-compile
     (concat "^"
@@ -349,6 +354,11 @@
  'treesit-language-source-alist
  '(clojure "https://github.com/sogaiu/tree-sitter-clojure.git"))
 
+(defun clojure-ts-mode-display-version ()
+  "Display the current `clojure-mode-version' in the minibuffer."
+  (interactive)
+  (message "clojure-ts-mode (version %s)" clojure-ts-mode-version))
+
 ;;;###autoload
 (define-derived-mode clojure-ts-mode prog-mode "Clojure[TS]"
   "Major mode for editing Clojure code.
@@ -373,9 +383,9 @@ Requires Emacs 29 and libtree-sitter-clojure.so available somewhere in
     (setq treesit--indent-verbose t)
     (treesit-major-mode-setup)
     (treesit-inspect-mode)
-    ;(clojure-mode-variables)
-    ;(add-hook 'paredit-mode-hook #'clojure-paredit-setup)
-    ;(add-hook 'electric-indent-function #'clojure-mode--electric-indent-function)
+    ;; (clojure-mode-variables)
+    ;; (add-hook 'paredit-mode-hook #'clojure-paredit-setup)
+    ;; (add-hook 'electric-indent-function #'clojure-mode--electric-indent-function)
     ))
 
 ;; Redirect clojure-mode to clojure-ts-mode if clojure-mode is present
