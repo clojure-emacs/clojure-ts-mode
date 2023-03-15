@@ -344,6 +344,50 @@
           (parent-is "list_lit")) parent 1)
      ((parent-is "set_lit") parent 2))))
 
+(defun clojure-ts-mode--symbol-named-p (expected-symbol-name node)
+  "Return non-nil if NODE is a symbol with text matching EXPECTED-SYMBOL-NAME."
+  (and (string-equal "sym_lit" (treesit-node-type node))
+       (string-equal expected-symbol-name
+                     (treesit-node-text (treesit-node-child-by-field-name node "name")))))
+
+(defun clojure-ts-mode--definition-node-p (defintion-type-name node)
+  "Return non-nil if NODE is a definition, defined by DEFINITION-TYPE-NAME.
+DEFINITION-TYPE-NAME might be a string like defn, def, defmulti, etc."
+  (and
+   (string-equal "list_lit" (treesit-node-type node))
+   (clojure-ts-mode--symbol-named-p defintion-type-name (treesit-node-child node 0 t))))
+
+(defun clojure-ts-mode--defn-node-p (node)
+  "Return non-nil if NODE is a defn form."
+  (clojure-ts-mode--definition-node-p "defn" node))
+
+(defun clojure-ts-mode--ns-node-p (node)
+  "Return non-nil if NODE is a ns form."
+  (clojure-ts-mode--definition-node-p "ns" node))
+
+(defun clojure-ts-mode--def-node-p (node)
+  "Return non-nil if NODE is a def form."
+  (clojure-ts-mode--definition-node-p "def" node))
+
+(defun clojure-ts-mode--standard-definition-node-name (node)
+  "Return the definition name for the given NODE.
+For example the node representing the expression (def foo 1) would return foo.
+The node representing (ns user) would return user."
+  (let* ((sym (treesit-node-child node 1 t))
+         (ns (treesit-node-child-by-field-name sym "ns"))
+         (name (treesit-node-child-by-field-name sym "name")))
+    (if ns
+        (concat (treesit-node-text ns) "/" (treesit-node-text name))
+      (treesit-node-text name))))
+
+(defvar clojure-ts-mode--imenu-settings
+  `(("Namespace" "list_lit" clojure-ts-mode--ns-node-p
+     clojure-ts-mode--standard-definition-node-name)
+    ("Definition" "list_lit" clojure-ts-mode--defn-node-p
+     clojure-ts-mode--standard-definition-node-name)
+    ("Variable" "list_lit" clojure-ts-mode--def-node-p
+     clojure-ts-mode--standard-definition-node-name)))
+
 (defvar clojure-ts-mode-map
   (let ((map (make-sparse-keymap)))
     ;(set-keymap-parent map clojure-mode-map)
@@ -380,6 +424,7 @@ Requires Emacs 29 and libtree-sitter-clojure.so available somewhere in
                   (keyword constant symbol bracket builtin)
                   (deref quote metadata definition variable type doc regex tagged-literals)))
     (setq-local treesit-simple-indent-rules clojure-ts-mode--fixed-indent-rules)
+    (setq-local treesit-simple-imenu-settings clojure-ts-mode--imenu-settings)
     (setq treesit--indent-verbose t)
     (treesit-major-mode-setup)
     (treesit-inspect-mode)
