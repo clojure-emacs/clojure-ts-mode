@@ -52,6 +52,11 @@
 ;;; Code:
 (require 'treesit)
 
+(declare-function treesit-parser-create "treesit.c")
+(declare-function treesit-node-type "treesit.c")
+(declare-function treesit-node-child "treesit.c")
+(declare-function treesit-node-child-by-field-name "treesit.c")
+
 (defconst clojure-ts-mode-version
   (eval-when-compile
     (lm-version (or load-file-name buffer-file-name)))
@@ -361,6 +366,10 @@ DEFINITION-TYPE-NAME might be a string like defn, def, defmulti, etc."
   "Return non-nil if NODE is a defn form."
   (clojure-ts-mode--definition-node-p "defn" node))
 
+(defun clojure-ts-mode--defmacro-node-p (node)
+  "Return non-nil if NODE is a defmacro form."
+  (clojure-ts-mode--definition-node-p "defmacro" node))
+
 (defun clojure-ts-mode--ns-node-p (node)
   "Return non-nil if NODE is a ns form."
   (clojure-ts-mode--definition-node-p "ns" node))
@@ -383,7 +392,9 @@ The node representing (ns user) would return user."
 (defvar clojure-ts-mode--imenu-settings
   `(("Namespace" "list_lit" clojure-ts-mode--ns-node-p
      clojure-ts-mode--standard-definition-node-name)
-    ("Definition" "list_lit" clojure-ts-mode--defn-node-p
+    ("Function" "list_lit" clojure-ts-mode--defn-node-p
+     clojure-ts-mode--standard-definition-node-name)
+    ("Macro" "list_lit" clojure-ts-mode--defmacro-node-p
      clojure-ts-mode--standard-definition-node-name)
     ("Variable" "list_lit" clojure-ts-mode--def-node-p
      clojure-ts-mode--standard-definition-node-name)))
