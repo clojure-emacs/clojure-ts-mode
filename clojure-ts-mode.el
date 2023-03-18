@@ -62,7 +62,7 @@
     (lm-version (or load-file-name buffer-file-name)))
   "The current version of `clojure-ts-mode'.")
 
-(defconst clojure-ts-mode--builtin-dynamic-var-regexp
+(defconst clojure-ts--builtin-dynamic-var-regexp
   (eval-and-compile
     (concat "^"
             (regexp-opt
@@ -79,7 +79,7 @@
                "*use-context-classloader*" "*warn-on-reflection*"))
             "$")))
 
-(defconst clojure-ts-mode--builtin-symbol-regexp
+(defconst clojure-ts--builtin-symbol-regexp
   (eval-and-compile
     (concat "^"
             (regexp-opt
@@ -182,7 +182,7 @@
   '((t (:inherit font-lock-string-face)))
   "Face used to font-lock Clojure character literals.")
 
-(defconst clojure--definition-keyword-regexp
+(defconst clojure-ts--definition-keyword-regexp
   (rx
    line-start
    (or (group (or "ns" "fn"))
@@ -192,10 +192,10 @@
                      "-" "_" "!" "@" "#" "$" "%" "^" "&" "*" "|" "?" "<" ">" "+" "=" ":"))))
    line-end))
 
-(defconst clojure--variable-keyword-regexp
+(defconst clojure-ts--variable-keyword-regexp
   (rx line-start (or "def" "defonce") line-end))
 
-(defconst clojure--type-keyword-regexp
+(defconst clojure-ts--type-keyword-regexp
   (rx line-start (or "defprotocol"
                      "defmulti"
                      "deftype"
@@ -205,7 +205,7 @@
                      "defstruct")
       line-end))
 
-(defvar clojure--treesit-settings
+(defvar clojure-ts--treesit-settings
   (treesit-font-lock-rules
    :feature 'string
    :language 'clojure
@@ -243,9 +243,9 @@
    :feature 'builtin
    :language 'clojure
    `(((list_lit :anchor (sym_lit (sym_name) @font-lock-keyword-face))
-      (:match ,clojure-ts-mode--builtin-symbol-regexp  @font-lock-keyword-face))
+      (:match ,clojure-ts--builtin-symbol-regexp @font-lock-keyword-face))
      ((sym_name) @font-lock-builtin-face
-      (:match ,clojure-ts-mode--builtin-dynamic-var-regexp @font-lock-builtin-face)))
+      (:match ,clojure-ts--builtin-dynamic-var-regexp @font-lock-builtin-face)))
 
    :feature 'symbol
    :language 'clojure
@@ -259,7 +259,7 @@
    :language 'clojure
    `(((list_lit :anchor (sym_lit (sym_name) @font-lock-keyword-face)
                 :anchor (sym_lit (sym_name) @font-lock-function-name-face))
-      (:match ,clojure--definition-keyword-regexp
+      (:match ,clojure-ts--definition-keyword-regexp
               @font-lock-keyword-face))
      ((anon_fn_lit
        marker: "#" @font-lock-property-face)))
@@ -268,13 +268,13 @@
    :language 'clojure
    `(((list_lit :anchor (sym_lit (sym_name) @font-lock-keyword-face)
                 :anchor (sym_lit (sym_name) @font-lock-variable-name-face))
-      (:match ,clojure--variable-keyword-regexp @font-lock-keyword-face)))
+      (:match ,clojure-ts--variable-keyword-regexp @font-lock-keyword-face)))
 
    :feature 'type ;; deftype, defmulti, defprotocol, etc
    :language 'clojure
    `(((list_lit :anchor (sym_lit (sym_name) @font-lock-keyword-face)
                 :anchor (sym_lit (sym_name) @font-lock-type-face))
-      (:match ,clojure--type-keyword-regexp @font-lock-keyword-face)))
+      (:match ,clojure-ts--type-keyword-regexp @font-lock-keyword-face)))
 
    :feature 'metadata
    :language 'clojure
@@ -300,7 +300,7 @@
    `(((list_lit :anchor (sym_lit) @def_symbol
                 :anchor (sym_lit) @function_name
                 :anchor (str_lit) @font-lock-doc-face)
-      (:match ,clojure--definition-keyword-regexp @def_symbol)))
+      (:match ,clojure-ts--definition-keyword-regexp @def_symbol)))
 
    :feature 'quote
    :language 'clojure
@@ -337,7 +337,7 @@
    '((derefing_lit
       marker: "@" @font-lock-warning-face))))
 
-(defvar clojure-ts-mode--fixed-indent-rules
+(defvar clojure-ts--fixed-indent-rules
   ;; This is in contrast to semantic rules
   ;; fixed-indent-rules come from https://tonsky.me/blog/clojurefmt/
   '((clojure
@@ -349,36 +349,36 @@
           (parent-is "list_lit")) parent 1)
      ((parent-is "set_lit") parent 2))))
 
-(defun clojure-ts-mode--symbol-named-p (expected-symbol-name node)
+(defun clojure-ts--symbol-named-p (expected-symbol-name node)
   "Return non-nil if NODE is a symbol with text matching EXPECTED-SYMBOL-NAME."
   (and (string-equal "sym_lit" (treesit-node-type node))
        (string-equal expected-symbol-name
                      (treesit-node-text (treesit-node-child-by-field-name node "name")))))
 
-(defun clojure-ts-mode--definition-node-p (defintion-type-name node)
+(defun clojure-ts--definition-node-p (defintion-type-name node)
   "Return non-nil if NODE is a definition, defined by DEFINITION-TYPE-NAME.
 DEFINITION-TYPE-NAME might be a string like defn, def, defmulti, etc."
   (and
    (string-equal "list_lit" (treesit-node-type node))
-   (clojure-ts-mode--symbol-named-p defintion-type-name (treesit-node-child node 0 t))))
+   (clojure-ts--symbol-named-p defintion-type-name (treesit-node-child node 0 t))))
 
-(defun clojure-ts-mode--defn-node-p (node)
+(defun clojure-ts--defn-node-p (node)
   "Return non-nil if NODE is a defn form."
-  (clojure-ts-mode--definition-node-p "defn" node))
+  (clojure-ts--definition-node-p "defn" node))
 
-(defun clojure-ts-mode--defmacro-node-p (node)
+(defun clojure-ts--defmacro-node-p (node)
   "Return non-nil if NODE is a defmacro form."
-  (clojure-ts-mode--definition-node-p "defmacro" node))
+  (clojure-ts--definition-node-p "defmacro" node))
 
-(defun clojure-ts-mode--ns-node-p (node)
+(defun clojure-ts--ns-node-p (node)
   "Return non-nil if NODE is a ns form."
-  (clojure-ts-mode--definition-node-p "ns" node))
+  (clojure-ts--definition-node-p "ns" node))
 
-(defun clojure-ts-mode--def-node-p (node)
+(defun clojure-ts--def-node-p (node)
   "Return non-nil if NODE is a def form."
-  (clojure-ts-mode--definition-node-p "def" node))
+  (clojure-ts--definition-node-p "def" node))
 
-(defun clojure-ts-mode--standard-definition-node-name (node)
+(defun clojure-ts--standard-definition-node-name (node)
   "Return the definition name for the given NODE.
 For example the node representing the expression (def foo 1) would return foo.
 The node representing (ns user) would return user."
@@ -389,15 +389,15 @@ The node representing (ns user) would return user."
         (concat (treesit-node-text ns) "/" (treesit-node-text name))
       (treesit-node-text name))))
 
-(defvar clojure-ts-mode--imenu-settings
-  `(("Namespace" "list_lit" clojure-ts-mode--ns-node-p
-     clojure-ts-mode--standard-definition-node-name)
-    ("Function" "list_lit" clojure-ts-mode--defn-node-p
-     clojure-ts-mode--standard-definition-node-name)
-    ("Macro" "list_lit" clojure-ts-mode--defmacro-node-p
-     clojure-ts-mode--standard-definition-node-name)
-    ("Variable" "list_lit" clojure-ts-mode--def-node-p
-     clojure-ts-mode--standard-definition-node-name)))
+(defvar clojure-ts--imenu-settings
+  `(("Namespace" "list_lit" clojure-ts--ns-node-p
+     clojure-ts--standard-definition-node-name)
+    ("Function" "list_lit" clojure-ts--defn-node-p
+     clojure-ts--standard-definition-node-name)
+    ("Macro" "list_lit" clojure-ts--defmacro-node-p
+     clojure-ts--standard-definition-node-name)
+    ("Variable" "list_lit" clojure-ts--def-node-p
+     clojure-ts--standard-definition-node-name)))
 
 (defvar clojure-ts-mode-map
   (let ((map (make-sparse-keymap)))
@@ -426,7 +426,7 @@ Requires Emacs 29 and libtree-sitter-clojure.so available somewhere in
   (setq-local comment-start ";")
   (when (treesit-ready-p 'clojure)
     (treesit-parser-create 'clojure)
-    (setq-local treesit-font-lock-settings clojure--treesit-settings)
+    (setq-local treesit-font-lock-settings clojure-ts--treesit-settings)
     (setq-local treesit-defun-prefer-top-level t
                 treesit-defun-tactic 'top-level
                 treesit-defun-type-regexp (rx (or "list_lit" "vec_lit" "map_lit")))
@@ -434,15 +434,14 @@ Requires Emacs 29 and libtree-sitter-clojure.so available somewhere in
                 '((comment string char number)
                   (keyword constant symbol bracket builtin)
                   (deref quote metadata definition variable type doc regex tagged-literals)))
-    (setq-local treesit-simple-indent-rules clojure-ts-mode--fixed-indent-rules)
-    (setq-local treesit-simple-imenu-settings clojure-ts-mode--imenu-settings)
+    (setq-local treesit-simple-indent-rules clojure-ts--fixed-indent-rules)
+    (setq-local treesit-simple-imenu-settings clojure-ts--imenu-settings)
     (setq treesit--indent-verbose t)
     (treesit-major-mode-setup)
-    (treesit-inspect-mode)
+    (treesit-inspect-mode)))
     ;; (clojure-mode-variables)
     ;; (add-hook 'paredit-mode-hook #'clojure-paredit-setup)
     ;; (add-hook 'electric-indent-function #'clojure-mode--electric-indent-function)
-    ))
 
 ;; Redirect clojure-mode to clojure-ts-mode if clojure-mode is present
 (if (require 'clojure-mode nil 'noerror)
