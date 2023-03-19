@@ -8,9 +8,28 @@ highlighting), indentation, and navigation support for the
 [tree-sitter-clojure](https://github.com/sogaiu/tree-sitter-clojure)
 [tree-sitter](https://tree-sitter.github.io/tree-sitter/) grammar.
 
-## Warning
+## Rationale
 
-This library is still under development. Breaking changes should be expected.
+[clojure-mode](https://github.com/clojure-emacs/clojure-mode) has served us well
+for a very long time, but it suffers from a few [long-standing
+problems](https://github.com/clojure-emacs/clojure-mode#caveats), related to
+Emacs limitations baked into its design. The introduction of built-in support
+for Tree-sitter in Emacs 29 provides a natural opportunity to address many of
+them. Enter `clojure-ts-mode`.
+
+Keep in mind that the transition to `clojure-ts-mode` won't happen overnight for several reasons:
+
+- getting to feature parity with `clojure-mode` will take some time
+- tools that depend on `clojure-mode` will need to be updated to work with `clojure-ts-mode`
+- we still need to support users of older Emacsen that don't support Tree-sitter
+
+That's why `clojure-ts-mode` is being developed independently of `clojure-mode` and will one day replace it when the time is right. (e.g. 3 major Emacs version down the road, so circa Emacs 32)
+
+You can read more about the vision for `clojure-ts-mode` [here](https://metaredux.com/posts/2023/03/12/clojure-mode-meets-tree-sitter.html).
+
+## Current Status
+
+**This library is still under development. Breaking changes should be expected.**
 
 You can track the current progress towards an initial release [here](https://github.com/clojure-emacs/clojure-ts-mode/issues/1).
 
