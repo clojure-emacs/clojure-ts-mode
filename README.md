@@ -55,11 +55,11 @@ Once installed, evaluate clojure-ts-mode.el and you should be ready to go.
 ### Install libtree-sitter-clojure shared library
 
 The tree-sitter clojure shared library must be available to Emacs.
-If you have `git` and a c compiler (`cc`) available on your system's `PATH`, **then these steps are not necessary**.
+If you have `git` and a C compiler (`cc`) available on your system's `PATH`, **then these steps are not necessary**.
 clojure-ts-mode will install the grammar when you first open a Clojure file.
 
 If clojure-ts-mode fails to automatically install the grammar, you have the option to install it manually.
-All you need is `git` and a c compiler (gcc works well).
+All you need is `git` and a C compiler (GCC works well).
 
 To start, clone [tree-sitter-clojure](https://github.com/sogaiu/tree-sitter-clojure).
 
@@ -94,7 +94,7 @@ Then tell Emacs where to find the shared library by adding something like this t
 ```
 
 OR you can move the `libtree-sitter-clojure.so`/`libtree-sitter-clojure.dylib` to a directory named `tree-sitter`
-under your `user-emacs-directory`.
+under your `user-emacs-directory` (typically `~/.emacs.d` on Unix systems).
 
 ## License
 
