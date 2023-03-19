@@ -1,4 +1,5 @@
 [![License GPL 3][badge-license]][copying]
+[![Lint Status](https://github.com/clojure-emacs/clojure-ts-mode/actions/workflows/lint-emacs.yml/badge.svg)](https://github.com/clojure-emacs/clojure-ts-mode/actions/workflows/lint-emacs.yml)
 
 # Clojure Tree-Sitter Mode
 
