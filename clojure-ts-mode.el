@@ -174,11 +174,11 @@
                "with-redefs-fn"))
             "$")))
 
-(defface clojure-keyword-face
+(defface clojure-ts-keyword-face
   '((t (:inherit font-lock-constant-face)))
   "Face used to font-lock Clojure keywords (:something).")
 
-(defface clojure-character-face
+(defface clojure-ts-character-face
   '((t (:inherit font-lock-string-face)))
   "Face used to font-lock Clojure character literals.")
 
@@ -227,17 +227,17 @@
 
    :feature 'char
    :language 'clojure
-   '((char_lit) @clojure-character-face)
+   '((char_lit) @clojure-ts-character-face)
 
    ;; :namespace/keyword is highlighted  with the namespace as font-lock-type-face
-   ;; and the name clojure-keyword-face
+   ;; and the name clojure-ts-keyword-face
    ;; I believe in order to do this, the grammer will have to be updated to provide these "fields"
    :feature 'keyword
    :language 'clojure
    '((kwd_ns) @font-lock-type-face
-     (kwd_name) @clojure-keyword-face
+     (kwd_name) @clojure-ts-keyword-face
      (kwd_lit
-      marker: _ @clojure-keyword-face
+      marker: _ @clojure-ts-keyword-face
       delimiter: _ :? @default))
 
    :feature 'builtin
