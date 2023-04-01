@@ -231,7 +231,7 @@
 
    ;; :namespace/keyword is highlighted  with the namespace as font-lock-type-face
    ;; and the name clojure-ts-keyword-face
-   ;; I believe in order to do this, the grammer will have to be updated to provide these "fields"
+   ;; I believe in order to do this, the grammar will have to be updated to provide these "fields"
    :feature 'keyword
    :language 'clojure
    '((kwd_ns) @font-lock-type-face
