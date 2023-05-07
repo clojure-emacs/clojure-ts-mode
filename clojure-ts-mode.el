@@ -51,6 +51,7 @@
 
 ;;; Code:
 (require 'treesit)
+(require 'lisp-mnt)
 
 (declare-function treesit-parser-create "treesit.c")
 (declare-function treesit-node-type "treesit.c")
