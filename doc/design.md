@@ -114,10 +114,10 @@ Instead, it is up to the emacs-lisp code and other consumers of the tree-sitter-
 
 There are some pros and cons of this decision for tree-sitter-clojure to only consider syntax and not semantics.
 Some of the (non-exhaustive) upsides:
-    - No semantic false positives or negatives in the parse tree.
-    - Simple grammar to maintain with less nodes and rules
-    - Small, fast grammar (with a small set of grammar rules, tree-sitter-clojure has one of the smallest binaries and fastest grammars in widespread use)
-    - Stability: the grammar changes infrequently and is very stable for downstream consumers
+- No semantic false positives or negatives in the parse tree.
+- Simple grammar to maintain with less nodes and rules
+- Small, fast grammar (with a small set of grammar rules, tree-sitter-clojure has one of the smallest binaries and fastest grammars in widespread use)
+- Stability: the grammar changes infrequently and is very stable for downstream consumers
 
 And the primary downside: Semantics must be (re)-implemented in tools that consume the grammar. While this results in more work for tooling authors, the tools that use the grammar are easier to change than the grammar itself. The inaccurate nature of statically interpreting Clojure semantics means that not every decision made for the grammar would meet the needs of the various grammar consumers. This would lead to bugs and feature requests. Nearly all changes to the grammar will result in some sort of breakages to its consumers, so changes are best avoided once the grammar has stabilized. Therefore avoiding these semantic interpretations in the grammar is one of the best ways to minimize changes in the grammar.
 
