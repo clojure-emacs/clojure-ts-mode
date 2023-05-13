@@ -347,22 +347,88 @@
           (parent-is "list_lit")) parent 1)
      ((parent-is "set_lit") parent 2))))
 
+
+;; Node predicates
+
+(defun clojure-ts--list-node-p (node)
+  "Return non-nil if NODE is a Clojure list."
+  (string-equal "list_lit" (treesit-node-type node)))
+
+(defun clojure-ts--symbol-node-p (node)
+  "Return non-nil if NODE is a Clojure symbol."
+  (string-equal "sym_lit" (treesit-node-type node)))
+
+(defun clojure-ts--named-node-text (node)
+  "Gets the name of a symbol or keyword NODE.
+This does not include the NODE's namespace."
+  (treesit-node-text (treesit-node-child-by-field-name node "name")))
+
 (defun clojure-ts--symbol-named-p (expected-symbol-name node)
   "Return non-nil if NODE is a symbol with text matching EXPECTED-SYMBOL-NAME."
-  (and (string-equal "sym_lit" (treesit-node-type node))
-       (string-equal expected-symbol-name
-                     (treesit-node-text (treesit-node-child-by-field-name node "name")))))
+  (and (clojure-ts--symbol-node-p node)
+       (string-equal expected-symbol-name (clojure-ts--named-node-text node))))
 
-(defun clojure-ts--definition-node-p (defintion-type-name node)
+(defun clojure-ts--symbol-matches-p (symbol-regexp node)
+  "Return non-nil if NODE is a symbol that matches SYMBOL-REGEXP."
+  (and (clojure-ts--symbol-node-p node)
+       (string-match-p symbol-regexp (clojure-ts--named-node-text node))))
+
+(defun clojure-ts--definition-node-p (definition-type-name node)
   "Return non-nil if NODE is a definition, defined by DEFINITION-TYPE-NAME.
-DEFINITION-TYPE-NAME might be a string like defn, def, defmulti, etc."
+DEFINITION-TYPE-NAME might be a string like defn, def, defmulti, etc.
+See `clojure-ts--definition-node-match-p'  when an exact match is not desired."
   (and
-   (string-equal "list_lit" (treesit-node-type node))
-   (clojure-ts--symbol-named-p defintion-type-name (treesit-node-child node 0 t))))
+   (clojure-ts--list-node-p node)
+   (clojure-ts--symbol-named-p definition-type-name (treesit-node-child node 0 t))))
 
-(defun clojure-ts--defn-node-p (node)
+(defun clojure-ts--definition-node-match-p (definition-type-regexp node)
+  "Return non-nil if NODE is a definition matching DEFINITION-TYPE-REGEXP.
+DEFINITION-TYPE-REGEXP matched the symbol used to construct the definition,
+like \"defn\".
+See `clojure-ts--definition-node-p' when an exact match is possible."
+  (and
+   (clojure-ts--list-node-p node)
+   (let* ((child (treesit-node-child node 0 t))
+          (child-txt (clojure-ts--named-node-text child)))
+     (and (clojure-ts--symbol-node-p child)
+          (string-match-p definition-type-regexp child-txt)))))
+
+(defun clojure-ts--standard-definition-node-name (node)
+  "Return the definition name for the given NODE.
+Returns nil if NODE is not a list with symbols as the first two children.
+For example the node representing the expression (def foo 1) would return foo.
+The node representing (ns user) would return user.
+Does not does any matching on the first symbol (def, defn, etc), so identifying
+that a node is a definition is intended to be done elsewhere.
+
+Can be called directly, but intended for use as `treesit-defun-name-function'."
+  (when (and (clojure-ts--list-node-p node)
+             (clojure-ts--symbol-node-p (treesit-node-child node 0 t)))
+    (let ((sym (treesit-node-child node 1 t)))
+      (when (clojure-ts--symbol-node-p sym)
+        (let ((ns (treesit-node-child-by-field-name sym "ns"))
+              (name (treesit-node-child-by-field-name sym "name")))
+          (if ns
+              (concat (treesit-node-text ns) "/" (treesit-node-text name))
+            (treesit-node-text name)))))))
+
+(defvar clojure-ts--function-type-regexp
+  (rx string-start (or "defn" "defmethod") string-end)
+  "Regular expression for matching definition nodes that resemble functions.")
+
+(defun clojure-ts--function-node-p (node)
   "Return non-nil if NODE is a defn form."
-  (clojure-ts--definition-node-p "defn" node))
+  (clojure-ts--definition-node-match-p clojure-ts--function-type-regexp node))
+
+(defun clojure-ts--function-node-name (node)
+  "Return the name of a function NODE.
+Includes a dispatch value when applicable (defmethods)."
+  (if (clojure-ts--definition-node-p "defmethod" node)
+      (let ((dispatch-value (treesit-node-text (treesit-node-child node 2 t))))
+        (concat (clojure-ts--standard-definition-node-name node)
+                " "
+                dispatch-value))
+    (clojure-ts--standard-definition-node-name node)))
 
 (defun clojure-ts--defmacro-node-p (node)
   "Return non-nil if NODE is a defmacro form."
@@ -372,30 +438,43 @@ DEFINITION-TYPE-NAME might be a string like defn, def, defmulti, etc."
   "Return non-nil if NODE is a ns form."
   (clojure-ts--definition-node-p "ns" node))
 
-(defun clojure-ts--def-node-p (node)
-  "Return non-nil if NODE is a def form."
-  (clojure-ts--definition-node-p "def" node))
+(defvar clojure-ts--variable-type-regexp
+  (rx string-start (or "def" "defonce") string-end)
+  "Regular expression for matching definition nodes that resemble variables.")
 
-(defun clojure-ts--standard-definition-node-name (node)
-  "Return the definition name for the given NODE.
-For example the node representing the expression (def foo 1) would return foo.
-The node representing (ns user) would return user."
-  (let* ((sym (treesit-node-child node 1 t))
-         (ns (treesit-node-child-by-field-name sym "ns"))
-         (name (treesit-node-child-by-field-name sym "name")))
-    (if ns
-        (concat (treesit-node-text ns) "/" (treesit-node-text name))
-      (treesit-node-text name))))
+(defun clojure-ts--variable-node-p (node)
+  "Return non-nil if NODE is a def or defonce form."
+  (clojure-ts--definition-node-match-p clojure-ts--variable-type-regexp node))
+
+(defvar clojure-ts--class-type-regexp
+  (rx string-start (or "deftype" "defrecord" "defstruct") string-end)
+  "Regular expression for matching definition nodes that resemble classes.")
+
+(defun clojure-ts--class-node-p (node)
+  "Return non-nil if NODE represents a type, record, or struct definition."
+  (clojure-ts--definition-node-match-p clojure-ts--class-type-regexp node))
+
+(defvar clojure-ts--interface-type-regexp
+  (rx string-start (or "defprotocol" "definterface" "defmulti") string-end)
+  "Regular expression for matching definition nodes that resemble interfaces.")
+
+(defun clojure-ts--interface-node-p (node)
+  "Return non-nil if NODE represents a protocol or interface definition."
+  (clojure-ts--definition-node-match-p clojure-ts--interface-type-regexp node))
+
 
 (defvar clojure-ts--imenu-settings
-  `(("Namespace" "list_lit" clojure-ts--ns-node-p
-     clojure-ts--standard-definition-node-name)
-    ("Function" "list_lit" clojure-ts--defn-node-p
-     clojure-ts--standard-definition-node-name)
-    ("Macro" "list_lit" clojure-ts--defmacro-node-p
-     clojure-ts--standard-definition-node-name)
-    ("Variable" "list_lit" clojure-ts--def-node-p
-     clojure-ts--standard-definition-node-name)))
+  `(("Namespace" "list_lit" clojure-ts--ns-node-p)
+    ("Function" "list_lit" clojure-ts--function-node-p
+     ;; Used instead of treesit-defun-name-function.
+     clojure-ts--function-node-name)
+    ("Macro" "list_lit" clojure-ts--defmacro-node-p)
+    ("Variable" "list_lit" clojure-ts--variable-node-p)
+    ("Interface" "list-lit" clojure-ts--interface-node-p)
+    ("Class" "list_lit" clojure-ts--class-node-p))
+  "The value for `treesit-simple-imenu-settings'.
+By default `treesit-defun-name-function' is used to extract definition names.
+See `clojure-ts--standard-definition-node-name' for the implementation used.")
 
 (defvar clojure-ts-mode-map
   (let ((map (make-sparse-keymap)))
@@ -433,6 +512,7 @@ Requires Emacs 29 and libtree-sitter-clojure.so available somewhere in
                   (keyword constant symbol bracket builtin)
                   (deref quote metadata definition variable type doc regex tagged-literals)))
     (setq-local treesit-simple-indent-rules clojure-ts--fixed-indent-rules)
+    (setq-local treesit-defun-name-function #'clojure-ts--standard-definition-node-name)
     (setq-local treesit-simple-imenu-settings clojure-ts--imenu-settings)
     (setq treesit--indent-verbose t)
     (treesit-major-mode-setup)
