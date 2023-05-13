@@ -473,7 +473,7 @@ Includes a dispatch value when applicable (defmethods)."
      clojure-ts--function-node-name)
     ("Macro" "list_lit" clojure-ts--defmacro-node-p)
     ("Variable" "list_lit" clojure-ts--variable-node-p)
-    ("Interface" "list-lit" clojure-ts--interface-node-p)
+    ("Interface" "list_lit" clojure-ts--interface-node-p)
     ("Class" "list_lit" clojure-ts--class-node-p))
   "The value for `treesit-simple-imenu-settings'.
 By default `treesit-defun-name-function' is used to extract definition names.
