@@ -406,6 +406,9 @@ Can be called directly, but intended for use as `treesit-defun-name-function'."
              (clojure-ts--symbol-node-p (treesit-node-child node 0 t)))
     (let ((sym (treesit-node-child node 1 t)))
       (when (clojure-ts--symbol-node-p sym)
+        ;; Extracts ns and name, and recreates the full var name.
+        ;; We can't just get the node-text of the full symbol because
+        ;; that could include metadata that isn't part of the name.
         (let ((ns (treesit-node-child-by-field-name sym "ns"))
               (name (treesit-node-child-by-field-name sym "name")))
           (if ns
