@@ -22,7 +22,7 @@ Keep in mind that the transition to `clojure-ts-mode` won't happen overnight for
 
 - getting to feature parity with `clojure-mode` will take some time
 - tools that depend on `clojure-mode` will need to be updated to work with `clojure-ts-mode`
-- we still need to support users of older Emacsen that don't support Tree-sitter
+- we still need to support users of older Emacs versions that don't support Tree-sitter
 
 That's why `clojure-ts-mode` is being developed independently of `clojure-mode` and will one day replace it when the time is right. (e.g. 3 major Emacs version down the road, so circa Emacs 32)
 
