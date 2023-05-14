@@ -335,19 +335,6 @@
    '((derefing_lit
       marker: "@" @font-lock-warning-face))))
 
-(defvar clojure-ts--fixed-indent-rules
-  ;; This is in contrast to semantic rules
-  ;; fixed-indent-rules come from https://tonsky.me/blog/clojurefmt/
-  '((clojure
-     ((parent-is "source") parent-bol 0)
-     ;; Lists beginning with a symbol indent 2 spaces (usually a function/macro call)
-     ((query "(list_lit . (sym_lit) _* @indent)") parent 2)
-     ((or (parent-is "vec_lit")
-          (parent-is "map_lit")
-          (parent-is "list_lit")) parent 1)
-     ((parent-is "set_lit") parent 2))))
-
-
 ;; Node predicates
 
 (defun clojure-ts--list-node-p (node)
@@ -357,6 +344,10 @@
 (defun clojure-ts--symbol-node-p (node)
   "Return non-nil if NODE is a Clojure symbol."
   (string-equal "sym_lit" (treesit-node-type node)))
+
+(defun clojure-ts--keyword-node-p (node)
+  "Return non-nil if NODE is a Clojure keyword."
+  (string-equal "kwd_lit" (treesit-node-type node)))
 
 (defun clojure-ts--named-node-text (node)
   "Gets the name of a symbol or keyword NODE.
@@ -478,6 +469,28 @@ Includes a dispatch value when applicable (defmethods)."
   "The value for `treesit-simple-imenu-settings'.
 By default `treesit-defun-name-function' is used to extract definition names.
 See `clojure-ts--standard-definition-node-name' for the implementation used.")
+
+(defvar clojure-ts--fixed-indent-rules
+  ;; This is in contrast to semantic
+  ;; fixed-indent-rules come from https://tonsky.me/blog/clojurefmt/
+  `((clojure
+     ((parent-is "source") parent-bol 0)
+     ;; ((query "(list_lit . [(sym_lit) (kwd_lit)] _* @node)") parent 2)
+     ;; Using the above `query' rule here doesn't always work because sometimes `node' is nil.
+     ;; `query' requires `node' to be matched.
+     ;; We really only care about the parent node being a function-call like list.
+     ;; with it's first named child being a symbol
+     ((lambda (node parent _)
+        (and (clojure-ts--list-node-p parent)
+             ;; Should we also check for keyword first child, as in (:k map) calls?
+             (let ((first-child (treesit-node-child parent 0 t)))
+               (or (clojure-ts--symbol-node-p first-child)
+                   (clojure-ts--keyword-node-p first-child)))))
+      parent 2)
+     ((parent-is "vec_lit") parent 1)
+     ((parent-is "map_lit") parent 1)
+     ((parent-is "list_lit") parent 1)
+     ((parent-is "set_lit") parent 2))))
 
 (defvar clojure-ts-mode-map
   (let ((map (make-sparse-keymap)))
