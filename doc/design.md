@@ -12,7 +12,7 @@ These guides for Emacs tree-sitter development are also useful
 
 In short:
 Tree-sitter is a tool that generates parser libraries for programming languages, and provides an API for interacting with those parsers.
-The generated parsers can create abstract syntax trees from source code text.
+The generated parsers can create syntax trees from source code text.
 The nodes of those trees are defined by the grammar.
 Emacs can use these generated parsers to provide major modes with things like syntax highlighting, indentation, navigation, structural editing, and many other things.
 
@@ -25,7 +25,7 @@ Emacs can use these generated parsers to provide major modes with things like sy
     - Abstract Syntax Tree: A syntax tree with less important details removed. An AST may contain a node for a list, but not individual parentheses. Tree-sitter does not create Abstract Syntax Trees.
 - Syntax Node: A node in a syntax tree. It represents some subset of a source code text. Each node has a type, defined by the grammar used to produce it. Some common node types represent language constructs like strings, integers, operators.
     - Named Syntax Node: A node that can be identified by a name given to it in the tree-sitter Grammar. In clojure-ts-mode, `list_lit` is a named node for lists.
-    - Anonymous Syntax Node: A node that cannot be identified by a name. In the Grammar these are identified by simple strings, not by complex Grammar rules. In clojure-ts-mode, `"("` and `")"` are anonymous nodes.n
+    - Anonymous Syntax Node: A node that cannot be identified by a name. In the Grammar these are identified by simple strings, not by complex Grammar rules. In clojure-ts-mode, `"("` and `")"` are anonymous nodes.
 - Font Locking: What Emacs calls "Syntax Highlighting".
 
 ## tree-sitter-clojure
