@@ -63,6 +63,10 @@
     (lm-version (or load-file-name buffer-file-name)))
   "The current version of `clojure-ts-mode'.")
 
+(defvar clojure-ts--debug nil
+  "Enables debugging messages, shows current node in mode-line.
+Only intended for use at development time.")
+
 (defconst clojure-ts--builtin-dynamic-var-regexp
   (eval-and-compile
     (concat "^"
@@ -519,23 +523,22 @@ Requires Emacs 29 and libtree-sitter-clojure.so available somewhere in
   (setq-local comment-start ";")
   (when (treesit-ready-p 'clojure)
     (treesit-parser-create 'clojure)
-    (setq-local treesit-font-lock-settings clojure-ts--font-lock-settings)
-    (setq-local treesit-defun-prefer-top-level t
+    (setq-local treesit-font-lock-settings clojure-ts--font-lock-settings
+                treesit-defun-prefer-top-level t
                 treesit-defun-tactic 'top-level
-                treesit-defun-type-regexp (rx (or "list_lit" "vec_lit" "map_lit")))
-    (setq-local treesit-font-lock-feature-list
+                treesit-defun-type-regexp (rx (or "list_lit" "vec_lit" "map_lit"))
+                treesit-simple-indent-rules clojure-ts--fixed-indent-rules
+                treesit-defun-name-function #'clojure-ts--standard-definition-node-name
+                treesit-simple-imenu-settings clojure-ts--imenu-settings
+                treesit-font-lock-feature-list
                 '((comment string char number)
                   (keyword constant symbol bracket builtin)
                   (deref quote metadata definition variable type doc regex tagged-literals)))
-    (setq-local treesit-simple-indent-rules clojure-ts--fixed-indent-rules)
-    (setq-local treesit-defun-name-function #'clojure-ts--standard-definition-node-name)
-    (setq-local treesit-simple-imenu-settings clojure-ts--imenu-settings)
-    (setq treesit--indent-verbose t)
-    (treesit-major-mode-setup)
-    (treesit-inspect-mode)))
-    ;; (clojure-mode-variables)
-    ;; (add-hook 'paredit-mode-hook #'clojure-paredit-setup)
-    ;; (add-hook 'electric-indent-function #'clojure-mode--electric-indent-function)
+    (when clojure-ts--debug
+      (setq-local treesit--indent-verbose t
+                  treesit--font-lock-verbose t)
+      (treesit-inspect-mode))
+    (treesit-major-mode-setup)))
 
 ;; Redirect clojure-mode to clojure-ts-mode if clojure-mode is present
 (if (require 'clojure-mode nil 'noerror)
