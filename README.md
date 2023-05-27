@@ -1,3 +1,4 @@
+[![MELPA][melpa-badge]][melpa-package]
 [![License GPL 3][badge-license]][copying]
 [![Lint Status](https://github.com/clojure-emacs/clojure-ts-mode/actions/workflows/lint-emacs.yml/badge.svg)](https://github.com/clojure-emacs/clojure-ts-mode/actions/workflows/lint-emacs.yml)
 
@@ -46,7 +47,12 @@ More information on this can be found in the Emacs repository:
 
 ### Install clojure-ts-mode
 
-In the future this package will be available through MELPA and Non-GNU ELPA.
+clojure-ts-mode is available on [Melpa](https://melpa.org/#/clojure-ts-mode).
+It can be installed with
+
+``` emacs-lisp
+(package-install 'clojure-ts-mode)
+```
 
 #### package-vc
 
@@ -123,5 +129,6 @@ Copyright © 2022-2023 Danny Freeman and [contributors][].
 Distributed under the GNU General Public License; type <kbd>C-h C-c</kbd> to view it.
 
 [badge-license]: https://img.shields.io/badge/license-GPL_3-green.svg
+[melpa-badge]: http://melpa.org/packages/clojure-ts-mode-badge.svg
 [COPYING]: http://www.gnu.org/copyleft/gpl.html
 [contributors]: https://github.com/clojure-emacs/clojure-ts-mode/contributors
