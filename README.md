@@ -130,5 +130,6 @@ Distributed under the GNU General Public License; type <kbd>C-h C-c</kbd> to vie
 
 [badge-license]: https://img.shields.io/badge/license-GPL_3-green.svg
 [melpa-badge]: http://melpa.org/packages/clojure-ts-mode-badge.svg
+[melpa-package]: http://melpa.org/#/clojure-ts-mode
 [COPYING]: http://www.gnu.org/copyleft/gpl.html
 [contributors]: https://github.com/clojure-emacs/clojure-ts-mode/contributors
