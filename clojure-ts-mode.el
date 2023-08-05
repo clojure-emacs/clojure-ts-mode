@@ -16,6 +16,9 @@
 ;; Provides font-lock, indentation, and navigation for the
 ;; Clojure programming language (http://clojure.org).
 
+;; For the tree-sitter grammar this mode is based on,
+;; see https://github.com/sogaiu/tree-sitter-clojure.
+
 ;; Using clojure-ts-mode with paredit or smartparens is highly recommended.
 
 ;; Here are some example configurations:
@@ -574,8 +577,6 @@ See `clojure-ts--standard-definition-node-name' for the implementation used.")
 ;;;###autoload
 (define-derived-mode clojure-ts-mode prog-mode "Clojure[TS]"
   "Major mode for editing Clojure code.
-Requires Emacs 29 and libtree-sitter-clojure.so available somewhere in
-`treesit-extra-load-path'.
 
 \\{clojure-ts-mode-map}"
   :syntax-table clojure-ts-mode-syntax-table
