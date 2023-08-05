@@ -546,6 +546,21 @@ See `clojure-ts--standard-definition-node-name' for the implementation used.")
     ;(set-keymap-parent map clojure-mode-map)
     map))
 
+(defvar clojurescript-ts-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map clojure-ts-mode-map)
+    map))
+
+(defvar clojurec-ts-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map clojure-ts-mode-map)
+    map))
+
+(defvar clojure-dart-ts-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map clojure-ts-mode-map)
+    map))
+
 ;;;###autolaod
 (add-to-list
  'treesit-language-source-alist
@@ -585,21 +600,50 @@ Requires Emacs 29 and libtree-sitter-clojure.so available somewhere in
       (treesit-inspect-mode))
     (treesit-major-mode-setup)))
 
+
+;;;###autoload
+(define-derived-mode clojurescript-ts-mode clojure-ts-mode "ClojureScript[TS]"
+  "Major mode for editing ClojureScript code.
+
+\\{clojurescript-ts-mode-map}")
+
+;;;###autoload
+(define-derived-mode clojurec-ts-mode clojure-ts-mode "ClojureC[TS]"
+  "Major mode for editing ClojureC code.
+
+\\{clojurec-ts-mode-map}")
+
+;;;###autoload
+(define-derived-mode clojure-dart-ts-mode clojure-ts-mode "ClojureDart[TS]"
+  "Major mode for editing Clojure Dart code.
+
+\\{clojure-dart-ts-mode-map}")
+
+(defun clojure-ts--register-novel-modes ()
+  "Set up Clojure modes not present in progenitor clojure-mode.el."
+  (add-to-list 'auto-mode-alist '("\\.cljd\\'" . clojure-dart-ts-mode)))
+
 ;; Redirect clojure-mode to clojure-ts-mode if clojure-mode is present
 (if (require 'clojure-mode nil 'noerror)
     (progn
       (add-to-list 'major-mode-remap-alist '(clojure-mode . clojure-ts-mode))
-      (add-to-list 'major-mode-remap-alist '(clojurescript-mode . clojure-ts-mode))
-      (add-to-list 'major-mode-remap-alist '(clojurec-mode . clojure-ts-mode)))
-  ;; clojure-mode is not present
+      (add-to-list 'major-mode-remap-alist '(clojurescript-mode . clojurescript-ts-mode))
+      (add-to-list 'major-mode-remap-alist '(clojurec-mode . clojurec-ts-mode))
+      (clojure-ts--register-novel-modes))
+  ;; Clojure-mode is not present, setup auto-modes ourselves
+  ;; Regular clojure/edn files
+  ;; I believe dtm is for datomic queries and datoms, which are just edn.
   (add-to-list 'auto-mode-alist
-               '("\\.\\(clj\\|cljd\\|cljc\\|cljs\\|dtm\\|edn\\)\\'" . clojure-ts-mode))
+               '("\\.\\(clj\\|dtm\\|edn\\)\\'" . clojure-ts-mode))
+  (add-to-list 'auto-mode-alist '("\\.cljs\\'" . clojurescript-ts-mode))
+  (add-to-list 'auto-mode-alist '("\\.cljc\\'" . clojurec-ts-mode))
   ;; boot build scripts are Clojure source files
   (add-to-list 'auto-mode-alist '("\\(?:build\\|profile\\)\\.boot\\'" . clojure-ts-mode))
   ;; babashka scripts are Clojure source files
   (add-to-list 'interpreter-mode-alist '("bb" . clojure-ts-mode))
   ;; nbb scripts are ClojureScript source files
-  (add-to-list 'interpreter-mode-alist '("nbb" . clojure-ts-mode)))
+  (add-to-list 'interpreter-mode-alist '("nbb" . clojurescript-ts-mode))
+  (clojure-ts--register-novel-modes))
 
 (provide 'clojure-ts-mode)
 
