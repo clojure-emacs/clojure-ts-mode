@@ -578,6 +578,7 @@ Requires Emacs 29 and libtree-sitter-clojure.so available somewhere in
 `treesit-extra-load-path'.
 
 \\{clojure-ts-mode-map}"
+  :syntax-table clojure-ts-mode-syntax-table
   (unless (treesit-language-available-p 'clojure nil)
     (treesit-install-language-grammar 'clojure))
   (setq-local comment-start ";")
