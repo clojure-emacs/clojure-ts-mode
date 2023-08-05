@@ -12,7 +12,7 @@
 
 ## 0.1.1
 
-- Fix bug with required emacs version [https://github.com/clojure-emacs/clojure-ts-mode/commit/19b8e4260bfd459ad5771e06afb22c9af0ebc370](19b8e4260bfd459ad5771e06afb22c9af0ebc370)
+- Fix bug with required emacs version [19b8e4260bfd459ad5771e06afb22c9af0ebc370](https://github.com/clojure-emacs/clojure-ts-mode/commit/19b8e4260bfd459ad5771e06afb22c9af0ebc370)
 
 ## 0.1.0
 
