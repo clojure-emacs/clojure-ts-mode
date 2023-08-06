@@ -617,15 +617,29 @@ See `treesit-simple-indent-rules'."
     (rx (and "->" (? ">") line-end)))
   "A regular expression matching a threading macro.")
 
-(defun clojure-ts--threading-macro-p (node)
-  "Return non-nil if NODE is a threading macro symbol like ->>."
-  (clojure-ts--symbol-matches-p clojure-ts--threading-macro node))
+(defun clojure-ts--match-threading-macro-arg (_node parent _)
+  "Match NODE if it is an argument to a PARENT threading macro."
+  ;; We want threading macros to indent 2 only if the ->> is on it's own line.
+  ;; If not, then align functoin arg.
+  (and (clojure-ts--list-node-p parent)
+       (let ((first-child (treesit-node-child parent 0 t)))
+         (clojure-ts--symbol-matches-p
+          clojure-ts--threading-macro
+          first-child))))
+
+(defun clojure-ts--threading-macro-arg-offset (node _parent _bol)
+  "Calculates the indentation offset for NODE, a threading macro argument."
+  (if (and node (<= (treesit-node-index node t) 1))
+      1 ;; NODE is the first arg, offset 1 from start of *->> symbol
+    0)) ;; arg 2...n, match indentation of the previous argument
 
 (defvar clojure-ts--semantic-indent-rules
   `((clojure
      ((parent-is "source") parent-bol 0)
      ;; https://guide.clojure.style/#body-indentation
      (clojure-ts--match-expression-in-body parent 2)
+     ;; https://guide.clojure.style/#threading-macros-alignment
+     (clojure-ts--match-threading-macro-arg prev-sibling 0)
      ;; https://guide.clojure.style/#vertically-align-fn-args
      (clojure-ts--match-function-call-arg (nth-sibling 2 nil) 0)
      ;; Literal Sequences
