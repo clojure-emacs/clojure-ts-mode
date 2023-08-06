@@ -499,11 +499,14 @@ By default `treesit-defun-name-function' is used to extract definition names.
 See `clojure-ts--standard-definition-node-name' for the implementation used.")
 
 (defcustom clojure-ts-indent-style 'semantic
-  "Automatic indentation style to use when mode clojure-ts-mode is run
+  "Automatic indentation style to use when mode `clojure-ts-mode' is run.
 
 The possible values for this variable are
-    `semantic' - Tries to follow the same rules as the clojure style guide.
-        See: https://guide.clojure.style/
+    `semantic' - Semantic indentation.
+        Tries to follow the same rules as cljfmt with default settings.
+        See:
+          - https://github.com/weavejester/cljfmt
+          - https://guide.clojure.style/
     `fixed' - A simpler set of indentation rules that can be summarized as
         1. Multi-line lists that start with a symbol are always indented with
            two spaces.
@@ -512,8 +515,8 @@ The possible values for this variable are
         See: https://tonsky.me/blog/clojurefmt/"
   :safe #'symbolp
   :type
-  '(choice (const :tag "Semantic indent rules, matching clojure style guide." semantic)
-           (const :tag "Simple fixed indent rules." fixed))
+  '(choice (const :tag "Semantic indentation rules." semantic)
+           (const :tag "Simple fixed indentation rules." fixed))
   :package-version '(clojure-ts-mode . "0.2.0"))
 
 (defvar clojure-ts--fixed-indent-rules
@@ -655,7 +658,8 @@ See `treesit-simple-indent-rules'."
    ((eq clojure-ts-indent-style 'fixed) clojure-ts--fixed-indent-rules)
    (t (error
        (format
-        "Invalid value for clojure-ts-indent-style. Valid values are 'semantic or 'fixed. Found %S"
+        "Invalid value for clojure-ts-indent-style. Expected one of '%S, but found '%S instead."
+        '(semantic fixed)
         clojure-ts-indent-style)))))
 
 (defvar clojure-ts-mode-map

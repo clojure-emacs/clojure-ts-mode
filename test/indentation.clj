@@ -1,9 +1,24 @@
+(ns indentation
+  (:require
+   [clojure.string :as str])
+  (:import
+   (java.util Date
+              UUID)))
+
 ; https://tonsky.me/blog/clojurefmt/#ok-what-do-we-do-then
 (when something
   body)
 
+(defmethod dispatch :on-me
+  [x]
+  (bar x))
+
 (defn f [x]
   body)
+
+(defn f
+  ([x] (f x nil))
+  ([x y] ))
 
 (defn f
   [x]
@@ -34,12 +49,12 @@
 
 ; second cond is not aligned
 (or (condition-a)
-  (condition-b))
+    (condition-b))
 
 ; or/and are the only forms where this looks not ideal
 ; other forms don’t win/lose much because of this change
 (filter even?
-  (range 1 10))
+        (range 1 10))
 
 ; my way is actually better if fn name is looooooooooong
 (clojure.core/filter even?
