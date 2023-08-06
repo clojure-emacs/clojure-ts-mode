@@ -60,6 +60,7 @@
 (declare-function treesit-node-type "treesit.c")
 (declare-function treesit-node-child "treesit.c")
 (declare-function treesit-node-child-by-field-name "treesit.c")
+(declare-function treesit-node-prev-sibling "treesit.c")
 
 (defgroup clojure-ts nil
   "Major mode for editing Clojure code with tree-sitter."
@@ -583,17 +584,33 @@ The possible values for this variable are
 Taken from cljfmt:
 https://github.com/weavejester/cljfmt/blob/fb26b22f569724b05c93eb2502592dfc2de898c3/cljfmt/resources/cljfmt/indents/clojure.clj")
 
-(defun clojure-ts--symbols-with-body-expressions-p (node)
-  "Return non-nil if NODE is a function/macro symbol with a body argument."
+(defun clojure-ts--match-function-call-arg (node parent _bol)
+  "Match NODE if PARENT is a list expressing a function or macro call."
+  (and (clojure-ts--list-node-p parent)
+       ;; Can the following two clauses be replaced by checking indexes?
+       ;; Does the second child exist, and is it not equal to the current node?
+       (treesit-node-child parent 1 t)
+       (not (treesit-node-eq (treesit-node-child parent 1 t) node))
+       (let ((first-child (treesit-node-child parent 0 t)))
+         (or (clojure-ts--symbol-node-p first-child)
+             (clojure-ts--keyword-node-p first-child)))))
+
+(defun clojure-ts--match-expression-in-body (_node parent _bol)
+  "Match NODE if it is an expression used in a body argument.
+PARENT is expected to be a list literal.
+See `treesit-simple-indent-rules'."
   (and
-   (not
-    (clojure-ts--symbol-matches-p
-     ;; Symbols starting with this are false positives
-     (rx line-start (or "default" "deflate" "defer"))
-     node))
-   (clojure-ts--symbol-matches-p
-    clojure-ts--symbols-with-body-expressions-regexp
-    node)))
+   (clojure-ts--list-node-p parent)
+   (let ((first-child (treesit-node-child parent 0 t)))
+     (and
+      (not
+       (clojure-ts--symbol-matches-p
+        ;; Symbols starting with this are false positives
+        (rx line-start (or "default" "deflate" "defer"))
+        first-child))
+      (clojure-ts--symbol-matches-p
+       clojure-ts--symbols-with-body-expressions-regexp
+       first-child)))))
 
 (defvar clojure-ts--threading-macro
   (eval-and-compile
@@ -607,30 +624,10 @@ https://github.com/weavejester/cljfmt/blob/fb26b22f569724b05c93eb2502592dfc2de89
 (defvar clojure-ts--semantic-indent-rules
   `((clojure
      ((parent-is "source") parent-bol 0)
-     ((lambda (node parent _) ;; https://guide.clojure.style/#body-indentation
-        (and (clojure-ts--list-node-p parent)
-             (let ((first-child (treesit-node-child parent 0 t)))
-               (clojure-ts--symbols-with-body-expressions-p first-child))))
-      parent 2)
-     ;; ;; We want threading macros to indent 2 only if the ->> is on it's own line.
-     ;; ;; If not, then align functoin args.
-     ;; ((lambda (node parent _)
-     ;;    (and (clojure-ts--list-node-p parent)
-     ;;         (let ((first-child (treesit-node-child parent 0 t))
-     ;;               (second-child (treesit-node-child parent 1 t)))
-     ;;           (clojure-ts--debug "Second-child %S" (treesit-node))
-     ;;           (clojure-ts--threading-macro-p first-child))))
-     ;;  parent 2)
-     ((lambda (node parent _) ;; https://guide.clojure.style/#vertically-align-fn-args
-        (and (clojure-ts--list-node-p parent)
-             ;; Can the following two clauses be replaced by checking indexes?
-             ;; Does the second child exist, and is it not equal to the current node?
-             (treesit-node-child parent 1 t)
-             (not (treesit-node-eq (treesit-node-child parent 1 t) node))
-             (let ((first-child (treesit-node-child parent 0 t)))
-               (or (clojure-ts--symbol-node-p first-child)
-                   (clojure-ts--keyword-node-p first-child)))))
-      (nth-sibling 2 nil) 0)
+     ;; https://guide.clojure.style/#body-indentation
+     (clojure-ts--match-expression-in-body parent 2)
+     ;; https://guide.clojure.style/#vertically-align-fn-args
+     (clojure-ts--match-function-call-arg (nth-sibling 2 nil) 0)
      ;; Literal Sequences
      ((parent-is "list_lit") parent 1) ;; https://guide.clojure.style/#one-space-indent
      ((parent-is "vec_lit") parent 1) ;; https://guide.clojure.style/#bindings-alignment
