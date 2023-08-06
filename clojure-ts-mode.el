@@ -497,6 +497,24 @@ Includes a dispatch value when applicable (defmethods)."
 By default `treesit-defun-name-function' is used to extract definition names.
 See `clojure-ts--standard-definition-node-name' for the implementation used.")
 
+(defcustom clojure-ts-indent-style 'semantic
+  "Automatic indentation style to use when mode clojure-ts-mode is run
+
+The possible values for this variable are
+    `semantic' - Tries to follow the same rules as the clojure style guide.
+        See: https://guide.clojure.style/
+    `fixed' - A simpler set of indentation rules that can be summarized as
+        1. Multi-line lists that start with a symbol are always indented with
+           two spaces.
+        2. Other multi-line lists, vectors, maps and sets are aligned with the
+           first element (1 or 2 spaces).
+        See: https://tonsky.me/blog/clojurefmt/"
+  :safe #'symbolp
+  :type
+  '(choice (const :tag "Semantic indent rules, matching clojure style guide." semantic)
+           (const :tag "Simple fixed indent rules." fixed))
+  :package-version '(clojure-ts-mode . "0.2.0"))
+
 (defvar clojure-ts--fixed-indent-rules
   ;; This is in contrast to semantic
   ;; fixed-indent-rules come from https://tonsky.me/blog/clojurefmt/
@@ -535,6 +553,99 @@ See `clojure-ts--standard-definition-node-name' for the implementation used.")
   `((clojure
      ((sexp ,(regexp-opt clojure-ts--sexp-nodes))
       (text ,(regexp-opt '("comment")))))))
+
+(defvar clojure-ts--symbols-with-body-expressions-regexp
+  (eval-and-compile
+    (rx (or
+         ;; Match def* symbols,
+         ;; we also explicitly do not match symbols beginning with
+         ;; "default" "deflate" and "defer", like cljfmt
+         (and line-start "def")
+         ;; Match with-* symbols
+         (and line-start "with-")
+         ;; Exact matches
+         (and line-start
+              (or "alt!" "alt!!" "are" "as->"
+                  "binding" "bound-fn"
+                  "case" "catch" "comment" "cond" "condp" "cond->" "cond->>"
+                  "delay" "do" "doseq" "dotimes" "doto"
+                  "extend" "extend-protocol" "extend-type"
+                  "fdef" "finally" "fn" "for" "future"
+                  "go" "go-loop"
+                  "if" "if-let" "if-not" "if-some"
+                  "let" "letfn" "locking" "loop"
+                  "match" "ns" "proxy" "reify" "struct-map"
+                  "testing" "thread" "try"
+                  "use-fixtures"
+                  "when" "when-first" "when-let" "when-not" "when-some" "while")
+              line-end))))
+  "A regex to match symbols that are functions/macros with a body argument.
+Taken from cljfmt:
+https://github.com/weavejester/cljfmt/blob/fb26b22f569724b05c93eb2502592dfc2de898c3/cljfmt/resources/cljfmt/indents/clojure.clj")
+
+(defun clojure-ts--symbols-with-body-expressions-p (node)
+  "Return non-nil if NODE is a function/macro symbol with a body argument."
+  (and
+   (not
+    (clojure-ts--symbol-matches-p
+     ;; Symbols starting with this are false positives
+     (rx line-start (or "default" "deflate" "defer"))
+     node))
+   (clojure-ts--symbol-matches-p
+    clojure-ts--symbols-with-body-expressions-regexp
+    node)))
+
+(defvar clojure-ts--threading-macro
+  (eval-and-compile
+    (rx (and "->" (? ">") line-end)))
+  "A regular expression matching a threading macro.")
+
+(defun clojure-ts--threading-macro-p (node)
+  "Return non-nil if NODE is a threading macro symbol like ->>."
+  (clojure-ts--symbol-matches-p clojure-ts--threading-macro node))
+
+(defvar clojure-ts--semantic-indent-rules
+  `((clojure
+     ((parent-is "source") parent-bol 0)
+     ((lambda (node parent _) ;; https://guide.clojure.style/#body-indentation
+        (and (clojure-ts--list-node-p parent)
+             (let ((first-child (treesit-node-child parent 0 t)))
+               (clojure-ts--symbols-with-body-expressions-p first-child))))
+      parent 2)
+     ;; ;; We want threading macros to indent 2 only if the ->> is on it's own line.
+     ;; ;; If not, then align functoin args.
+     ;; ((lambda (node parent _)
+     ;;    (and (clojure-ts--list-node-p parent)
+     ;;         (let ((first-child (treesit-node-child parent 0 t))
+     ;;               (second-child (treesit-node-child parent 1 t)))
+     ;;           (clojure-ts--debug "Second-child %S" (treesit-node))
+     ;;           (clojure-ts--threading-macro-p first-child))))
+     ;;  parent 2)
+     ((lambda (node parent _) ;; https://guide.clojure.style/#vertically-align-fn-args
+        (and (clojure-ts--list-node-p parent)
+             ;; Can the following two clauses be replaced by checking indexes?
+             ;; Does the second child exist, and is it not equal to the current node?
+             (treesit-node-child parent 1 t)
+             (not (treesit-node-eq (treesit-node-child parent 1 t) node))
+             (let ((first-child (treesit-node-child parent 0 t)))
+               (or (clojure-ts--symbol-node-p first-child)
+                   (clojure-ts--keyword-node-p first-child)))))
+      (nth-sibling 2 nil) 0)
+     ;; Literal Sequences
+     ((parent-is "list_lit") parent 1) ;; https://guide.clojure.style/#one-space-indent
+     ((parent-is "vec_lit") parent 1) ;; https://guide.clojure.style/#bindings-alignment
+     ((parent-is "map_lit") parent 1) ;; https://guide.clojure.style/#map-keys-alignment
+     ((parent-is "set_lit") parent 2))))
+
+(defun clojure-ts--configured-indent-rules ()
+  "Gets the configured choice of indent rules."
+  (cond
+   ((eq clojure-ts-indent-style 'semantic) clojure-ts--semantic-indent-rules)
+   ((eq clojure-ts-indent-style 'fixed) clojure-ts--fixed-indent-rules)
+   (t (error
+       (format
+        "Invalid value for clojure-ts-indent-style. Valid values are 'semantic or 'fixed. Found %S"
+        clojure-ts-indent-style)))))
 
 (defvar clojure-ts-mode-map
   (let ((map (make-sparse-keymap)))
@@ -581,7 +692,7 @@ See `clojure-ts--standard-definition-node-name' for the implementation used.")
                 treesit-defun-prefer-top-level t
                 treesit-defun-tactic 'top-level
                 treesit-defun-type-regexp (rx (or "list_lit" "vec_lit" "map_lit"))
-                treesit-simple-indent-rules clojure-ts--fixed-indent-rules
+                treesit-simple-indent-rules (clojure-ts--configured-indent-rules)
                 treesit-defun-name-function #'clojure-ts--standard-definition-node-name
                 treesit-simple-imenu-settings clojure-ts--imenu-settings
                 treesit-font-lock-feature-list
