@@ -2,6 +2,8 @@
 
 ## main (unreleased)
 
+## 0.1.2
+
 - Add a syntax table from clojure-mode. [712dc772fd38111c1e35fe60e4dbe7ac83032bd6](https://github.com/clojure-emacs/clojure-ts-mode/commit/712dc772fd38111c1e35fe60e4dbe7ac83032bd6). 
     - Better support for `thing-at-point` driven functionality.
     - Thank you @jasonjckn for this contribution.
