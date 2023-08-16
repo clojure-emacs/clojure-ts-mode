@@ -73,6 +73,18 @@
     (lm-version (or load-file-name buffer-file-name)))
   "The current version of `clojure-ts-mode'.")
 
+(defcustom clojure-ts-comment-macro-font-lock-body nil
+  "Highlight the entire body of a comment macro as a comment.
+
+When set to a non-nil value, applies the comment font-locking face to the entire
+body of comment macros.
+When nil (the default), the body of comment macros uses default font-locking
+rules for whatever expressions are in the body, except for the comment symbol
+itself."
+  :safe #'booleanp
+  :type 'boolean
+  :package-version '(clojure-ts-mode . "0.1.3"))
+
 (defvar clojure-ts--debug nil
   "Enables debugging messages, shows current node in mode-line.
 Only intended for use at development time.")
@@ -532,18 +544,6 @@ Includes a dispatch value when applicable (defmethods)."
   "The value for `treesit-simple-imenu-settings'.
 By default `treesit-defun-name-function' is used to extract definition names.
 See `clojure-ts--standard-definition-node-name' for the implementation used.")
-
-(defcustom clojure-ts-comment-macro-font-lock-body nil
-  "Highlight the entire body of a comment macro as a comment.
-
-When set to a non-nil value, applies the comment font-locking face to the entire
-body of comment macros.
-When nil (the default), the body of comment macros uses default font-locking
-rules for whatever expressions are in the body, except for the comment symbol
-itself."
-  :safe #'booleanp
-  :type 'boolean
-  :package-version '(clojure-ts-mode . "0.1.3"))
 
 (defvar clojure-ts--fixed-indent-rules
   ;; This is in contrast to semantic
