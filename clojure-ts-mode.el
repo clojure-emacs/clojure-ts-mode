@@ -6,7 +6,7 @@
 ;; Maintainer: Danny Freeman <danny@dfreeman.email>
 ;; URL: http://github.com/clojure-emacs/clojure-ts-mode
 ;; Keywords: languages clojure clojurescript lisp
-;; Version: 0.1.2
+;; Version: 0.1.3
 ;; Package-Requires: ((emacs "29"))
 
 ;; This file is not part of GNU Emacs.
@@ -60,6 +60,13 @@
 (declare-function treesit-node-type "treesit.c")
 (declare-function treesit-node-child "treesit.c")
 (declare-function treesit-node-child-by-field-name "treesit.c")
+
+(defgroup clojure-ts nil
+  "Major mode for editing Clojure code with tree-sitter."
+  :prefix "clojure-ts-"
+  :group 'languages
+  :link '(url-link :tag "GitHub" "https://github.com/clojure-emacs/clojure-ts-mode")
+  :link '(emacs-commentary-link :tag "Commentary" "clojure-mode"))
 
 (defconst clojure-ts-mode-version
   (eval-when-compile
@@ -258,7 +265,8 @@ Only intended for use at development time.")
                      "defstruct")
       line-end))
 
-(defvar clojure-ts--font-lock-settings
+(defun clojure-ts--font-lock-settings ()
+  "Return font lock settings suitable for use in `treesit-font-lock-settings'."
   (treesit-font-lock-rules
    :feature 'string
    :language 'clojure
@@ -375,12 +383,15 @@ Only intended for use at development time.")
    :feature 'comment
    :language 'clojure
    :override t
-   '((comment) @font-lock-comment-face
+   `((comment) @font-lock-comment-face
      (dis_expr
       marker: "#_" @font-lock-comment-delimiter-face
       value: _ @font-lock-comment-face)
-     ((list_lit :anchor (sym_lit (sym_name) @font-lock-comment-delimiter-face))
-      (:match "^comment$" @font-lock-comment-delimiter-face)))
+     (,(append
+        '(list_lit :anchor (sym_lit) @font-lock-comment-delimiter-face)
+        (when clojure-ts-comment-macro-font-lock-body
+          '(_ :* @font-lock-comment-face)))
+      (:match "^\\(\\(clojure.core/\\)?comment\\)$" @font-lock-comment-delimiter-face)))
 
    :feature 'deref ;; not part of clojure-mode, but a cool idea?
    :language 'clojure
@@ -522,6 +533,18 @@ Includes a dispatch value when applicable (defmethods)."
 By default `treesit-defun-name-function' is used to extract definition names.
 See `clojure-ts--standard-definition-node-name' for the implementation used.")
 
+(defcustom clojure-ts-comment-macro-font-lock-body nil
+  "Highlight the entire body of a comment macro as a comment.
+
+When set to a non-nil value, applies the comment font-locking face to the entire
+body of comment macros.
+When nil (the default), the body of comment macros uses default font-locking
+rules for whatever expressions are in the body, except for the comment symbol
+itself."
+  :safe #'booleanp
+  :type 'boolean
+  :package-version '(clojure-ts-mode . "0.1.3"))
+
 (defvar clojure-ts--fixed-indent-rules
   ;; This is in contrast to semantic
   ;; fixed-indent-rules come from https://tonsky.me/blog/clojurefmt/
@@ -585,7 +608,7 @@ See `clojure-ts--standard-definition-node-name' for the implementation used.")
   (setq-local comment-start ";")
   (when (treesit-ready-p 'clojure)
     (treesit-parser-create 'clojure)
-    (setq-local treesit-font-lock-settings clojure-ts--font-lock-settings
+    (setq-local treesit-font-lock-settings (clojure-ts--font-lock-settings)
                 treesit-defun-prefer-top-level t
                 treesit-defun-tactic 'top-level
                 treesit-defun-type-regexp (rx (or "list_lit" "vec_lit" "map_lit"))
