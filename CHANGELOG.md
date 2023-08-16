@@ -2,6 +2,10 @@
 
 ## main (unreleased)
 
+## 0.1.4
+
+- Fix misplaced defcustom form in hastily release 0.1.3 [a1859640095083f12f875ecaa1660b4c05c0caab](https://github.com/clojure-emacs/clojure-ts-mode/commit/a1859640095083f12f875ecaa1660b4c05c0caab)
+
 ## 0.1.3
 
 - Add custom option for highlighting comment macro body forms as comments. [ae3790adc0fc40ad905b8c30b152122991592a4e](https://github.com/clojure-emacs/clojure-ts-mode/commit/ae3790adc0fc40ad905b8c30b152122991592a4e)
