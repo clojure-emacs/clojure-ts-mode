@@ -2,6 +2,12 @@
 
 ## main (unreleased)
 
+## 0.1.3
+
+- Add custom option for highlighting comment macro body forms as comments. [ae3790adc0fc40ad905b8c30b152122991592a4e](https://github.com/clojure-emacs/clojure-ts-mode/commit/ae3790adc0fc40ad905b8c30b152122991592a4e)
+    - Defaults to OFF, highlighting comment body forms like any other expressions.
+    - Additionally, does a better job of better detecting comment macros by reducing false positives from forms like (not.clojure.core/comment)
+
 ## 0.1.2
 
 - Add a syntax table from clojure-mode. [712dc772fd38111c1e35fe60e4dbe7ac83032bd6](https://github.com/clojure-emacs/clojure-ts-mode/commit/712dc772fd38111c1e35fe60e4dbe7ac83032bd6). 
