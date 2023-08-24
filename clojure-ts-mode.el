@@ -277,138 +277,224 @@ Only intended for use at development time.")
                      "defstruct")
       line-end))
 
-(defun clojure-ts--font-lock-settings ()
-  "Return font lock settings suitable for use in `treesit-font-lock-settings'."
+(defvar clojure-ts-regex-grammar-git-url
+  "https://github.com/tree-sitter/tree-sitter-regex.git"
+  "The URL to install the regex grammar from.")
+
+(defvar clojure-ts-regex-grammar-git-ref
+  "v0.20.0"
+  "The branch or tag to use when installing the regex gramar.")
+
+(defun clojure-ts-install-regex-grammar ()
+  "Install the grammar needed by `clojure-ts-mode' for regex literal font-locking."
+  (interactive)
+  (add-to-list
+   'treesit-language-source-alist
+   `(regex . (,clojure-ts-regex-grammar-git-url ,clojure-ts-regex-grammar-git-ref)))
+  (treesit-install-language-grammar 'regex))
+
+(defvar clojure-ts--supress-regex-grammar-install-message
+  nil
+  "When non-nil, do not show message about installing the regex grammar.")
+
+(defun clojure-ts--notify-regex-grammar-missing ()
+  "Show the users a one-time message about installing the regex grammar."
+  (unless clojure-ts--supress-regex-grammar-install-message
+    (message (concat "To add support for regular expression font locking "
+                     "in clojure-ts-mode "
+                     "run `M-x clojure-ts-install-regex-grammar <RET>`."))
+    (setq clojure-ts--supress-regex-grammar-install-message t)))
+
+(defun clojure-ts--regex-font-lock-compatibility-ab4eb4b ()
+  "Font-lock helper to handle breaking changes in different releases of tree-sitter-regex."
+  ;; Prior to ab4eb4b, lookahead_assertion was a named node
+  ;; After ab4eb4b was applied, it was replaced by lookaround_assertion, which includes
+  ;; both lookahead and lookbehind assertions.
+  (condition-case nil
+      (progn (treesit-query-capture 'regex '((lookahead_assertion) @capture))
+             `(lookahead_assertion (["(?" "=" "!" ")"]) @font-lock-regexp-grouping-construct))
+    (error
+     `(lookaround_assertion (["(?" "(?<" "=" "!" ")"]) @font-lock-regexp-grouping-construct))))
+
+(defun clojure-ts--regex-font-lock-settings ()
+  "Return rules for font-locking regular expression literals."
+  ;; We have to gate this behind a check to (treesit-ready-p 'regex)
+  ;; Even if we don't set treesit-range-settings while the grammar is not
+  ;; installed, the font-locking engine still seems to want to evaluate these
+  ;; rules.
   (treesit-font-lock-rules
-   :feature 'string
-   :language 'clojure
-   '((str_lit) @font-lock-string-face
-     (regex_lit) @font-lock-string-face)
-
    :feature 'regex
-   :language 'clojure
+   :language 'regex
    :override t
-   '((regex_lit marker: _ @font-lock-property-face))
+   `(;; This captures the #"" characters that surround a regex in clojure.
+     ;; If we could define offsets in treesit-range-settings
+     ;; this would not be necessary
+     ((pattern (term
+                :anchor (pattern_character) @font-lock-regexp-face
+                :anchor (pattern_character) @font-lock-string-face
+                (pattern_character) @font-lock-string-face :anchor))
+      (:equal @font-lock-regexp-face "#")
+      (:equal @font-lock-string-face "\""))
+     ;; Capturing Groups
+     ((anonymous_capturing_group (["(" ")"]) @font-lock-regexp-grouping-construct))
+     ((non_capturing_group (["(?:" ")"]) @font-lock-regexp-grouping-construct))
+     (,(clojure-ts--regex-font-lock-compatibility-ab4eb4b))
+     ((named_capturing_group (["(?<" ">" ")"]) @font-lock-regexp-grouping-construct))
+     ((group_name) @font-lock-variable-name-face)
+     ;; Character classes
+     ((character_class (["[" "]"]) @font-lock-bracket-face))
+     ((character_class "^" @font-lock-negation-char-face))
+     ((class_range "-" @font-lock-punctuation-face))
+     ;; Quantifiers
+     ([(zero_or_more) (one_or_more) (optional)]) @font-lock-keyword-face
+     ((count_quantifier (["{" "}"]) @font-lock-bracket-face))
+     ((count_quantifier "," @font-lock-punctuation-face))
+     ((count_quantifier (decimal_digits) @font-lock-number-face))
+     ;; Escaping
+     ([(start_assertion) (any_character) (end_assertion)]) @font-lock-keyword-face
+     ([(decimal_escape)
+       (identity_escape)
+       (character_class_escape)]) @font-lock-regexp-grouping-backslash
+     ((pattern_character) @font-lock-regexp-face)
+     ([(control_escape) (boundary_assertion)] @font-lock-builtin-face))))
 
-   :feature 'number
-   :language 'clojure
-   '((num_lit) @font-lock-number-face)
 
-   :feature 'constant
-   :language 'clojure
-   '([(bool_lit) (nil_lit)] @font-lock-constant-face)
+(defun clojure-ts--font-lock-settings (regex-available)
+  "Return font lock settings suitable for use in `treesit-font-lock-settings'.
+When REGEX-AVAILABLE is non-nil, includes regex font-lock rules."
+  (append
+   (treesit-font-lock-rules
+    :feature 'string
+    :language 'clojure
+    '((str_lit) @font-lock-string-face
+      (regex_lit) @font-lock-regexp-face)
 
-   :feature 'char
-   :language 'clojure
-   '((char_lit) @clojure-ts-character-face)
+    :feature 'regex
+    :language 'clojure
+    :override t
+    '((regex_lit marker: "#" @font-lock-regexp-face)))
+   (when regex-available
+     (clojure-ts--regex-font-lock-settings))
+   (treesit-font-lock-rules
+    :feature 'number
+    :language 'clojure
+    '((num_lit) @font-lock-number-face)
 
-   :feature 'keyword
-   :language 'clojure
-   '((kwd_ns) @font-lock-type-face
-     (kwd_name) @clojure-ts-keyword-face
-     (kwd_lit
-      marker: _ @clojure-ts-keyword-face
-      delimiter: _ :? @default))
+    :feature 'constant
+    :language 'clojure
+    '([(bool_lit) (nil_lit)] @font-lock-constant-face)
 
-   :feature 'builtin
-   :language 'clojure
-   `(((list_lit :anchor (sym_lit (sym_name) @font-lock-keyword-face))
-      (:match ,clojure-ts--builtin-symbol-regexp @font-lock-keyword-face))
-     ((sym_name) @font-lock-builtin-face
-      (:match ,clojure-ts--builtin-dynamic-var-regexp @font-lock-builtin-face)))
+    :feature 'char
+    :language 'clojure
+    '((char_lit) @clojure-ts-character-face)
 
-   :feature 'symbol
-   :language 'clojure
-   '((sym_ns) @font-lock-type-face)
+    :feature 'keyword
+    :language 'clojure
+    '((kwd_ns) @font-lock-type-face
+      (kwd_name) @clojure-ts-keyword-face
+      (kwd_lit
+       marker: _ @clojure-ts-keyword-face
+       delimiter: _ :? @default))
 
-   ;; How does this work for defns nested in other forms, not at the top level?
-   ;; Should I match against the source node to only hit the top level? Can that be expressed?
-   ;; What about valid usages like `(let [closed 1] (defn +closed [n] (+ n closed)))'??
-   ;; No wonder the tree-sitter-clojure grammar only touches syntax, and not semantics
-   :feature 'definition ;; defn and defn like macros
-   :language 'clojure
-   `(((list_lit :anchor (sym_lit (sym_name) @font-lock-keyword-face)
-                :anchor (sym_lit (sym_name) @font-lock-function-name-face))
-      (:match ,clojure-ts--definition-keyword-regexp
-              @font-lock-keyword-face))
-     ((anon_fn_lit
-       marker: "#" @font-lock-property-face)))
+    :feature 'builtin
+    :language 'clojure
+    `(((list_lit :anchor (sym_lit (sym_name) @font-lock-keyword-face))
+       (:match ,clojure-ts--builtin-symbol-regexp @font-lock-keyword-face))
+      ((sym_name) @font-lock-builtin-face
+       (:match ,clojure-ts--builtin-dynamic-var-regexp @font-lock-builtin-face)))
 
-   :feature 'variable ;; def, defonce
-   :language 'clojure
-   `(((list_lit :anchor (sym_lit (sym_name) @font-lock-keyword-face)
-                :anchor (sym_lit (sym_name) @font-lock-variable-name-face))
-      (:match ,clojure-ts--variable-keyword-regexp @font-lock-keyword-face)))
+    :feature 'symbol
+    :language 'clojure
+    '((sym_ns) @font-lock-type-face)
 
-   :feature 'type ;; deftype, defmulti, defprotocol, etc
-   :language 'clojure
-   `(((list_lit :anchor (sym_lit (sym_name) @font-lock-keyword-face)
-                :anchor (sym_lit (sym_name) @font-lock-type-face))
-      (:match ,clojure-ts--type-keyword-regexp @font-lock-keyword-face)))
+    ;; How does this work for defns nested in other forms, not at the top level?
+    ;; Should I match against the source node to only hit the top level? Can that be expressed?
+    ;; What about valid usages like `(let [closed 1] (defn +closed [n] (+ n closed)))'??
+    ;; No wonder the tree-sitter-clojure grammar only touches syntax, and not semantics
+    :feature 'definition ;; defn and defn like macros
+    :language 'clojure
+    `(((list_lit :anchor (sym_lit (sym_name) @font-lock-keyword-face)
+                 :anchor (sym_lit (sym_name) @font-lock-function-name-face))
+       (:match ,clojure-ts--definition-keyword-regexp
+               @font-lock-keyword-face))
+      ((anon_fn_lit
+        marker: "#" @font-lock-property-face)))
 
-   :feature 'metadata
-   :language 'clojure
-   :override t
-   `((meta_lit marker: "^" @font-lock-property-face)
-     (meta_lit value: (kwd_lit) @font-lock-property-face) ;; metadata
-     (meta_lit value: (sym_lit (sym_name) @font-lock-type-face)) ;; typehint
-     (old_meta_lit marker: "#^" @font-lock-property-face)
-     (old_meta_lit value: (kwd_lit) @font-lock-property-face) ;; metadata
-     (old_meta_lit value: (sym_lit (sym_name) @font-lock-type-face))) ;; typehint
+    :feature 'variable ;; def, defonce
+    :language 'clojure
+    `(((list_lit :anchor (sym_lit (sym_name) @font-lock-keyword-face)
+                 :anchor (sym_lit (sym_name) @font-lock-variable-name-face))
+       (:match ,clojure-ts--variable-keyword-regexp @font-lock-keyword-face)))
 
-   :feature 'tagged-literals
-   :language 'clojure
-   :override t
-   '((tagged_or_ctor_lit marker: "#" @font-lock-preprocessor-face
-                         tag: (sym_lit) @font-lock-preprocessor-face))
+    :feature 'type ;; deftype, defmulti, defprotocol, etc
+    :language 'clojure
+    `(((list_lit :anchor (sym_lit (sym_name) @font-lock-keyword-face)
+                 :anchor (sym_lit (sym_name) @font-lock-type-face))
+       (:match ,clojure-ts--type-keyword-regexp @font-lock-keyword-face)))
 
-   ;; TODO, also account for `def'
-   ;; Figure out how to highlight symbols in docstrings.
-   :feature 'doc
-   :language 'clojure
-   :override t
-   `(((list_lit :anchor (sym_lit) @def_symbol
-                :anchor (sym_lit) @function_name
-                :anchor (str_lit) @font-lock-doc-face)
-      (:match ,clojure-ts--definition-keyword-regexp @def_symbol)))
+    :feature 'metadata
+    :language 'clojure
+    :override t
+    `((meta_lit marker: "^" @font-lock-property-face)
+      (meta_lit value: (kwd_lit) @font-lock-property-face) ;; metadata
+      (meta_lit value: (sym_lit (sym_name) @font-lock-type-face)) ;; typehint
+      (old_meta_lit marker: "#^" @font-lock-property-face)
+      (old_meta_lit value: (kwd_lit) @font-lock-property-face) ;; metadata
+      (old_meta_lit value: (sym_lit (sym_name) @font-lock-type-face))) ;; typehint
 
-   :feature 'quote
-   :language 'clojure
-   '((quoting_lit
-      marker: _ @font-lock-delimiter-face)
-     (var_quoting_lit
-      marker: _ @font-lock-delimiter-face)
-     (syn_quoting_lit
-      marker: _ @font-lock-delimiter-face)
-     (unquoting_lit
-      marker: _ @font-lock-delimiter-face)
-     (unquote_splicing_lit
-      marker: _ @font-lock-delimiter-face)
-     (var_quoting_lit
-      marker: _ @font-lock-delimiter-face))
+    :feature 'tagged-literals
+    :language 'clojure
+    :override t
+    '((tagged_or_ctor_lit marker: "#" @font-lock-preprocessor-face
+                          tag: (sym_lit) @font-lock-preprocessor-face))
 
-   :feature 'bracket
-   :language 'clojure
-   '((["(" ")" "[" "]" "{" "}"]) @font-lock-bracket-face
-     (set_lit :anchor "#" @font-lock-bracket-face))
+    ;; TODO, also account for `def'
+    ;; Figure out how to highlight symbols in docstrings.
+    :feature 'doc
+    :language 'clojure
+    :override t
+    `(((list_lit :anchor (sym_lit) @def_symbol
+                 :anchor (sym_lit) @function_name
+                 :anchor (str_lit) @font-lock-doc-face)
+       (:match ,clojure-ts--definition-keyword-regexp @def_symbol)))
 
-   :feature 'comment
-   :language 'clojure
-   :override t
-   `((comment) @font-lock-comment-face
-     (dis_expr
-      marker: "#_" @font-lock-comment-delimiter-face
-      value: _ @font-lock-comment-face)
-     (,(append
-        '(list_lit :anchor (sym_lit) @font-lock-comment-delimiter-face)
-        (when clojure-ts-comment-macro-font-lock-body
-          '(_ :* @font-lock-comment-face)))
-      (:match "^\\(\\(clojure.core/\\)?comment\\)$" @font-lock-comment-delimiter-face)))
+    :feature 'quote
+    :language 'clojure
+    '((quoting_lit
+       marker: _ @font-lock-delimiter-face)
+      (var_quoting_lit
+       marker: _ @font-lock-delimiter-face)
+      (syn_quoting_lit
+       marker: _ @font-lock-delimiter-face)
+      (unquoting_lit
+       marker: _ @font-lock-delimiter-face)
+      (unquote_splicing_lit
+       marker: _ @font-lock-delimiter-face)
+      (var_quoting_lit
+       marker: _ @font-lock-delimiter-face))
 
-   :feature 'deref ;; not part of clojure-mode, but a cool idea?
-   :language 'clojure
-   '((derefing_lit
-      marker: "@" @font-lock-warning-face))))
+    :feature 'bracket
+    :language 'clojure
+    '((["(" ")" "[" "]" "{" "}"]) @font-lock-bracket-face
+      (set_lit :anchor "#" @font-lock-bracket-face))
+
+    :feature 'comment
+    :language 'clojure
+    :override t
+    `((comment) @font-lock-comment-face
+      (dis_expr
+       marker: "#_" @font-lock-comment-delimiter-face
+       value: _ @font-lock-comment-face)
+      (,(append
+         '(list_lit :anchor (sym_lit) @font-lock-comment-delimiter-face)
+         (when clojure-ts-comment-macro-font-lock-body
+           '(_ :* @font-lock-comment-face)))
+       (:match "^\\(\\(clojure.core/\\)?comment\\)$" @font-lock-comment-delimiter-face)))
+
+    :feature 'deref ;; not part of clojure-mode, but a cool idea?
+    :language 'clojure
+    '((derefing_lit
+       marker: "@" @font-lock-warning-face)))))
 
 ;; Node predicates
 
@@ -597,6 +683,12 @@ See `clojure-ts--standard-definition-node-name' for the implementation used.")
   (interactive)
   (message "clojure-ts-mode (version %s)" clojure-ts-mode-version))
 
+(defvar clojure-ts--treesit-range-settings
+  (treesit-range-rules
+   :embed 'regex
+   :host 'clojure
+   '((regex_lit) @capture)))
+
 ;;;###autoload
 (define-derived-mode clojure-ts-mode prog-mode "Clojure[TS]"
   "Major mode for editing Clojure code.
@@ -607,9 +699,20 @@ See `clojure-ts--standard-definition-node-name' for the implementation used.")
     (treesit-install-language-grammar 'clojure))
   (setq-local comment-start ";")
   (when (treesit-ready-p 'clojure)
-    (treesit-parser-create 'clojure)
-    (setq-local treesit-font-lock-settings (clojure-ts--font-lock-settings)
-                treesit-defun-prefer-top-level t
+    (let ((regex-available (treesit-ready-p
+                            'regex
+                            (or clojure-ts--supress-regex-grammar-install-message
+                                'message))))
+      ;; Configure OPTIONAL regex sub-grammar font locking
+      (if regex-available
+          (progn
+            (treesit-parser-create 'regex)
+            (setq-local treesit-range-settings clojure-ts--treesit-range-settings))
+        (treesit-parser-create 'clojure)
+        (clojure-ts--notify-regex-grammar-missing))
+      (setq-local treesit-font-lock-settings
+                  (clojure-ts--font-lock-settings regex-available)))
+    (setq-local treesit-defun-prefer-top-level t
                 treesit-defun-tactic 'top-level
                 treesit-defun-type-regexp (rx (or "list_lit" "vec_lit" "map_lit"))
                 treesit-simple-indent-rules clojure-ts--fixed-indent-rules

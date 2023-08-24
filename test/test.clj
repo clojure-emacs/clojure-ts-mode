@@ -264,7 +264,7 @@ Etiam commodo nulla id risus convallis pharetra. Integer dapibus, eros vitae veh
   (println "Hello, World!"))
 
 (binding [*out* nil]
-  #"regex string"
+  #"^(?<lookup>abc)[0-9]\b$"
   (def #^Typehint x 1)
   (def #^:metadata x 1)
   (def ^Typehint x 2)
