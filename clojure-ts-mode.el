@@ -6,7 +6,7 @@
 ;; Maintainer: Danny Freeman <danny@dfreeman.email>
 ;; URL: http://github.com/clojure-emacs/clojure-ts-mode
 ;; Keywords: languages clojure clojurescript lisp
-;; Version: 0.1.3
+;; Version: 0.1.4
 ;; Package-Requires: ((emacs "29"))
 
 ;; This file is not part of GNU Emacs.
