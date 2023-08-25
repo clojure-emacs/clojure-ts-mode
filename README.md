@@ -1,3 +1,4 @@
+[![NonGNU ELPA][nongnu-elpa-badge]][nongnu-elpa-package]
 [![MELPA Stable][melpa-stable-badge]][melpa-stable-package]
 [![MELPA][melpa-badge]][melpa-package]
 [![License GPL 3][badge-license]][copying]
@@ -130,6 +131,8 @@ Copyright © 2022-2023 Danny Freeman and [contributors][].
 Distributed under the GNU General Public License; type <kbd>C-h C-c</kbd> to view it.
 
 [badge-license]: https://img.shields.io/badge/license-GPL_3-green.svg
+[nongnu-elpa-badge]: https://elpa.nongnu.org/nongnu/clojure-ts-mode.svg
+[nongnu-elpa-package]: https://elpa.nongnu.org/nongnu/clojure-ts-mode.html
 [melpa-badge]: http://melpa.org/packages/clojure-ts-mode-badge.svg
 [melpa-package]: http://melpa.org/#/clojure-ts-mode
 [melpa-stable-badge]: http://stable.melpa.org/packages/clojure-ts-mode-badge.svg
