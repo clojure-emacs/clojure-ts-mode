@@ -2,6 +2,12 @@
 
 ## main (unreleased)
 
+- Add support for font locking regex literals
+    - [c62ac120ff64307debd4bca463ed822fd241a006](https://github.com/clojure-emacs/clojure-ts-mode/commit/c62ac120ff64307debd4bca463ed822fd241a006)
+    - Requires installation of the tree-sitter-regex grammar
+    - If the grammar is not available, clojure-ts-mode SHOULD fall back to simple uniform font-locking of the entire regex literal.
+    - Includes a command `clojure-ts-install-regex-grammar` to aid in installation.
+
 ## 0.1.4
 
 - Fix misplaced defcustom form in hastily release 0.1.3 [6cba90c556c7e658b815cdbb9b4243bde3273203](https://github.com/clojure-emacs/clojure-ts-mode/commit/6cba90c556c7e658b815cdbb9b4243bde3273203)
