@@ -2,6 +2,8 @@
 
 ## main (unreleased)
 
+- Implement clojure-ts-find-ns function (mostly as a demonstration).
+
 ## 0.1.4
 
 - Fix misplaced defcustom form in hastily release 0.1.3 [6cba90c556c7e658b815cdbb9b4243bde3273203](https://github.com/clojure-emacs/clojure-ts-mode/commit/6cba90c556c7e658b815cdbb9b4243bde3273203)

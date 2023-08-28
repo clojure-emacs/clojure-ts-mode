@@ -670,6 +670,19 @@ See `clojure-ts--standard-definition-node-name' for the implementation used.")
   (add-to-list 'interpreter-mode-alist '("nbb" . clojurescript-ts-mode))
   (clojure-ts--register-novel-modes))
 
+(defvar clojure-ts--find-ns-query
+  (treesit-query-compile
+   'clojure
+   '(((source (list_lit
+               :anchor (sym_lit name: (sym_name) @ns)
+               :anchor (sym_lit name: (sym_name) @ns-name)))
+      (:equal @ns "ns")))))
+
+(defun clojure-ts-find-ns ()
+  "Return the name of the current namespace."
+  (let ((nodes (treesit-query-capture 'clojure clojure-ts--find-ns-query)))
+    (treesit-node-text (cdr (assoc 'ns-name nodes)))))
+
 (provide 'clojure-ts-mode)
 
 ;;; clojure-ts-mode.el ends here
