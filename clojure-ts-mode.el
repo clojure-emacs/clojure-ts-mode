@@ -623,8 +623,9 @@ See `clojure-ts--standard-definition-node-name' for the implementation used.")
       (setq-local treesit--indent-verbose t
                   treesit--font-lock-verbose t)
       (treesit-inspect-mode))
-    (treesit-major-mode-setup)))
-
+    (treesit-major-mode-setup)
+    (when (fboundp 'transpose-sexps-default-function)
+      (setq-local transpose-sexps-function #'transpose-sexps-default-function))))
 
 ;;;###autoload
 (define-derived-mode clojurescript-ts-mode clojure-ts-mode "ClojureScript[TS]"
