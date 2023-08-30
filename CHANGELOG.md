@@ -2,8 +2,10 @@
 
 ## main (unreleased)
 
-- Disable treesit-transpose-sexps on Emacs 30 in favor of the default implementation (#17)
-- Implement clojure-ts-find-ns function (mostly as a demonstration).
+## 0.1.5
+
+- Disable treesit-transpose-sexps on Emacs 30 in favor of the default implementation (#17) [623c98292f9207a95169cdeae6f8595c016c6320](https://github.com/clojure-emacs/clojure-ts-mode/commit/623c98292f9207a95169cdeae6f8595c016c6320)
+- Implement clojure-ts-find-ns function (mostly as a demonstration). [d630cd63af8022d5a1fee0e7aa05450b6e0fd75e](https://github.com/clojure-emacs/clojure-ts-mode/commit/d630cd63af8022d5a1fee0e7aa05450b6e0fd75e)
 
 ## 0.1.4
 
