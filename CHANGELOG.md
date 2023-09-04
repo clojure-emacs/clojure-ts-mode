@@ -2,6 +2,8 @@
 
 ## main (unreleased)
 
+- Re-enable treesit-transpose-sexps on Emacs 30 after fixes released by @casouri.
+
 ## 0.1.5
 
 - Disable treesit-transpose-sexps on Emacs 30 in favor of the default implementation (#17) [623c98292f9207a95169cdeae6f8595c016c6320](https://github.com/clojure-emacs/clojure-ts-mode/commit/623c98292f9207a95169cdeae6f8595c016c6320)

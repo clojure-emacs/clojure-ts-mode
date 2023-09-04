@@ -567,6 +567,23 @@ See `clojure-ts--standard-definition-node-name' for the implementation used.")
      ((parent-is "list_lit") parent 1)
      ((parent-is "set_lit") parent 2))))
 
+(defvar clojure-ts--sexp-nodes
+  '("#_" ;; transpose-sexp near a discard macro moves it around.
+    "num_lit" "sym_lit" "kwd_lit" "nil_lit" "bool_lit"
+    "regex_lit" "str_lit" "char_lit"
+    "list_lit" "map_lit" "vec_lit" "set_lit" "ns_map_lit"
+    "anon_fn_lit" "read_cond_lit"
+    "var_quoting_lit" "sym_val_lit" "evaling_lit"
+    "tagged_or_ctor_lit" "splicing_read_cond_lit"
+    "derefing_lit" "quoting_lit" "syn_quoting_lit"
+    "unquote_splicing_lit" "unquoting_lit")
+  "A regular expression that matches nodes that can be treated as s-expressions.")
+
+(defvar clojure-ts--thing-settings
+  `((clojure
+     ((sexp ,(regexp-opt clojure-ts--sexp-nodes))
+      (text ,(regexp-opt '("comment")))))))
+
 (defvar clojure-ts-mode-map
   (let ((map (make-sparse-keymap)))
     ;(set-keymap-parent map clojure-mode-map)
@@ -619,13 +636,13 @@ See `clojure-ts--standard-definition-node-name' for the implementation used.")
                 '((comment string char number)
                   (keyword constant symbol bracket builtin)
                   (deref quote metadata definition variable type doc regex tagged-literals)))
+    (when (boundp 'treesit-thing-settings) ;; Emacs 30+
+      (setq-local treesit-thing-settings clojure-ts--thing-settings))
     (when clojure-ts--debug
       (setq-local treesit--indent-verbose t
                   treesit--font-lock-verbose t)
       (treesit-inspect-mode))
-    (treesit-major-mode-setup)
-    (when (fboundp 'transpose-sexps-default-function)
-      (setq-local transpose-sexps-function #'transpose-sexps-default-function))))
+    (treesit-major-mode-setup)))
 
 ;;;###autoload
 (define-derived-mode clojurescript-ts-mode clojure-ts-mode "ClojureScript[TS]"
