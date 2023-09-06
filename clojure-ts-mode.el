@@ -607,7 +607,7 @@ See `clojure-ts--standard-definition-node-name' for the implementation used.")
 ;;;###autolaod
 (add-to-list
  'treesit-language-source-alist
- '(clojure "https://github.com/sogaiu/tree-sitter-clojure.git"))
+ '(clojure "https://github.com/sogaiu/tree-sitter-clojure.git" "v0.0.12"))
 
 (defun clojure-ts-mode-display-version ()
   "Display the current `clojure-mode-version' in the minibuffer."

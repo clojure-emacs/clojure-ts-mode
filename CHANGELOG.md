@@ -3,6 +3,7 @@
 ## main (unreleased)
 
 - Re-enable treesit-transpose-sexps on Emacs 30 after fixes released by @casouri.
+- Pin grammar revision in treesit-language-source-alist
 
 ## 0.1.5
 
