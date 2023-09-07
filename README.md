@@ -42,8 +42,8 @@ You can track the current progress towards an initial release [here](https://git
 ### Emacs 29
 
 This package requires Emacs 29 built with tree-sitter support from the [emacs-29 branch](https://git.savannah.gnu.org/cgit/emacs.git/log/?h=emacs-29).
-As of right now, users must install Emacs from source with tree-sitter installed on their system.
-More information on this can be found in the Emacs repository:
+
+If you decide to build Emacs from source there's some useful information on this in the Emacs repository:
 - [Emacs tree-sitter starter-guide](https://git.savannah.gnu.org/cgit/emacs.git/tree/admin/notes/tree-sitter/starter-guide?h=emacs-29)
 - [Emacs install instructions](https://git.savannah.gnu.org/cgit/emacs.git/tree/INSTALL.REPO).
 
