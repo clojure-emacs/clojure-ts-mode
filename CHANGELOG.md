@@ -4,6 +4,7 @@
 
 - Re-enable treesit-transpose-sexps on Emacs 30 after fixes released by @casouri.
 - Pin grammar revision in treesit-language-source-alist
+- Make font lock feature list more conforming with recommendations
 
 ## 0.1.5
 

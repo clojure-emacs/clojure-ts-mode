@@ -155,95 +155,35 @@ Only intended for use at development time.")
   (eval-and-compile
     (concat "^"
             (regexp-opt
-             '("do"
-               "if"
-               "let*"
-               "var"
-               "fn"
-               "fn*"
-               "loop*"
-               "recur"
-               "throw"
-               "try"
-               "catch"
-               "finally"
-               "set!"
-               "new"
-               "."
-               "monitor-enter"
-               "monitor-exit"
+             '("do" "if" "let*" "var"
+               "fn" "fn*" "loop*" "recur"
+               "throw" "try" "catch" "finally"
+               "set!" "new"
+               "monitor-enter" "monitor-exit"
                "quote"
 
-               "->"
-               "->>"
-               ".."
-               "amap"
-               "and"
-               "areduce"
-               "as->"
-               "assert"
-               "binding"
-               "bound-fn"
-               "case"
-               "comment"
-               "cond"
-               "cond->"
-               "cond->>"
-               "condp"
-               "declare"
-               "delay"
-               "doall"
-               "dorun"
-               "doseq"
-               "dosync"
-               "dotimes"
-               "doto"
-               "extend-protocol"
-               "extend-type"
-               "for"
-               "future"
-               "gen-class"
-               "gen-interface"
-               "if-let"
-               "if-not"
-               "if-some"
-               "import"
-               "in-ns"
-               "io!"
-               "lazy-cat"
-               "lazy-seq"
-               "let"
-               "letfn"
-               "locking"
-               "loop"
-               "memfn"
-               "ns"
-               "or"
-               "proxy"
-               "proxy-super"
-               "pvalues"
-               "refer-clojure"
-               "reify"
-               "some->"
-               "some->>"
-               "sync"
-               "time"
-               "vswap!"
-               "when"
-               "when-first"
-               "when-let"
-               "when-not"
-               "when-some"
-               "while"
-               "with-bindings"
-               "with-in-str"
-               "with-loading-context"
-               "with-local-vars"
-               "with-open"
-               "with-out-str"
-               "with-precision"
-               "with-redefs"
-               "with-redefs-fn"))
+               "->" "->>" ".." "."
+               "amap" "and" "areduce" "as->" "assert"
+               "binding" "bound-fn"
+               "case" "comment" "cond" "cond->" "cond->>" "condp"
+               "declare" "def" "definline" "definterface" "defmacro" "defmethod"
+               "defmulti" "defn" "defn-" "defonce" "defprotocol" "defrecord"
+               "defstruct" "deftype"
+               "delay" "doall" "dorun" "doseq" "dosync" "dotimes" "doto"
+               "extend-protocol" "extend-type"
+               "for" "future"
+               "gen-class" "gen-interface"
+               "if-let" "if-not" "if-some" "import" "in-ns""io!"
+               "lazy-cat" "lazy-seq" "let" "letfn" "locking" "loop"
+               "memfn" "ns" "or"
+               "proxy" "proxy-super" "pvalues"
+               "refer-clojure" "reify"
+               "some->" "some->>""sync"
+               "time" "vswap!"
+               "when" "when-first" "when-let" "when-not" "when-some" "while"
+               "with-bindings" "with-in-str" "with-loading-context"
+               "with-local-vars" "with-open" "with-out-str" "with-precision"
+               "with-redefs" "with-redefs-fn"))
             "$")))
 
 (defface clojure-ts-keyword-face
@@ -268,13 +208,9 @@ Only intended for use at development time.")
   (rx line-start (or "def" "defonce") line-end))
 
 (defconst clojure-ts--type-keyword-regexp
-  (rx line-start (or "defprotocol"
-                     "defmulti"
-                     "deftype"
-                     "defrecord"
-                     "definterface"
-                     "defmethod"
-                     "defstruct")
+  (rx line-start
+      (or "defprotocol" "defmulti" "deftype" "defrecord"
+          "definterface" "defmethod" "defstruct")
       line-end))
 
 (defun clojure-ts--font-lock-settings ()
@@ -283,7 +219,7 @@ Only intended for use at development time.")
    :feature 'string
    :language 'clojure
    '((str_lit) @font-lock-string-face
-     (regex_lit) @font-lock-string-face)
+     (regex_lit) @font-lock-regexp-face)
 
    :feature 'regex
    :language 'clojure
@@ -317,6 +253,13 @@ Only intended for use at development time.")
      ((sym_name) @font-lock-builtin-face
       (:match ,clojure-ts--builtin-dynamic-var-regexp @font-lock-builtin-face)))
 
+   ;; Any function calls, not built-ins.
+   ;; This can give false positives (macros, quoted lists, namespace imports)
+   ;; but is a level 4 feature and never enabled by default.
+   :feature 'function
+   :language 'clojure
+   '((list_lit :anchor (sym_lit (sym_name) @font-lock-function-call-face)))
+
    :feature 'symbol
    :language 'clojure
    '((sym_ns) @font-lock-type-face)
@@ -327,34 +270,42 @@ Only intended for use at development time.")
    ;; No wonder the tree-sitter-clojure grammar only touches syntax, and not semantics
    :feature 'definition ;; defn and defn like macros
    :language 'clojure
-   `(((list_lit :anchor (sym_lit (sym_name) @font-lock-keyword-face)
+   `(((list_lit :anchor (sym_lit (sym_name) @def)
                 :anchor (sym_lit (sym_name) @font-lock-function-name-face))
-      (:match ,clojure-ts--definition-keyword-regexp
-              @font-lock-keyword-face))
+      (:match ,clojure-ts--definition-keyword-regexp @def))
      ((anon_fn_lit
        marker: "#" @font-lock-property-face)))
 
    :feature 'variable ;; def, defonce
    :language 'clojure
-   `(((list_lit :anchor (sym_lit (sym_name) @font-lock-keyword-face)
+   `(((list_lit :anchor (sym_lit (sym_name) @def)
                 :anchor (sym_lit (sym_name) @font-lock-variable-name-face))
-      (:match ,clojure-ts--variable-keyword-regexp @font-lock-keyword-face)))
+      (:match ,clojure-ts--variable-keyword-regexp @def)))
 
-   :feature 'type ;; deftype, defmulti, defprotocol, etc
+   ;; Can we support declarations in the namespace form?
+   :feature 'type
    :language 'clojure
-   `(((list_lit :anchor (sym_lit (sym_name) @font-lock-keyword-face)
+   `(;; Type Declarations
+     ((list_lit :anchor (sym_lit (sym_name) @def)
                 :anchor (sym_lit (sym_name) @font-lock-type-face))
-      (:match ,clojure-ts--type-keyword-regexp @font-lock-keyword-face)))
+      (:match ,clojure-ts--type-keyword-regexp @def))
+     ;; Type Hints
+     (meta_lit
+      marker: "^" @font-lock-operator-face
+      value: (sym_lit (sym_name) @font-lock-type-face))
+     (old_meta_lit
+      marker: "#^" @font-lock-operator-face
+      value: (sym_lit (sym_name) @font-lock-type-face)))
 
    :feature 'metadata
    :language 'clojure
    :override t
-   `((meta_lit marker: "^" @font-lock-property-face)
-     (meta_lit value: (kwd_lit) @font-lock-property-face) ;; metadata
-     (meta_lit value: (sym_lit (sym_name) @font-lock-type-face)) ;; typehint
-     (old_meta_lit marker: "#^" @font-lock-property-face)
-     (old_meta_lit value: (kwd_lit) @font-lock-property-face) ;; metadata
-     (old_meta_lit value: (sym_lit (sym_name) @font-lock-type-face))) ;; typehint
+   `((meta_lit
+      marker: "^" @font-lock-operator-face
+      value: (kwd_lit (kwd_name) @font-lock-property-name-face))
+     (old_meta_lit
+      marker: "#^" @font-lock-operator-face
+      value: (kwd_lit (kwd_name) @font-lock-property-name-face)))
 
    :feature 'tagged-literals
    :language 'clojure
@@ -364,6 +315,7 @@ Only intended for use at development time.")
 
    ;; TODO, also account for `def'
    ;; Figure out how to highlight symbols in docstrings.
+   ;; Might require a markdown grammar
    :feature 'doc
    :language 'clojure
    :override t
@@ -633,9 +585,10 @@ See `clojure-ts--standard-definition-node-name' for the implementation used.")
                 treesit-defun-name-function #'clojure-ts--standard-definition-node-name
                 treesit-simple-imenu-settings clojure-ts--imenu-settings
                 treesit-font-lock-feature-list
-                '((comment string char number)
-                  (keyword constant symbol bracket builtin)
-                  (deref quote metadata definition variable type doc regex tagged-literals)))
+                '((comment definition variable)
+                  (keyword string char symbol builtin type)
+                  (constant number quote metadata)
+                  (bracket deref function regex tagged-literals)))
     (when (boundp 'treesit-thing-settings) ;; Emacs 30+
       (setq-local treesit-thing-settings clojure-ts--thing-settings))
     (when clojure-ts--debug
