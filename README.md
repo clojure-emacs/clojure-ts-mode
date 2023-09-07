@@ -49,7 +49,8 @@ If you decide to build Emacs from source there's some useful information on this
 
 ### Install clojure-ts-mode
 
-clojure-ts-mode is available on [Melpa](https://melpa.org/#/clojure-ts-mode).
+clojure-ts-mode is available on [MElPA](https://melpa.org/#/clojure-ts-mode) and
+[NonGNU ELPA](https://elpa.nongnu.org/nongnu/clojure-ts-mode.html).
 It can be installed with
 
 ``` emacs-lisp
