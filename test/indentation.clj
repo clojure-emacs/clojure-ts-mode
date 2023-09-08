@@ -5,8 +5,11 @@
    (java.util Date
               UUID)))
 
-; https://tonsky.me/blog/clojurefmt/#ok-what-do-we-do-then
+; Single ; comment
+;; double ; comment
 (when something
+  ; single ; comment
+  ;; double ; comment
   body)
 
 (defmethod dispatch :on-me
@@ -47,25 +50,69 @@
 #{a b c
   d e f}
 
-; second cond is not aligned
+
 (or (condition-a)
     (condition-b))
 
-; or/and are the only forms where this looks not ideal
-; other forms don’t win/lose much because of this change
-(filter even?
-        (range 1 10))
+(filter even? (range 1 10))
 
-; my way is actually better if fn name is looooooooooong
 (clojure.core/filter even?
-  (range 1 10))
+                     (range 1 10))
 
-; 1 additional space, no big deal
+
 (filter
-  even?
-  (range 1 10))
+ even?
+ (range 1 10))
+
+(asdf
+ asdf
+ asdf)
+
+(defn foo [x 1]
+  x)
 
 (:my/keyword
-  {:my/keyword 1
-   :another-keyword 2}
-  "default value")
+ {:my/keyword 1
+  :another-keyword 2}
+ "default value")
+
+
+
+(defprotocol IProto
+  (foo [this x])
+  (bar [this y]))
+
+(deftype MyThing []
+  IProto
+  (foo [this x]
+    x))
+
+(defrecord MyThingR []
+  IProto
+  (foo [this x] x))
+
+(defn foo2 [x]b)
+
+(reify
+  IProto
+  (foo [this x]
+    x))
+
+(extend-type MyThing
+  clojure.lang.IFn
+  (invoke [this] 1))
+
+(extend-protocol clojure.lang.IFn
+  MyThingR
+  (invoke [this]
+    2))
+
+(extend AType
+  AProtocol
+  {:foo an-existing-fn
+   :bar (fn [a b]
+          a)
+   :baz (fn
+          ([a] a)
+          ([a b]
+           b))})
