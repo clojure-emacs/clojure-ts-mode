@@ -12,6 +12,33 @@ highlighting), indentation, and navigation support for the
 [tree-sitter-clojure](https://github.com/sogaiu/tree-sitter-clojure)
 [tree-sitter](https://tree-sitter.github.io/tree-sitter/) grammar.
 
+## Configuration
+
+To see a list of available configuration options do M-x customize-group RET clojure-ts.
+
+Most configuration changes will require reverting any active clojure-ts-mode buffers.
+
+### Indentation
+
+clojure-ts-mode currently supports 2 different indentation strategies
+- `semantic`, the default, which tries to match the indentation of clojure-mode and cljfmt
+- `fixed`, [a simple indentation strategy outlined by Tonsky in a blog post](https://tonsky.me/blog/clojurefmt/)
+
+Set the var `clojure-ts-indent-style` to change it.
+``` emacs-lisp
+(setq clojure-ts-indent-style 'fixed)
+```
+
+### Font Locking
+
+Too highlight entire rich `comment` expression with the comment font face, set
+``` emacs-lisp
+(setq clojure-ts-comment-macro-font-lock-body t)
+```
+
+By default this is `nil`, so that anything within a `comment` expression is
+highlighted like regular clojure code.
+
 ## Rationale
 
 [clojure-mode](https://github.com/clojure-emacs/clojure-mode) has served us well
@@ -34,8 +61,6 @@ You can read more about the vision for `clojure-ts-mode` [here](https://metaredu
 ## Current Status
 
 **This library is still under development. Breaking changes should be expected.**
-
-You can track the current progress towards an initial release [here](https://github.com/clojure-emacs/clojure-ts-mode/issues/1).
 
 ## Installation
 
@@ -83,11 +108,26 @@ Once installed, evaluate clojure-ts-mode.el and you should be ready to go.
 
 ### Install libtree-sitter-clojure shared library
 
+#### From your OS
+
+Some distributions may package the tree-sitter-clojure grammar in their package repositories.
+If yours does you may be able to install tree-sitter-clojure with your system package manager.
+
+If the version packaged by your OS is out of date, you may see errors in the `*Messages*` buffer or your clojure buffers will not have any syntax highlighting.
+If this happens you should install the grammar manually with `M-x treesit-install-language-grammar <RET> clojure`.
+
+#### Manually
+
 The tree-sitter clojure shared library must be available to Emacs.
-If you have `git` and a C compiler (`cc`) available on your system's `PATH`, **then these steps are not necessary**.
+If you have `git` and a C compiler (`cc`) available on your system's `PATH`, **then these steps should not be necessary**.
 clojure-ts-mode will install the grammar when you first open a Clojure file.
 
 If clojure-ts-mode fails to automatically install the grammar, you have the option to install it manually.
+
+The first way is to run `M-x treesit-install-language-grammar <RET> clojure` in Emacs.
+This is what clojure-ts-mode attempts to do when a suitable grammar is not found.
+
+If that fails, you can attempt to download and compile manually.
 All you need is `git` and a C compiler (GCC works well).
 
 To start, clone [tree-sitter-clojure](https://github.com/sogaiu/tree-sitter-clojure).
