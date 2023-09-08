@@ -195,7 +195,7 @@ Only intended for use at development time.")
   '((t (:inherit font-lock-string-face)))
   "Face used to font-lock Clojure character literals.")
 
-(defconst clojure-ts--definition-keyword-regexp
+(defconst clojure-ts--definition-symbol-regexp
   (rx
    line-start
    (or (group (or "ns" "fn"))
@@ -205,14 +205,33 @@ Only intended for use at development time.")
                      "-" "_" "!" "@" "#" "$" "%" "^" "&" "*" "|" "?" "<" ">" "+" "=" ":"))))
    line-end))
 
-(defconst clojure-ts--variable-keyword-regexp
-  (rx line-start (or "def" "defonce") line-end))
+(defconst clojure-ts--variable-definition-symbol-regexp
+  (eval-and-compile
+    (rx line-start (or "def" "defonce") line-end))
+  "A regular expression matching a symbol used to define a variable.")
 
-(defconst clojure-ts--type-keyword-regexp
-  (rx line-start
+(defconst clojure-ts--typedef-symbol-regexp
+  (eval-and-compile
+    (rx line-start
       (or "defprotocol" "defmulti" "deftype" "defrecord"
           "definterface" "defmethod" "defstruct")
       line-end))
+  "A regular expression matching a symbol used to define a type")
+
+(defconst clojure-ts-type-symbol-regexp
+  (eval-and-compile
+    (rx line-start
+        (or "deftype" "defrecord"
+            ;; While not reifying, helps with doc strings
+            "defprotocol" "definterface"
+            "reify" "proxy" "extend-type" "extend-protocol")
+        line-end))
+  "A regular expression matching a symbol used to define or instantiate a type.")
+
+(defconst clojure-ts--interface-def-symbol-regexp
+  (eval-and-compile
+    (rx line-start (or "defprotocol" "definterface") line-end))
+  "A regular expression matching a symbol used to define an interface.")
 
 (defun clojure-ts--font-lock-settings ()
   "Return font lock settings suitable for use in `treesit-font-lock-settings'."
@@ -273,7 +292,7 @@ Only intended for use at development time.")
    :language 'clojure
    `(((list_lit :anchor (sym_lit (sym_name) @def)
                 :anchor (sym_lit (sym_name) @font-lock-function-name-face))
-      (:match ,clojure-ts--definition-keyword-regexp @def))
+      (:match ,clojure-ts--definition-symbol-regexp @def))
      ((anon_fn_lit
        marker: "#" @font-lock-property-face)))
 
@@ -281,7 +300,7 @@ Only intended for use at development time.")
    :language 'clojure
    `(((list_lit :anchor (sym_lit (sym_name) @def)
                 :anchor (sym_lit (sym_name) @font-lock-variable-name-face))
-      (:match ,clojure-ts--variable-keyword-regexp @def)))
+      (:match ,clojure-ts--variable-definition-symbol-regexp @def)))
 
    ;; Can we support declarations in the namespace form?
    :feature 'type
@@ -289,7 +308,7 @@ Only intended for use at development time.")
    `(;; Type Declarations
      ((list_lit :anchor (sym_lit (sym_name) @def)
                 :anchor (sym_lit (sym_name) @font-lock-type-face))
-      (:match ,clojure-ts--type-keyword-regexp @def))
+      (:match ,clojure-ts--typedef-symbol-regexp @def))
      ;; Type Hints
      (meta_lit
       marker: "^" @font-lock-operator-face
@@ -314,16 +333,29 @@ Only intended for use at development time.")
    '((tagged_or_ctor_lit marker: "#" @font-lock-preprocessor-face
                          tag: (sym_lit) @font-lock-preprocessor-face))
 
-   ;; TODO, also account for `def'
    ;; Figure out how to highlight symbols in docstrings.
    ;; Might require a markdown grammar
    :feature 'doc
    :language 'clojure
    :override t
-   `(((list_lit :anchor (sym_lit) @def_symbol
-                :anchor (sym_lit) @function_name
+   `(;; Captures docstrings in def, defonce
+     ((list_lit :anchor (sym_lit) @def_symbol
+                :anchor (sym_lit) ; variable name
+                :anchor (str_lit) @font-lock-doc-face
+                :anchor (_)) ; the variable's value
+      (:match ,clojure-ts--variable-definition-symbol-regexp @def_symbol))
+     ;; Captures docstrings defn, defmacro, ns, and things like that
+     ((list_lit :anchor (sym_lit) @def_symbol
+                :anchor (sym_lit) ; function_name
                 :anchor (str_lit) @font-lock-doc-face)
-      (:match ,clojure-ts--definition-keyword-regexp @def_symbol)))
+      (:match ,clojure-ts--definition-symbol-regexp @def_symbol))
+     ;; Captures docstrings in defprotcol, definterface
+     ((list_lit :anchor (sym_lit) @def_symbol
+                (list_lit
+                 :anchor (sym_lit) (vec_lit) :*
+                 (str_lit) @font-lock-doc-face :anchor)
+                :*)
+      (:match ,clojure-ts--interface-def-symbol-regexp @def_symbol)))
 
    :feature 'quote
    :language 'clojure
@@ -615,13 +647,6 @@ See `treesit-simple-indent-rules'."
        clojure-ts--symbols-with-body-expressions-regexp
        first-child)))))
 
-(defconst clojure-ts--reifying-symbol-regexp
-  (eval-and-compile
-    (rx line-start
-        (or "deftype" "defrecord"
-            "reify" "proxy" "extend-type" "extend-protocol")))
-  "A regular expression matching a symbol used to define a concrete type.")
-
 (defun clojure-ts--match-method-body (node parent _bol)
   "Matches a `NODE' in the body of a `PARENT' method implementation.
 A method implementation referes to concrete implemntations being defined in
@@ -632,7 +657,7 @@ forms like deftype, defrecord, reify, proxy, etc."
           ;; auncle: gender neutral sibling of parent, aka child of grandparent
           (first-auncle (treesit-node-child grandparent 0 t)))
      (and (clojure-ts--list-node-p grandparent)
-          (clojure-ts--symbol-matches-p clojure-ts--reifying-symbol-regexp
+          (clojure-ts--symbol-matches-p clojure-ts-type-symbol-regexp
                                         first-auncle)))))
 
 (defvar clojure-ts--threading-macro
@@ -734,7 +759,7 @@ forms like deftype, defrecord, reify, proxy, etc."
                 treesit-font-lock-feature-list
                 '((comment definition variable)
                   (keyword string char symbol builtin type)
-                  (constant number quote metadata)
+                  (constant number quote metadata doc)
                   (bracket deref function regex tagged-literals)))
     (when (boundp 'treesit-thing-settings) ;; Emacs 30+
       (setq-local treesit-thing-settings clojure-ts--thing-settings))
