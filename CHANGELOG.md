@@ -5,6 +5,9 @@
 - Re-enable treesit-transpose-sexps on Emacs 30 after fixes released by @casouri.
 - Pin grammar revision in treesit-language-source-alist
 - Make font lock feature list more conforming with recommendations
+   - (See treesit-font-lock-level documentation for more information.)
+- Highlight docstrings in interface, protocol, and variable definitions
+- Add support for semantic indentation (now the default)
 
 ## 0.1.5
 
