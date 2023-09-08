@@ -662,12 +662,6 @@ forms like deftype, defrecord, reify, proxy, etc."
           clojure-ts--threading-macro
           first-child))))
 
-(defun clojure-ts--threading-macro-arg-offset (node _parent _bol)
-  "Calculates the indentation offset for NODE, a threading macro argument."
-  (if (and node (<= (treesit-node-index node t) 1))
-      1 ;; NODE is the first arg, offset 1 from start of *->> symbol
-    0)) ;; arg 2...n, match indentation of the previous argument
-
 (defun clojure-ts--match-fn-docstring (node)
   "Match NODE when it is a docstring for PARENT function definition node."
    ;; A string that is the third node in a function defn block
