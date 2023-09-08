@@ -405,6 +405,10 @@ Only intended for use at development time.")
   "Return non-nil if NODE is a Clojure symbol."
   (string-equal "sym_lit" (treesit-node-type node)))
 
+(defun clojure-ts--string-node-p (node)
+  "Return non-nil if NODE is a Clojure string literal."
+  (string-equal "str_lit" (treesit-node-type node)))
+
 (defun clojure-ts--keyword-node-p (node)
   "Return non-nil if NODE is a Clojure keyword."
   (string-equal "kwd_lit" (treesit-node-type node)))
@@ -681,9 +685,50 @@ forms like deftype, defrecord, reify, proxy, etc."
       1 ;; NODE is the first arg, offset 1 from start of *->> symbol
     0)) ;; arg 2...n, match indentation of the previous argument
 
-(defvar clojure-ts--semantic-indent-rules
+(defun clojure-ts--match-fn-docstring (node)
+  "Match NODE when it is a docstring for PARENT function definition node."
+   ;; A string that is the third node in a function defn block
+  (let ((parent (treesit-node-parent node)))
+    (and (treesit-node-eq node (treesit-node-child parent 2 t))
+         (let ((first-auncle (treesit-node-child parent 0 t)))
+           (clojure-ts--symbol-matches-p
+            clojure-ts--definition-symbol-regexp
+            first-auncle)))))
+
+(defun clojure-ts--match-def-docstring (node)
+  "Match NODE when it is a docstring for PARENT variable definition node."
+  ;; A string that is the fourth node in a variable definition block.
+  (let ((parent (treesit-node-parent node)))
+    (and (treesit-node-eq node (treesit-node-child parent 2 t))
+         ;; There needs to be a value after the string.
+         ;; If there is no 4th child, then this string is the value.
+         (treesit-node-child parent 3 t)
+         (let ((first-auncle (treesit-node-child parent 0 t)))
+           (clojure-ts--symbol-matches-p
+            clojure-ts--variable-definition-symbol-regexp
+            first-auncle)))))
+
+(defun clojure-ts--match-method-docstring (node)
+  "Match NODE when it is a docstring in a method definition."
+  (let* ((grandparent (treesit-node-parent ;; the protocol/interface
+                       (treesit-node-parent node))) ;; the method definition
+         (first-grandauncle (treesit-node-child grandparent 0 t)))
+    (clojure-ts--symbol-matches-p
+     clojure-ts--interface-def-symbol-regexp
+     first-grandauncle)))
+
+(defun clojure-ts--match-docstring (_node parent _bol)
+  "Match PARENT when it is a docstring node."
+  (and (clojure-ts--string-node-p parent) ;; We are IN a string
+       (or (clojure-ts--match-def-docstring parent)
+           (clojure-ts--match-fn-docstring parent)
+           (clojure-ts--match-method-docstring parent))))
+
+(defun clojure-ts--semantic-indent-rules ()
+  "Return a list of indentation rules for `treesit-simple-indent-rules'."
   `((clojure
      ((parent-is "source") parent-bol 0)
+     (clojure-ts--match-docstring parent 0)
      ;; https://guide.clojure.style/#body-indentation
      (clojure-ts--match-method-body parent 2)
      (clojure-ts--match-expression-in-body parent 2)
