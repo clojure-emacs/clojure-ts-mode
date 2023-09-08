@@ -634,7 +634,7 @@ See `treesit-simple-indent-rules'."
        clojure-ts--symbols-with-body-expressions-regexp
        first-child)))))
 
-(defun clojure-ts--match-method-body (node parent _bol)
+(defun clojure-ts--match-method-body (_node parent _bol)
   "Matches a `NODE' in the body of a `PARENT' method implementation.
 A method implementation referes to concrete implemntations being defined in
 forms like deftype, defrecord, reify, proxy, etc."
