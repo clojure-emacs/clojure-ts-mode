@@ -615,6 +615,26 @@ See `treesit-simple-indent-rules'."
        clojure-ts--symbols-with-body-expressions-regexp
        first-child)))))
 
+(defconst clojure-ts--reifying-symbol-regexp
+  (eval-and-compile
+    (rx line-start
+        (or "deftype" "defrecord"
+            "reify" "proxy" "extend-type" "extend-protocol")))
+  "A regular expression matching a symbol used to define a concrete type.")
+
+(defun clojure-ts--match-method-body (node parent _bol)
+  "Matches a `NODE' in the body of a `PARENT' method implementation.
+A method implementation referes to concrete implemntations being defined in
+forms like deftype, defrecord, reify, proxy, etc."
+  (and
+   (clojure-ts--list-node-p parent)
+   (let* ((grandparent (treesit-node-parent parent))
+          ;; auncle: gender neutral sibling of parent, aka child of grandparent
+          (first-auncle (treesit-node-child grandparent 0 t)))
+     (and (clojure-ts--list-node-p grandparent)
+          (clojure-ts--symbol-matches-p clojure-ts--reifying-symbol-regexp
+                                        first-auncle)))))
+
 (defvar clojure-ts--threading-macro
   (eval-and-compile
     (rx (and "->" (? ">") line-end)))
@@ -623,7 +643,7 @@ See `treesit-simple-indent-rules'."
 (defun clojure-ts--match-threading-macro-arg (_node parent _)
   "Match NODE if it is an argument to a PARENT threading macro."
   ;; We want threading macros to indent 2 only if the ->> is on it's own line.
-  ;; If not, then align functoin arg.
+  ;; If not, then align function arg.
   (and (clojure-ts--list-node-p parent)
        (let ((first-child (treesit-node-child parent 0 t)))
          (clojure-ts--symbol-matches-p
@@ -640,6 +660,7 @@ See `treesit-simple-indent-rules'."
   `((clojure
      ((parent-is "source") parent-bol 0)
      ;; https://guide.clojure.style/#body-indentation
+     (clojure-ts--match-method-body parent 2)
      (clojure-ts--match-expression-in-body parent 2)
      ;; https://guide.clojure.style/#threading-macros-alignment
      (clojure-ts--match-threading-macro-arg prev-sibling 0)
@@ -654,7 +675,7 @@ See `treesit-simple-indent-rules'."
 (defun clojure-ts--configured-indent-rules ()
   "Gets the configured choice of indent rules."
   (cond
-   ((eq clojure-ts-indent-style 'semantic) clojure-ts--semantic-indent-rules)
+   ((eq clojure-ts-indent-style 'semantic) (clojure-ts--semantic-indent-rules))
    ((eq clojure-ts-indent-style 'fixed) clojure-ts--fixed-indent-rules)
    (t (error
        (format
