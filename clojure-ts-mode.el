@@ -577,23 +577,6 @@ The possible values for this variable are
      ((parent-is "list_lit") parent 1)
      ((parent-is "set_lit") parent 2))))
 
-(defvar clojure-ts--sexp-nodes
-  '("#_" ;; transpose-sexp near a discard macro moves it around.
-    "num_lit" "sym_lit" "kwd_lit" "nil_lit" "bool_lit"
-    "regex_lit" "str_lit" "char_lit"
-    "list_lit" "map_lit" "vec_lit" "set_lit" "ns_map_lit"
-    "anon_fn_lit" "read_cond_lit"
-    "var_quoting_lit" "sym_val_lit" "evaling_lit"
-    "tagged_or_ctor_lit" "splicing_read_cond_lit"
-    "derefing_lit" "quoting_lit" "syn_quoting_lit"
-    "unquote_splicing_lit" "unquoting_lit")
-  "A regular expression that matches nodes that can be treated as s-expressions.")
-
-(defvar clojure-ts--thing-settings
-  `((clojure
-     ((sexp ,(regexp-opt clojure-ts--sexp-nodes))
-      (text ,(regexp-opt '("comment")))))))
-
 (defvar clojure-ts--symbols-with-body-expressions-regexp
   (eval-and-compile
     (rx (or
@@ -752,6 +735,23 @@ forms like deftype, defrecord, reify, proxy, etc."
         "Invalid value for clojure-ts-indent-style. Expected one of '%S, but found '%S instead."
         '(semantic fixed)
         clojure-ts-indent-style)))))
+
+(defconst clojure-ts--sexp-nodes
+  '("#_" ;; transpose-sexp near a discard macro moves it around.
+    "num_lit" "sym_lit" "kwd_lit" "nil_lit" "bool_lit"
+    "regex_lit" "str_lit" "char_lit"
+    "list_lit" "map_lit" "vec_lit" "set_lit" "ns_map_lit"
+    "anon_fn_lit" "read_cond_lit"
+    "var_quoting_lit" "sym_val_lit" "evaling_lit"
+    "tagged_or_ctor_lit" "splicing_read_cond_lit"
+    "derefing_lit" "quoting_lit" "syn_quoting_lit"
+    "unquote_splicing_lit" "unquoting_lit")
+  "A regular expression that matches nodes that can be treated as s-expressions.")
+
+(defconst clojure-ts--thing-settings
+  `((clojure
+     ((sexp ,(regexp-opt clojure-ts--sexp-nodes))
+      (text ,(regexp-opt '("comment")))))))
 
 (defvar clojure-ts-mode-map
   (let ((map (make-sparse-keymap)))
