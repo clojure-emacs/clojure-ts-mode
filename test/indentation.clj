@@ -1,4 +1,5 @@
 (ns indentation
+  "Docstring `important`. asdf"
   (:require
    [clojure.string :as str])
   (:import
@@ -79,7 +80,8 @@
 
 
 (defprotocol IProto
-  (foo [this x])
+  (foo [this x]
+    "`this` is a docstring.")
   (bar [this y]))
 
 (deftype MyThing []

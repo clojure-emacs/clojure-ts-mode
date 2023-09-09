@@ -8,6 +8,9 @@
    - (See treesit-font-lock-level documentation for more information.)
 - Highlight docstrings in interface, protocol, and variable definitions
 - Add support for semantic indentation (now the default)
+- Highlight "\`quoted-symbols\`  in docs strings like this."
+   - This feature uses a nested markdown parser.
+     If the parser is not available this feature should be silently disabled.
 
 ## 0.1.5
 

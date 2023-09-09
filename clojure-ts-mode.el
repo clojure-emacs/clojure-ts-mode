@@ -86,6 +86,12 @@ itself."
   :type 'boolean
   :package-version '(clojure-ts-mode . "0.1.3"))
 
+(defcustom clojure-ts-ensure-grammars t
+  "When non-nil, ensure required tree-sitter grammars are installed."
+  :safe #'booleanp
+  :type 'boolean
+  :package-version '(clojure-ts-mode . "0.2.0"))
+
 (defvar clojure-ts--debug nil
   "Enables debugging messages, shows current node in mode-line.
 Only intended for use at development time.")
@@ -233,167 +239,188 @@ Only intended for use at development time.")
     (rx line-start (or "defprotocol" "definterface") line-end))
   "A regular expression matching a symbol used to define an interface.")
 
-(defun clojure-ts--font-lock-settings ()
-  "Return font lock settings suitable for use in `treesit-font-lock-settings'."
-  (treesit-font-lock-rules
-   :feature 'string
-   :language 'clojure
-   '((str_lit) @font-lock-string-face
-     (regex_lit) @font-lock-regexp-face)
+(defun clojure-ts--docstring-query (capture-symbol)
+  "Return a query that captures docstrings with CAPTURE-SYMBOL."
+  `(;; Captures docstrings in def, defonce
+    ((list_lit :anchor (sym_lit) @def_symbol
+               :anchor (sym_lit) ; variable name
+               :anchor (str_lit) ,capture-symbol
+               :anchor (_)) ; the variable's value
+     (:match ,clojure-ts--variable-definition-symbol-regexp @def_symbol))
+    ;; Captures docstrings defn, defmacro, ns, and things like that
+    ((list_lit :anchor (sym_lit) @def_symbol
+               :anchor (sym_lit) ; function_name
+               :anchor (str_lit) ,capture-symbol)
+     (:match ,clojure-ts--definition-symbol-regexp @def_symbol))
+    ;; Captures docstrings in defprotcol, definterface
+    ((list_lit :anchor (sym_lit) @def_symbol
+               (list_lit
+                :anchor (sym_lit) (vec_lit) :*
+                (str_lit) ,capture-symbol :anchor)
+               :*)
+     (:match ,clojure-ts--interface-def-symbol-regexp @def_symbol))))
 
-   :feature 'regex
-   :language 'clojure
-   :override t
-   '((regex_lit marker: _ @font-lock-property-face))
+(defvar clojure-ts--treesit-range-settings
+  (treesit-range-rules
+   :embed 'markdown_inline
+   :host 'clojure
+   (clojure-ts--docstring-query '@capture)))
 
-   :feature 'number
-   :language 'clojure
-   '((num_lit) @font-lock-number-face)
+(defun clojure-ts--font-lock-settings (markdown-available)
+  "Return font lock settings suitable for use in `treesit-font-lock-settings'.
+When MARKDOWN-AVAILABLE is non-nil, includes rules for highlighting docstrings
+with the markdown_inline grammar."
+  (append
+   (treesit-font-lock-rules
+    :feature 'string
+    :language 'clojure
+    '((str_lit) @font-lock-string-face
+      (regex_lit) @font-lock-regexp-face)
 
-   :feature 'constant
-   :language 'clojure
-   '([(bool_lit) (nil_lit)] @font-lock-constant-face)
+    :feature 'regex
+    :language 'clojure
+    :override t
+    '((regex_lit marker: _ @font-lock-property-face))
 
-   :feature 'char
-   :language 'clojure
-   '((char_lit) @clojure-ts-character-face)
+    :feature 'number
+    :language 'clojure
+    '((num_lit) @font-lock-number-face)
 
-   :feature 'keyword
-   :language 'clojure
-   '((kwd_ns) @font-lock-type-face
-     (kwd_name) @clojure-ts-keyword-face
-     (kwd_lit
-      marker: _ @clojure-ts-keyword-face
-      delimiter: _ :? @default))
+    :feature 'constant
+    :language 'clojure
+    '([(bool_lit) (nil_lit)] @font-lock-constant-face)
 
-   :feature 'builtin
-   :language 'clojure
-   `(((list_lit :anchor (sym_lit (sym_name) @font-lock-keyword-face))
-      (:match ,clojure-ts--builtin-symbol-regexp @font-lock-keyword-face))
-     ((sym_name) @font-lock-builtin-face
-      (:match ,clojure-ts--builtin-dynamic-var-regexp @font-lock-builtin-face)))
+    :feature 'char
+    :language 'clojure
+    '((char_lit) @clojure-ts-character-face)
 
-   ;; Any function calls, not built-ins.
-   ;; This can give false positives (macros, quoted lists, namespace imports)
-   ;; but is a level 4 feature and never enabled by default.
-   :feature 'function
-   :language 'clojure
-   '((list_lit :anchor (sym_lit (sym_name) @font-lock-function-call-face)))
+    :feature 'keyword
+    :language 'clojure
+    '((kwd_ns) @font-lock-type-face
+      (kwd_name) @clojure-ts-keyword-face
+      (kwd_lit
+       marker: _ @clojure-ts-keyword-face
+       delimiter: _ :? @default))
 
-   :feature 'symbol
-   :language 'clojure
-   '((sym_ns) @font-lock-type-face)
+    :feature 'builtin
+    :language 'clojure
+    `(((list_lit :anchor (sym_lit (sym_name) @font-lock-keyword-face))
+       (:match ,clojure-ts--builtin-symbol-regexp @font-lock-keyword-face))
+      ((sym_name) @font-lock-builtin-face
+       (:match ,clojure-ts--builtin-dynamic-var-regexp @font-lock-builtin-face)))
 
-   ;; How does this work for defns nested in other forms, not at the top level?
-   ;; Should I match against the source node to only hit the top level? Can that be expressed?
-   ;; What about valid usages like `(let [closed 1] (defn +closed [n] (+ n closed)))'??
-   ;; No wonder the tree-sitter-clojure grammar only touches syntax, and not semantics
-   :feature 'definition ;; defn and defn like macros
-   :language 'clojure
-   `(((list_lit :anchor (sym_lit (sym_name) @def)
-                :anchor (sym_lit (sym_name) @font-lock-function-name-face))
-      (:match ,clojure-ts--definition-symbol-regexp @def))
-     ((anon_fn_lit
-       marker: "#" @font-lock-property-face)))
+    ;; Any function calls, not built-ins.
+    ;; This can give false positives (macros, quoted lists, namespace imports)
+    ;; but is a level 4 feature and never enabled by default.
+    :feature 'function
+    :language 'clojure
+    '((list_lit :anchor (sym_lit (sym_name) @font-lock-function-call-face)))
 
-   :feature 'variable ;; def, defonce
-   :language 'clojure
-   `(((list_lit :anchor (sym_lit (sym_name) @def)
-                :anchor (sym_lit (sym_name) @font-lock-variable-name-face))
-      (:match ,clojure-ts--variable-definition-symbol-regexp @def)))
+    :feature 'symbol
+    :language 'clojure
+    '((sym_ns) @font-lock-type-face)
 
-   ;; Can we support declarations in the namespace form?
-   :feature 'type
-   :language 'clojure
-   `(;; Type Declarations
-     ((list_lit :anchor (sym_lit (sym_name) @def)
-                :anchor (sym_lit (sym_name) @font-lock-type-face))
-      (:match ,clojure-ts--typedef-symbol-regexp @def))
-     ;; Type Hints
-     (meta_lit
-      marker: "^" @font-lock-operator-face
-      value: (sym_lit (sym_name) @font-lock-type-face))
-     (old_meta_lit
-      marker: "#^" @font-lock-operator-face
-      value: (sym_lit (sym_name) @font-lock-type-face)))
+    ;; How does this work for defns nested in other forms, not at the top level?
+    ;; Should I match against the source node to only hit the top level? Can that be expressed?
+    ;; What about valid usages like `(let [closed 1] (defn +closed [n] (+ n closed)))'??
+    ;; No wonder the tree-sitter-clojure grammar only touches syntax, and not semantics
+    :feature 'definition ;; defn and defn like macros
+    :language 'clojure
+    `(((list_lit :anchor (sym_lit (sym_name) @def)
+                 :anchor (sym_lit (sym_name) @font-lock-function-name-face))
+       (:match ,clojure-ts--definition-symbol-regexp @def))
+      ((anon_fn_lit
+        marker: "#" @font-lock-property-face)))
 
-   :feature 'metadata
-   :language 'clojure
-   :override t
-   `((meta_lit
-      marker: "^" @font-lock-operator-face
-      value: (kwd_lit (kwd_name) @font-lock-property-name-face))
-     (old_meta_lit
-      marker: "#^" @font-lock-operator-face
-      value: (kwd_lit (kwd_name) @font-lock-property-name-face)))
+    :feature 'variable ;; def, defonce
+    :language 'clojure
+    `(((list_lit :anchor (sym_lit (sym_name) @def)
+                 :anchor (sym_lit (sym_name) @font-lock-variable-name-face))
+       (:match ,clojure-ts--variable-definition-symbol-regexp @def)))
 
-   :feature 'tagged-literals
-   :language 'clojure
-   :override t
-   '((tagged_or_ctor_lit marker: "#" @font-lock-preprocessor-face
-                         tag: (sym_lit) @font-lock-preprocessor-face))
+    ;; Can we support declarations in the namespace form?
+    :feature 'type
+    :language 'clojure
+    `(;; Type Declarations
+      ((list_lit :anchor (sym_lit (sym_name) @def)
+                 :anchor (sym_lit (sym_name) @font-lock-type-face))
+       (:match ,clojure-ts--typedef-symbol-regexp @def))
+      ;; Type Hints
+      (meta_lit
+       marker: "^" @font-lock-operator-face
+       value: (sym_lit (sym_name) @font-lock-type-face))
+      (old_meta_lit
+       marker: "#^" @font-lock-operator-face
+       value: (sym_lit (sym_name) @font-lock-type-face)))
 
-   ;; Figure out how to highlight symbols in docstrings.
-   ;; Might require a markdown grammar
-   :feature 'doc
-   :language 'clojure
-   :override t
-   `(;; Captures docstrings in def, defonce
-     ((list_lit :anchor (sym_lit) @def_symbol
-                :anchor (sym_lit) ; variable name
-                :anchor (str_lit) @font-lock-doc-face
-                :anchor (_)) ; the variable's value
-      (:match ,clojure-ts--variable-definition-symbol-regexp @def_symbol))
-     ;; Captures docstrings defn, defmacro, ns, and things like that
-     ((list_lit :anchor (sym_lit) @def_symbol
-                :anchor (sym_lit) ; function_name
-                :anchor (str_lit) @font-lock-doc-face)
-      (:match ,clojure-ts--definition-symbol-regexp @def_symbol))
-     ;; Captures docstrings in defprotcol, definterface
-     ((list_lit :anchor (sym_lit) @def_symbol
-                (list_lit
-                 :anchor (sym_lit) (vec_lit) :*
-                 (str_lit) @font-lock-doc-face :anchor)
-                :*)
-      (:match ,clojure-ts--interface-def-symbol-regexp @def_symbol)))
+    :feature 'metadata
+    :language 'clojure
+    :override t
+    `((meta_lit
+       marker: "^" @font-lock-operator-face
+       value: (kwd_lit (kwd_name) @font-lock-property-name-face))
+      (old_meta_lit
+       marker: "#^" @font-lock-operator-face
+       value: (kwd_lit (kwd_name) @font-lock-property-name-face)))
 
-   :feature 'quote
-   :language 'clojure
-   '((quoting_lit
-      marker: _ @font-lock-delimiter-face)
-     (var_quoting_lit
-      marker: _ @font-lock-delimiter-face)
-     (syn_quoting_lit
-      marker: _ @font-lock-delimiter-face)
-     (unquoting_lit
-      marker: _ @font-lock-delimiter-face)
-     (unquote_splicing_lit
-      marker: _ @font-lock-delimiter-face)
-     (var_quoting_lit
-      marker: _ @font-lock-delimiter-face))
+    :feature 'tagged-literals
+    :language 'clojure
+    :override t
+    '((tagged_or_ctor_lit marker: "#" @font-lock-preprocessor-face
+                          tag: (sym_lit) @font-lock-preprocessor-face))
 
-   :feature 'bracket
-   :language 'clojure
-   '((["(" ")" "[" "]" "{" "}"]) @font-lock-bracket-face
-     (set_lit :anchor "#" @font-lock-bracket-face))
+    :feature 'doc
+    :language 'clojure
+    :override t
+    (clojure-ts--docstring-query '@font-lock-doc-face))
 
-   :feature 'comment
-   :language 'clojure
-   :override t
-   `((comment) @font-lock-comment-face
-     (dis_expr
-      marker: "#_" @font-lock-comment-delimiter-face
-      value: _ @font-lock-comment-face)
-     (,(append
-        '(list_lit :anchor (sym_lit) @font-lock-comment-delimiter-face)
-        (when clojure-ts-comment-macro-font-lock-body
-          '(_ :* @font-lock-comment-face)))
-      (:match "^\\(\\(clojure.core/\\)?comment\\)$" @font-lock-comment-delimiter-face)))
+   (when markdown-available
+     (treesit-font-lock-rules
+      :feature 'doc
+      :language 'markdown_inline
+      :override t
+      `((inline
+          (code_span (code_span_delimiter) :* @font-lock-delimiter-face)
+          @font-lock-constant-face))))
 
-   :feature 'deref ;; not part of clojure-mode, but a cool idea?
-   :language 'clojure
-   '((derefing_lit
-      marker: "@" @font-lock-warning-face))))
+   (treesit-font-lock-rules
+    :feature 'quote
+    :language 'clojure
+    '((quoting_lit
+       marker: _ @font-lock-delimiter-face)
+      (var_quoting_lit
+       marker: _ @font-lock-delimiter-face)
+      (syn_quoting_lit
+       marker: _ @font-lock-delimiter-face)
+      (unquoting_lit
+       marker: _ @font-lock-delimiter-face)
+      (unquote_splicing_lit
+       marker: _ @font-lock-delimiter-face)
+      (var_quoting_lit
+       marker: _ @font-lock-delimiter-face))
+
+    :feature 'bracket
+    :language 'clojure
+    '((["(" ")" "[" "]" "{" "}"]) @font-lock-bracket-face
+      (set_lit :anchor "#" @font-lock-bracket-face))
+
+    :feature 'comment
+    :language 'clojure
+    :override t
+    `((comment) @font-lock-comment-face
+      (dis_expr
+       marker: "#_" @font-lock-comment-delimiter-face
+       value: _ @font-lock-comment-face)
+      (,(append
+         '(list_lit :anchor (sym_lit) @font-lock-comment-delimiter-face)
+         (when clojure-ts-comment-macro-font-lock-body
+           '(_ :* @font-lock-comment-face)))
+       (:match "^\\(\\(clojure.core/\\)?comment\\)$" @font-lock-comment-delimiter-face)))
+
+    :feature 'deref ;; not part of clojure-mode, but a cool idea?
+    :language 'clojure
+    '((derefing_lit
+       marker: "@" @font-lock-warning-face)))))
 
 ;; Node predicates
 
@@ -767,15 +794,53 @@ forms like deftype, defrecord, reify, proxy, etc."
     (set-keymap-parent map clojure-ts-mode-map)
     map))
 
-;;;###autolaod
-(add-to-list
- 'treesit-language-source-alist
- '(clojure "https://github.com/sogaiu/tree-sitter-clojure.git" "v0.0.12"))
-
 (defun clojure-ts-mode-display-version ()
   "Display the current `clojure-mode-version' in the minibuffer."
   (interactive)
   (message "clojure-ts-mode (version %s)" clojure-ts-mode-version))
+
+(defconst clojure-ts-grammar-recipes
+  '((clojure "https://github.com/sogaiu/tree-sitter-clojure.git"
+             "v0.0.12")
+    (markdown_inline "https://github.com/MDeiml/tree-sitter-markdown"
+                     "v0.1.6"
+                     "tree-sitter-markdown-inline/src"))
+  "Intended to be used as the value for `treesit-language-source-alist'.")
+
+(defun clojure-ts--ensure-grammars ()
+  "Install required language grammars if not already available."
+  (when clojure-ts-ensure-grammars
+    (let ((treesit-language-source-alist clojure-ts-grammar-recipes))
+      (unless (treesit-language-available-p 'clojure nil)
+        (message "Installing clojure tree-sitter grammar.")
+        (treesit-install-language-grammar 'clojure))
+      (unless (treesit-language-available-p 'markdown_inline nil)
+        (message "Installing markdown tree-sitter grammar.")
+        (treesit-install-language-grammar 'markdown_inline)))))
+
+(defun clojure-ts-mode-variables (&optional markdown-available)
+  "Set up initial buffer-local variables for clojure-ts-mode.
+See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
+  (setq-local comment-start ";")
+  (setq-local treesit-font-lock-settings
+              (clojure-ts--font-lock-settings markdown-available))
+  (setq-local treesit-defun-prefer-top-level t)
+  (setq-local treesit-defun-tactic 'top-level)
+  (setq-local treesit-defun-type-regexp
+              (rx (or "list_lit" "vec_lit" "map_lit")))
+  (setq-local treesit-simple-indent-rules
+              (clojure-ts--configured-indent-rules))
+  (setq-local treesit-defun-name-function
+              #'clojure-ts--standard-definition-node-name)
+  (setq-local treesit-simple-imenu-settings
+              clojure-ts--imenu-settings)
+  (setq-local treesit-font-lock-feature-list
+              '((comment definition variable)
+                (keyword string char symbol builtin type)
+                (constant number quote metadata doc)
+                (bracket deref function regex tagged-literals)))
+  (when (boundp 'treesit-thing-settings) ;; Emacs 30+
+    (setq-local treesit-thing-settings clojure-ts--thing-settings)))
 
 ;;;###autoload
 (define-derived-mode clojure-ts-mode prog-mode "Clojure[TS]"
@@ -783,30 +848,20 @@ forms like deftype, defrecord, reify, proxy, etc."
 
 \\{clojure-ts-mode-map}"
   :syntax-table clojure-ts-mode-syntax-table
-  (unless (treesit-language-available-p 'clojure nil)
-    (treesit-install-language-grammar 'clojure))
-  (setq-local comment-start ";")
-  (when (treesit-ready-p 'clojure)
-    (treesit-parser-create 'clojure)
-    (setq-local treesit-font-lock-settings (clojure-ts--font-lock-settings)
-                treesit-defun-prefer-top-level t
-                treesit-defun-tactic 'top-level
-                treesit-defun-type-regexp (rx (or "list_lit" "vec_lit" "map_lit"))
-                treesit-simple-indent-rules (clojure-ts--configured-indent-rules)
-                treesit-defun-name-function #'clojure-ts--standard-definition-node-name
-                treesit-simple-imenu-settings clojure-ts--imenu-settings
-                treesit-font-lock-feature-list
-                '((comment definition variable)
-                  (keyword string char symbol builtin type)
-                  (constant number quote metadata doc)
-                  (bracket deref function regex tagged-literals)))
-    (when (boundp 'treesit-thing-settings) ;; Emacs 30+
-      (setq-local treesit-thing-settings clojure-ts--thing-settings))
-    (when clojure-ts--debug
-      (setq-local treesit--indent-verbose t
-                  treesit--font-lock-verbose t)
-      (treesit-inspect-mode))
-    (treesit-major-mode-setup)))
+  (clojure-ts--ensure-grammars)
+  (let ((markdown-available (treesit-ready-p 'markdown_inline t)))
+    (when markdown-available
+      (treesit-parser-create 'markdown_inline)
+      (setq-local treesit-range-settings clojure-ts--treesit-range-settings))
+    (when (treesit-ready-p 'clojure)
+      (treesit-parser-create 'clojure)
+      (clojure-ts-mode-variables markdown-available)
+      (when clojure-ts--debug
+        (setq-local treesit--indent-verbose t)
+        (when (eq clojure-ts--debug 'font-lock)
+          (setq-local treesit--font-lock-verbose t))
+        (treesit-inspect-mode))
+      (treesit-major-mode-setup))))
 
 ;;;###autoload
 (define-derived-mode clojurescript-ts-mode clojure-ts-mode "ClojureScript[TS]"

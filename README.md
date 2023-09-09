@@ -106,11 +106,14 @@ git clone https://github.com/clojure-emacs/clojure-ts-mode.git
 
 Once installed, evaluate clojure-ts-mode.el and you should be ready to go.
 
-### Install libtree-sitter-clojure shared library
+### Install tree-sitter grammars
 
-The tree-sitter clojure shared library must be available to Emacs.
+The compile tree-sitter clojure shared library must be available to Emacs.
+Additionally, the tree-sitter [markdown_inline](https://github.com/MDeiml/tree-sitter-markdown) shared library will also be used for docstrings if available.
+
 If you have `git` and a C compiler (`cc`) available on your system's `PATH`, **then these steps should not be necessary**.
-clojure-ts-mode will install the grammar when you first open a Clojure file.
+clojure-ts-mode will install the grammars when you first open a Clojure file and
+`clojure-ts-ensure-grammars` is set to `t` (the default).
 
 If clojure-ts-mode fails to automatically install the grammar, you have the option to install it manually.
 
@@ -120,7 +123,9 @@ Some distributions may package the tree-sitter-clojure grammar in their package 
 If yours does you may be able to install tree-sitter-clojure with your system package manager.
 
 If the version packaged by your OS is out of date, you may see errors in the `*Messages*` buffer or your clojure buffers will not have any syntax highlighting.
-If this happens you should install the grammar manually with `M-x treesit-install-language-grammar <RET> clojure`.
+
+If this happens you should install the grammar manually with `M-x treesit-install-language-grammar <RET> clojure` and follow the prompts.
+Recommended values for these prompts can be seen in `clojure-ts-grammar-recipes`.
 
 #### Compile From Source
 
