@@ -207,8 +207,10 @@ Only intended for use at development time.")
    (or (group (or "ns" "fn"))
        (group "def"
               (+ (or alnum
-                     ;; What are valid characters for symbols? is a negative match better?
-                     "-" "_" "!" "@" "#" "$" "%" "^" "&" "*" "|" "?" "<" ">" "+" "=" ":"))))
+                     ;; What are valid characters for symbols?
+                     ;; is a negative match better?
+                     "-" "_" "!" "@" "#" "$" "%" "^" "&"
+                     "*" "|" "?" "<" ">" "+" "=" ":"))))
    line-end))
 
 (defconst clojure-ts--variable-definition-symbol-regexp
@@ -247,6 +249,22 @@ Only intended for use at development time.")
                :anchor (str_lit) ,capture-symbol
                :anchor (_)) ; the variable's value
      (:match ,clojure-ts--variable-definition-symbol-regexp @def_symbol))
+    ;; Captures docstrings in metadata of definitions
+    ((list_lit :anchor (sym_lit) @def_symbol
+               :anchor (sym_lit
+                        (meta_lit
+                         value: (map_lit
+                                 (kwd_lit) @doc-keyword
+                                 :anchor
+                                 (str_lit) ,capture-symbol))))
+     ;; We're only supporting this on a fixed set of defining symbols
+     ;; Existing regexes don't encompass def and defn
+     ;; Naming another regex is very cumbersome.
+     (:match ,(regexp-opt '("def" "defonce" "defn" "defn-" "defmacro" "ns"
+                            "defmulti" "definterface" "defprotocol"
+                            "deftype" "defrecord" "defstruct"))
+             @def_symbol)
+     (:equal @doc-keyword ":doc"))
     ;; Captures docstrings defn, defmacro, ns, and things like that
     ((list_lit :anchor (sym_lit) @def_symbol
                :anchor (sym_lit) ; function_name
