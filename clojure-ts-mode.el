@@ -138,7 +138,7 @@ Only intended for use at development time.")
     (modify-syntax-entry ?\\ "\\" table) ; escape
 
     table)
-  "Syntax table for clojure-ts-mode.")
+  "Syntax table for `clojure-ts-mode'.")
 
 
 (defconst clojure-ts--builtin-dynamic-var-regexp
@@ -224,7 +224,7 @@ Only intended for use at development time.")
       (or "defprotocol" "defmulti" "deftype" "defrecord"
           "definterface" "defmethod" "defstruct")
       line-end))
-  "A regular expression matching a symbol used to define a type")
+  "A regular expression matching a symbol used to define a type.")
 
 (defconst clojure-ts-type-symbol-regexp
   (eval-and-compile
@@ -840,7 +840,7 @@ forms like deftype, defrecord, reify, proxy, etc."
             (treesit-install-language-grammar grammar)))))))
 
 (defun clojure-ts-mode-variables (&optional markdown-available)
-  "Set up initial buffer-local variables for clojure-ts-mode.
+  "Initialize buffer-local variables for `clojure-ts-mode'.
 See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
   (setq-local comment-start ";")
   (setq-local treesit-font-lock-settings
