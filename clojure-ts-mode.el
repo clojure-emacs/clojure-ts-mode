@@ -828,16 +828,16 @@ forms like deftype, defrecord, reify, proxy, etc."
 (defun clojure-ts--ensure-grammars ()
   "Install required language grammars if not already available."
   (when clojure-ts-ensure-grammars
-    ;; `treesit-language-source-alist' is dynamically scoped.
-    ;; Setting it here allows `treesit-install-language-gramamr' to pick up
-    ;; the grammar recipes we want without modifying what the user has set.
-    (let ((treesit-language-source-alist clojure-ts-grammar-recipes))
-      (unless (treesit-language-available-p 'clojure nil)
-        (message "Installing clojure tree-sitter grammar.")
-        (treesit-install-language-grammar 'clojure))
-      (unless (treesit-language-available-p 'markdown_inline nil)
-        (message "Installing markdown tree-sitter grammar.")
-        (treesit-install-language-grammar 'markdown_inline)))))
+    (dolist (recipe clojure-ts-grammar-recipes)
+      (let ((grammar (car recipe)))
+        (unless (treesit-language-available-p grammar nil)
+          (message "Installing %s tree-sitter grammar" grammar)
+          ;; `treesit-language-source-alist' is dynamically scoped.
+          ;; Binding it in this let expression allows
+          ;; `treesit-install-language-gramamr' to pick up the grammar recipes
+          ;; without modifying what the user has configured themselves.
+          (let ((treesit-language-source-alist clojure-ts-grammar-recipes))
+            (treesit-install-language-grammar grammar)))))))
 
 (defun clojure-ts-mode-variables (&optional markdown-available)
   "Set up initial buffer-local variables for clojure-ts-mode.
