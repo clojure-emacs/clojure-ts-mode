@@ -57,10 +57,11 @@
 (require 'lisp-mnt)
 
 (declare-function treesit-parser-create "treesit.c")
+(declare-function treesit-node-eq "treesit.c")
 (declare-function treesit-node-type "treesit.c")
+(declare-function treesit-node-parent "treesit.c")
 (declare-function treesit-node-child "treesit.c")
 (declare-function treesit-node-child-by-field-name "treesit.c")
-(declare-function treesit-node-prev-sibling "treesit.c")
 
 (defgroup clojure-ts nil
   "Major mode for editing Clojure code with tree-sitter."
