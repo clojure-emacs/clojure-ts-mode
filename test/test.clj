@@ -29,7 +29,7 @@
 ;; examples of valid namespace definitions
 (comment
   (ns .validns)
- 
+
   (ns =validns)
   (ns .ValidNs=<>?+|?*.)
   (ns ValidNs<>?+|?*.b*ar.ba*z)
@@ -289,3 +289,44 @@ clojure.core/map
 
 (def ^Integer x 1)
 
+(comment
+  (defrecord TestRecord [field]
+    AutoCloseable
+    (close [this]
+      (.close this)))
+
+  (reify
+    AutoCloseable
+    (close [this] (.close this))
+
+    (another [this arg]
+      (implement this arg)))
+
+  (definterface MyInterface
+    (^String name [])
+    (^double mass []))
+
+  (defmulti my-method :hello :default ::default)
+
+  (defmethod my-method :world
+    [_]
+    (println "Hi"))
+
+  (deftype ImageSelection [data]
+    Transferable
+    (getTransferDataFlavors
+      [this]
+      (into-array DataFlavor [DataFlavor/imageFlavor]))
+
+    (isDataFlavorSupported
+      [this flavor]
+      (= DataFlavor/imageFlavor flavor))
+
+    (getTransferData
+      [this flavor]
+      (when (= DataFlavor/imageFlavor flavor)
+        (.getImage (ImageIcon. data)))))
+
+  (defprotocol P
+    (foo [this])
+    (bar-me [this] [this y])))

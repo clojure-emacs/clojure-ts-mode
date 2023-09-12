@@ -11,6 +11,8 @@
 - Highlight "\`quoted-symbols\`  in docs strings like this."
    - This feature uses a nested markdown parser.
      If the parser is not available this feature should be silently disabled.
+- Highlight methods for `deftype`, `defrecord`, `defprotocol`, `reify` and `definterface`
+  forms ([#20](https://github.com/clojure-emacs/clojure-ts-mode/issues/20)).
 
 ## 0.1.5
 
@@ -29,7 +31,7 @@
 
 ## 0.1.2
 
-- Add a syntax table from clojure-mode. [712dc772fd38111c1e35fe60e4dbe7ac83032bd6](https://github.com/clojure-emacs/clojure-ts-mode/commit/712dc772fd38111c1e35fe60e4dbe7ac83032bd6). 
+- Add a syntax table from clojure-mode. [712dc772fd38111c1e35fe60e4dbe7ac83032bd6](https://github.com/clojure-emacs/clojure-ts-mode/commit/712dc772fd38111c1e35fe60e4dbe7ac83032bd6).
     - Better support for `thing-at-point` driven functionality.
     - Thank you @jasonjckn for this contribution.
 - Add 3 derived major modes [4dc853df16ba09d10dc3a648865e681679c17606](https://github.com/clojure-emacs/clojure-ts-mode/commit/4dc853df16ba09d10dc3a648865e681679c17606)
