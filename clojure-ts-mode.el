@@ -790,8 +790,8 @@ forms like deftype, defrecord, reify, proxy, etc."
 
 (defconst clojure-ts--thing-settings
   `((clojure
-     ((sexp ,(regexp-opt clojure-ts--sexp-nodes))
-      (text ,(regexp-opt '("comment")))))))
+     (sexp ,(regexp-opt clojure-ts--sexp-nodes)
+      text ,(regexp-opt '("comment"))))))
 
 (defvar clojure-ts-mode-map
   (let ((map (make-sparse-keymap)))
@@ -883,7 +883,12 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
         (when (eq clojure-ts--debug 'font-lock)
           (setq-local treesit--font-lock-verbose t))
         (treesit-inspect-mode))
-      (treesit-major-mode-setup))))
+      (treesit-major-mode-setup)
+      ;; Workaround for treesit-transpose-sexps not correctly working with
+      ;; treesit-thing-settings on Emacs 30.
+      ;; Once treesit-transpose-sexps it working again this can be removed
+      (when (fboundp 'transpose-sexps-default-function)
+        (setq-local transpose-sexps-function #'transpose-sexps-default-function)))))
 
 ;;;###autoload
 (define-derived-mode clojurescript-ts-mode clojure-ts-mode "ClojureScript[TS]"
