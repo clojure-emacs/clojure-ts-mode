@@ -205,7 +205,7 @@ Only intended for use at development time.")
 (defconst clojure-ts--definition-symbol-regexp
   (rx
    line-start
-   (or (group (or "ns" "fn"))
+   (or (group "fn")
        (group "def"
               (+ (or alnum
                      ;; What are valid characters for symbols?
@@ -347,9 +347,42 @@ with the markdown_inline grammar."
     :language 'clojure
     `(((list_lit :anchor (sym_lit (sym_name) @def)
                  :anchor (sym_lit (sym_name) @font-lock-function-name-face))
-       (:match ,clojure-ts--definition-symbol-regexp @def))
+       (:match ,(rx-to-string
+                 `(seq bol
+                       (or
+                        "defn"
+                        "defn-"
+                        "defmulti"
+                        "defmethod"
+                        "deftest"
+                        "deftest-"
+                        "defmacro"
+                        "definline")
+                       eol))
+               @def))
       ((anon_fn_lit
-        marker: "#" @font-lock-property-face)))
+        marker: "#" @font-lock-property-face))
+      ;; Methods implementation
+      ((list_lit
+        ((sym_lit name: (sym_name) @def)
+         ((:match ,(rx-to-string
+                    `(seq bol
+                          (or
+                           "defrecord"
+                           "definterface"
+                           "deftype"
+                           "defprotocol")
+                          eol))
+                  @def)))
+        :anchor
+        (sym_lit (sym_name) @font-lock-type-face)
+        (list_lit
+         (sym_lit name: (sym_name) @font-lock-function-name-face))))
+      ((list_lit
+        ((sym_lit name: (sym_name) @def)
+         ((:equal "reify" @def)))
+        (list_lit
+         (sym_lit name: (sym_name) @font-lock-function-name-face)))))
 
     :feature 'variable ;; def, defonce
     :language 'clojure
@@ -370,7 +403,11 @@ with the markdown_inline grammar."
        value: (sym_lit (sym_name) @font-lock-type-face))
       (old_meta_lit
        marker: "#^" @font-lock-operator-face
-       value: (sym_lit (sym_name) @font-lock-type-face)))
+       value: (sym_lit (sym_name) @font-lock-type-face))
+      ;; Highlight namespace
+      ((list_lit :anchor (sym_lit (sym_name) @def)
+                 :anchor (sym_lit (sym_name) @font-lock-type-face))
+       (:equal "ns" @def)))
 
     :feature 'metadata
     :language 'clojure
