@@ -191,7 +191,9 @@ Only intended for use at development time.")
                "when" "when-first" "when-let" "when-not" "when-some" "while"
                "with-bindings" "with-in-str" "with-loading-context"
                "with-local-vars" "with-open" "with-out-str" "with-precision"
-               "with-redefs" "with-redefs-fn"))
+               "with-redefs" "with-redefs-fn"
+               ;; Commonly used clojure.test functions
+               "deftest" "deftest-" "is" "are" "testing"))
             "$")))
 
 (defface clojure-ts-keyword-face
