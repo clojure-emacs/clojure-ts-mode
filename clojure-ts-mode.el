@@ -202,17 +202,26 @@ Only intended for use at development time.")
   '((t (:inherit font-lock-string-face)))
   "Face used to font-lock Clojure character literals.")
 
-(defconst clojure-ts--definition-symbol-regexp
-  (rx
-   line-start
-   (or (group "fn")
-       (group "def"
-              (+ (or alnum
-                     ;; What are valid characters for symbols?
-                     ;; is a negative match better?
-                     "-" "_" "!" "@" "#" "$" "%" "^" "&"
-                     "*" "|" "?" "<" ">" "+" "=" ":"))))
-   line-end))
+(defun clojure-ts-symbol-regexp (symbols)
+  "Return a regular expression that matches one of SYMBOLS exactly."
+  (concat "^" (regexp-opt symbols) "$"))
+
+(defvar clojure-ts-function-docstring-symbols
+  '("definline"
+    "defmulti"
+    "defmacro"
+    "defn"
+    "defn-"
+    "defprotocol"
+    "ns")
+  "Symbols that accept an optional docstring as their second argument.")
+
+(defvar clojure-ts-definition-docstring-symbols
+  '("def")
+  "Symbols that accept an optional docstring as their second argument.
+Any symbols added here should only treat their second argument as a docstring
+if a third argument (the value) is provided.
+\"def\" is the only builtin Clojure symbol that behaves like this.")
 
 (defconst clojure-ts--variable-definition-symbol-regexp
   (eval-and-compile
@@ -244,40 +253,49 @@ Only intended for use at development time.")
 
 (defun clojure-ts--docstring-query (capture-symbol)
   "Return a query that captures docstrings with CAPTURE-SYMBOL."
-  `(;; Captures docstrings in def, defonce
-    ((list_lit :anchor (sym_lit) @def_symbol
+  `(;; Captures docstrings in def
+    ((list_lit :anchor (sym_lit) @_def_symbol
+               :anchor (comment) :?
                :anchor (sym_lit) ; variable name
+               :anchor (comment) :?
                :anchor (str_lit) ,capture-symbol
                :anchor (_)) ; the variable's value
-     (:match ,clojure-ts--variable-definition-symbol-regexp @def_symbol))
+     (:match ,(clojure-ts-symbol-regexp clojure-ts-definition-docstring-symbols)
+             @_def_symbol))
     ;; Captures docstrings in metadata of definitions
-    ((list_lit :anchor (sym_lit) @def_symbol
+    ((list_lit :anchor (sym_lit) @_def_symbol
+               :anchor (comment) :?
                :anchor (sym_lit
                         (meta_lit
                          value: (map_lit
-                                 (kwd_lit) @doc-keyword
+                                 (kwd_lit) @_doc-keyword
                                  :anchor
                                  (str_lit) ,capture-symbol))))
      ;; We're only supporting this on a fixed set of defining symbols
      ;; Existing regexes don't encompass def and defn
      ;; Naming another regex is very cumbersome.
-     (:match ,(regexp-opt '("def" "defonce" "defn" "defn-" "defmacro" "ns"
-                            "defmulti" "definterface" "defprotocol"
-                            "deftype" "defrecord" "defstruct"))
-             @def_symbol)
-     (:equal @doc-keyword ":doc"))
+     (:match ,(clojure-ts-symbol-regexp
+               '("def" "defonce" "defn" "defn-" "defmacro" "ns"
+                 "defmulti" "definterface" "defprotocol"
+                 "deftest" "deftest-"
+                 "deftype" "defrecord" "defstruct"))
+             @_def_symbol)
+     (:equal @_doc-keyword ":doc"))
     ;; Captures docstrings defn, defmacro, ns, and things like that
-    ((list_lit :anchor (sym_lit) @def_symbol
+    ((list_lit :anchor (sym_lit) @_def_symbol
+               :anchor (comment) :?
                :anchor (sym_lit) ; function_name
+               :anchor (comment) :?
                :anchor (str_lit) ,capture-symbol)
-     (:match ,clojure-ts--definition-symbol-regexp @def_symbol))
+     (:match ,(clojure-ts-symbol-regexp clojure-ts-function-docstring-symbols)
+             @_def_symbol))
     ;; Captures docstrings in defprotcol, definterface
-    ((list_lit :anchor (sym_lit) @def_symbol
+    ((list_lit :anchor (sym_lit) @_def_symbol
                (list_lit
                 :anchor (sym_lit) (vec_lit) :*
                 (str_lit) ,capture-symbol :anchor)
                :*)
-     (:match ,clojure-ts--interface-def-symbol-regexp @def_symbol))))
+     (:match ,clojure-ts--interface-def-symbol-regexp @_def_symbol))))
 
 (defvar clojure-ts--treesit-range-settings
   (treesit-range-rules
@@ -752,7 +770,7 @@ forms like deftype, defrecord, reify, proxy, etc."
     (and (treesit-node-eq node (treesit-node-child parent 2 t))
          (let ((first-auncle (treesit-node-child parent 0 t)))
            (clojure-ts--symbol-matches-p
-            clojure-ts--definition-symbol-regexp
+            (regexp-opt clojure-ts-function-docstring-symbols)
             first-auncle)))))
 
 (defun clojure-ts--match-def-docstring (node)
@@ -765,7 +783,7 @@ forms like deftype, defrecord, reify, proxy, etc."
          (treesit-node-child parent 3 t)
          (let ((first-auncle (treesit-node-child parent 0 t)))
            (clojure-ts--symbol-matches-p
-            clojure-ts--variable-definition-symbol-regexp
+            (regexp-opt clojure-ts-definition-docstring-symbols)
             first-auncle)))))
 
 (defun clojure-ts--match-method-docstring (node)
