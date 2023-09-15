@@ -227,7 +227,7 @@ Only intended for use at development time.")
       line-end))
   "A regular expression matching a symbol used to define a type.")
 
-(defconst clojure-ts-type-symbol-regexp
+(defconst clojure-ts--type-symbol-regexp
   (eval-and-compile
     (rx line-start
         (or "deftype" "defrecord"
@@ -727,7 +727,7 @@ forms like deftype, defrecord, reify, proxy, etc."
           ;; auncle: gender neutral sibling of parent, aka child of grandparent
           (first-auncle (treesit-node-child grandparent 0 t)))
      (and (clojure-ts--list-node-p grandparent)
-          (clojure-ts--symbol-matches-p clojure-ts-type-symbol-regexp
+          (clojure-ts--symbol-matches-p clojure-ts--type-symbol-regexp
                                         first-auncle)))))
 
 (defvar clojure-ts--threading-macro
