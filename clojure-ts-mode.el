@@ -870,6 +870,11 @@ forms like deftype, defrecord, reify, proxy, etc."
     (set-keymap-parent map clojure-ts-mode-map)
     map))
 
+(defvar clojure-jank-ts-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map clojure-ts-mode-map)
+    map))
+
 (defun clojure-ts-mode-display-version ()
   "Display the current `clojure-mode-version' in the minibuffer."
   (interactive)
@@ -965,9 +970,16 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
 
 \\{clojure-dart-ts-mode-map}")
 
+;;;###autoload
+(define-derived-mode clojure-jank-ts-mode clojure-ts-mode "Jank[TS]"
+  "Major mode for editing Jank code.
+
+\\{clojure-jank-ts-mode-map}")
+
 (defun clojure-ts--register-novel-modes ()
   "Set up Clojure modes not present in progenitor clojure-mode.el."
-  (add-to-list 'auto-mode-alist '("\\.cljd\\'" . clojure-dart-ts-mode)))
+  (add-to-list 'auto-mode-alist '("\\.cljd\\'" . clojure-dart-ts-mode))
+  (add-to-list 'auto-mode-alist '("\\.jank\\'" . clojure-jank-ts-mode)))
 
 ;; Redirect clojure-mode to clojure-ts-mode if clojure-mode is present
 (if (require 'clojure-mode nil 'noerror)
