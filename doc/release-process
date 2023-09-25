@@ -1,0 +1,25 @@
+Instructions for releasing a new version.
+
+Review the ## main (unreleased) heading in CHANGELOG.md. Add links to commits
+for each entry so users can reference them. Add a thank you note for entries
+contributed by people who are not primary maintainers.
+
+Add a new heading in the CHANGELOG.md file corresponding to the next version
+number. Following this the ## main (unreleased) heading should be empty
+
+Update clojure-ts-mode.el Version: property in the package comment at the top of
+the file to match the upcomming version number.
+
+Create a new commit on main branch with all the above changes.
+
+Add a new tag for the corresponding version on the commit just created. This is
+needed by MELPA. The tag should follow the format (without quotes) "vM.m.p"
+where M is the major number, m is the minor number, and p is the patch number.
+The tag should have a comment referring readers to the CHANGELOG.md file. It
+should read something like
+
+    Release v.M.m.p
+
+    See CHANGELOG.md for more details
+
+Make sure gpg signing is enabled when creating the commit and tags.
