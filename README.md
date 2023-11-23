@@ -148,7 +148,7 @@ cc -fPIC -shared src/parser.o -o "dist/libtree-sitter-clojure.so"
 
 ```bash
 mkdir -p dist
-cc -c -I./src src/parser.c -o "parser.o"
+cc -c -I./src src/parser.c -o "src/parser.o"
 cc -fPIC -shared src/parser.o -o "dist/libtree-sitter-clojure.dylib"
 ```
 
