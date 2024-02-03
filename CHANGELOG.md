@@ -2,6 +2,8 @@
 
 ## main (unreleased)
 
+- Add custom option `clojure-ts-toplevel-inside-comment-form` as an equivalent to `clojure-toplevel-inside-comment-form` in clojure-mode (#30)
+
 ## 0.2.0
 
 - Pin grammar revision in treesit-language-source-alist
