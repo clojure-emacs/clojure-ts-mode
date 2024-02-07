@@ -93,6 +93,12 @@ itself."
   :type 'boolean
   :package-version '(clojure-ts-mode . "0.2.0"))
 
+(defcustom clojure-ts-toplevel-inside-comment-form nil
+  "Eval top level forms inside comment forms instead of the comment form itself."
+  :type 'boolean
+  :safe #'booleanp
+  :package-version '(clojure-ts-mode . "0.2.1"))
+
 (defvar clojure-ts--debug nil
   "Enables debugging messages, shows current node in mode-line.
 Only intended for use at development time.")
@@ -911,7 +917,10 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
   (setq-local treesit-defun-prefer-top-level t)
   (setq-local treesit-defun-tactic 'top-level)
   (setq-local treesit-defun-type-regexp
-              (rx (or "list_lit" "vec_lit" "map_lit")))
+              (cons (rx (or "list_lit" "vec_lit" "map_lit"))
+                    (lambda (node)
+                      (or (not clojure-ts-toplevel-inside-comment-form)
+                          (not (clojure-ts--definition-node-p "comment" node))))))
   (setq-local treesit-simple-indent-rules
               (clojure-ts--configured-indent-rules))
   (setq-local treesit-defun-name-function

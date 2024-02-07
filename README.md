@@ -39,6 +39,14 @@ Too highlight entire rich `comment` expression with the comment font face, set
 By default this is `nil`, so that anything within a `comment` expression is
 highlighted like regular clojure code.
 
+### Navigation and Evaluation
+
+To make forms inside of `(comment ...)` forms appear as toplevel forms for evaluation and navigation, set
+
+``` emacs-lisp
+(setq clojure-ts-toplevel-inside-comment-form t)
+```
+
 ## Rationale
 
 [clojure-mode](https://github.com/clojure-emacs/clojure-mode) has served us well
