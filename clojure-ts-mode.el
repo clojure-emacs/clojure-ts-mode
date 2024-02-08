@@ -917,7 +917,7 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
   (setq-local treesit-defun-prefer-top-level t)
   (setq-local treesit-defun-tactic 'top-level)
   (setq-local treesit-defun-type-regexp
-              (cons (rx (or "list_lit" "vec_lit" "map_lit"))
+              (cons (regexp-opt clojure-ts--sexp-nodes)
                     (lambda (node)
                       (or (not clojure-ts-toplevel-inside-comment-form)
                           (not (clojure-ts--definition-node-p "comment" node))))))
