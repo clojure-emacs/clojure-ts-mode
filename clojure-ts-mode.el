@@ -917,10 +917,13 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
   (setq-local treesit-defun-prefer-top-level t)
   (setq-local treesit-defun-tactic 'top-level)
   (setq-local treesit-defun-type-regexp
-              (cons (regexp-opt clojure-ts--sexp-nodes)
-                    (lambda (node)
-                      (or (not clojure-ts-toplevel-inside-comment-form)
-                          (not (clojure-ts--definition-node-p "comment" node))))))
+              (cons
+               ;; consider all clojure sexps as valid top level forms...
+               (regexp-opt clojure-ts--sexp-nodes)
+               ;; ...except `comment' forms if `clojure-ts-toplevel-inside-comment-form' is set
+               (lambda (node)
+                 (or (not clojure-ts-toplevel-inside-comment-form)
+                     (not (clojure-ts--definition-node-p "comment" node))))))
   (setq-local treesit-simple-indent-rules
               (clojure-ts--configured-indent-rules))
   (setq-local treesit-defun-name-function
