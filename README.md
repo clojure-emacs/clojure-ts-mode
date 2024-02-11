@@ -16,13 +16,13 @@ highlighting), indentation, and navigation support for the
 
 To see a list of available configuration options do `M-x customize-group <RET> clojure-ts`.
 
-Most configuration changes will require reverting any active clojure-ts-mode buffers.
+Most configuration changes will require reverting any active `clojure-ts-mode` buffers.
 
 ### Indentation
 
-clojure-ts-mode currently supports 2 different indentation strategies:
+`clojure-ts-mode` currently supports 2 different indentation strategies:
 
-- `semantic`, the default, which tries to match the indentation of clojure-mode and cljfmt
+- `semantic`, the default, which tries to match the indentation of `clojure-mode` and cljfmt
 - `fixed`, [a simple indentation strategy outlined by Tonsky in a blog post](https://tonsky.me/blog/clojurefmt/)
 
 Set the var `clojure-ts-indent-style` to change it.
@@ -36,6 +36,7 @@ Set the var `clojure-ts-indent-style` to change it.
 ### Font Locking
 
 Too highlight entire rich `comment` expression with the comment font face, set
+
 ``` emacs-lisp
 (setq clojure-ts-comment-macro-font-lock-body t)
 ```
@@ -170,7 +171,7 @@ I don't know how to do this on Windows. Patches welcome!
 
 #### Finally, in emacs
 
-Then tell Emacs where to find the shared library by adding something like this to your init file
+Then tell Emacs where to find the shared library by adding something like this to your init file:
 
 ```emacs-lisp
 (setq treesit-extra-load-path '( "~/path/to/tree-sitter-clojure/dist"))
