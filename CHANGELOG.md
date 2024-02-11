@@ -3,6 +3,7 @@
 ## main (unreleased)
 
 - Add custom option `clojure-ts-toplevel-inside-comment-form` as an equivalent to `clojure-toplevel-inside-comment-form` in clojure-mode (#30)
+- Change behavior of `beginning-of-defun` and `end-of-defun` to consider all Clojure sexps as defuns (#32)
 
 ## 0.2.0
 
