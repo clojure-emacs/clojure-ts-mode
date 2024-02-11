@@ -20,14 +20,18 @@ Most configuration changes will require reverting any active clojure-ts-mode buf
 
 ### Indentation
 
-clojure-ts-mode currently supports 2 different indentation strategies
+clojure-ts-mode currently supports 2 different indentation strategies:
+
 - `semantic`, the default, which tries to match the indentation of clojure-mode and cljfmt
 - `fixed`, [a simple indentation strategy outlined by Tonsky in a blog post](https://tonsky.me/blog/clojurefmt/)
 
 Set the var `clojure-ts-indent-style` to change it.
+
 ``` emacs-lisp
 (setq clojure-ts-indent-style 'fixed)
 ```
+
+**Note:** You can find [this article](https://metaredux.com/posts/2020/12/06/semantic-clojure-formatting.html) comparing semantic and fixed indentation useful.
 
 ### Font Locking
 
