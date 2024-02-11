@@ -180,6 +180,16 @@ Then tell Emacs where to find the shared library by adding something like this t
 OR you can move the `libtree-sitter-clojure.so`/`libtree-sitter-clojure.dylib` to a directory named `tree-sitter`
 under your `user-emacs-directory` (typically `~/.emacs.d` on Unix systems).
 
+## Frequently Asked Questions
+
+### Does `clojure-ts-mode` work with CIDER?
+
+Not yet, but [should change soon](https://github.com/clojure-emacs/cider/pull/3461). Feel free to help out with the remaining work, so we can expedite the process.
+
+### Does `clojure-ts-mode` work with `inf-clojure`?
+
+[Ditto.](https://github.com/clojure-emacs/inf-clojure/pull/215)
+
 ## License
 
 Copyright © 2022-2024 Danny Freeman and [contributors][].
