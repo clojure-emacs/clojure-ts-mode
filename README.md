@@ -184,7 +184,13 @@ under your `user-emacs-directory` (typically `~/.emacs.d` on Unix systems).
 
 ### Does `clojure-ts-mode` work with CIDER?
 
-Not yet, but [should change soon](https://github.com/clojure-emacs/cider/pull/3461). Feel free to help out with the remaining work, so we can expedite the process.
+Not yet out of the box, but that [should change soon](https://github.com/clojure-emacs/cider/pull/3461). Feel free to help out with the remaining work, so we can expedite the process.
+
+For now, when you take care of the keybindings for the cider functions you use and ensure `cider-mode` is enabled for `clojure-ts-mode` buffers in your config, most functinality should already work:
+
+```emacs-lisp
+(add-hook 'clojure-ts-mode-hook #'cider-mode)
+```
 
 ### Does `clojure-ts-mode` work with `inf-clojure`?
 
