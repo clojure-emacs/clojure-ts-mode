@@ -22,7 +22,7 @@ Most configuration changes will require reverting any active `clojure-ts-mode` b
 
 `clojure-ts-mode` currently supports 2 different indentation strategies:
 
-- `semantic`, the default, which tries to match the indentation of `clojure-mode` and cljfmt
+- `semantic`, the default, which tries to match the indentation of `clojure-mode` and `cljfmt`
 - `fixed`, [a simple indentation strategy outlined by Tonsky in a blog post](https://tonsky.me/blog/clojurefmt/)
 
 Set the var `clojure-ts-indent-style` to change it.
@@ -46,7 +46,7 @@ highlighted like regular clojure code.
 
 ### Navigation and Evaluation
 
-To make forms inside of `(comment ...)` forms appear as toplevel forms for evaluation and navigation, set
+To make forms inside of `(comment ...)` forms appear as top-level forms for evaluation and navigation, set
 
 ``` emacs-lisp
 (setq clojure-ts-toplevel-inside-comment-form t)
@@ -186,7 +186,7 @@ under your `user-emacs-directory` (typically `~/.emacs.d` on Unix systems).
 
 Not yet out of the box, but that [should change soon](https://github.com/clojure-emacs/cider/pull/3461). Feel free to help out with the remaining work, so we can expedite the process.
 
-For now, when you take care of the keybindings for the cider functions you use and ensure `cider-mode` is enabled for `clojure-ts-mode` buffers in your config, most functinality should already work:
+For now, when you take care of the keybindings for the cider functions you use and ensure `cider-mode` is enabled for `clojure-ts-mode` buffers in your config, most functionality should already work:
 
 ```emacs-lisp
 (add-hook 'clojure-ts-mode-hook #'cider-mode)
