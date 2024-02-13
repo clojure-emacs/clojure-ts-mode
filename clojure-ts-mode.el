@@ -7,7 +7,7 @@
 ;; URL: http://github.com/clojure-emacs/clojure-ts-mode
 ;; Keywords: languages clojure clojurescript lisp
 ;; Version: 0.2.0
-;; Package-Requires: ((emacs "29"))
+;; Package-Requires: ((emacs "29.1"))
 
 ;; This file is not part of GNU Emacs.
 
