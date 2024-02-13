@@ -1,4 +1,4 @@
-name: Lint Emacs
+name: CI
 
 on:
   push:
@@ -7,6 +7,52 @@ on:
     paths: ['**.el']
 
 jobs:
+  compile:
+    runs-on: ubuntu-latest
+    # continue-on-error: ${{matrix.emacs_version == 'snapshot'}}
+
+    strategy:
+      matrix:
+        emacs_version: ['snapshot']
+
+    steps:
+    - name: Set up Emacs
+      uses: purcell/setup-emacs@master
+      with:
+        version: ${{matrix.emacs_version}}
+
+    - name: Install Eldev
+      run: curl -fsSL https://raw.github.com/doublep/eldev/master/webinstall/github-eldev | sh
+
+    - name: Check out the source code
+      uses: actions/checkout@v4
+
+    - name: Compile the project
+      run: make compile
+
+  lint:
+    runs-on: ubuntu-latest
+    # continue-on-error: ${{matrix.emacs_version == 'snapshot'}}
+
+    strategy:
+      matrix:
+        emacs_version: ['29.1']
+
+    steps:
+    - name: Set up Emacs
+      uses: purcell/setup-emacs@master
+      with:
+        version: ${{matrix.emacs_version}}
+
+    - name: Install Eldev
+      run: curl -fsSL https://raw.github.com/doublep/eldev/master/webinstall/github-eldev | sh
+
+    - name: Check out the source code
+      uses: actions/checkout@v4
+
+    - name: Lint the project
+      run: make lint
+
   test:
     runs-on: ubuntu-latest
     # continue-on-error: ${{matrix.emacs_version == 'snapshot'}}
@@ -25,7 +71,7 @@ jobs:
       run: curl -fsSL https://raw.github.com/doublep/eldev/master/webinstall/github-eldev | sh
 
     - name: Check out the source code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
-    - name: Lint the project
-      run: eldev -dtT -C compile --warnings-as-errors
+    - name: Run tests
+      run: make test
