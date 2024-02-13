@@ -21,7 +21,7 @@
 
 (with-eval-after-load 'elisp-lint
   ;; We will byte-compile with Eldev.
-  (setf elisp-lint-ignored-validators '("fill-column")
+  (setf elisp-lint-ignored-validators '("fill-column" "check-declare")
         enable-local-variables        :safe))
 
 (setq eldev-project-main-file "clojure-ts-mode.el")
