@@ -861,22 +861,22 @@ forms like deftype, defrecord, reify, proxy, etc."
     ;(set-keymap-parent map clojure-mode-map)
     map))
 
-(defvar clojurescript-ts-mode-map
+(defvar clojure-ts-clojurescript-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map clojure-ts-mode-map)
     map))
 
-(defvar clojurec-ts-mode-map
+(defvar clojure-ts-clojurec-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map clojure-ts-mode-map)
     map))
 
-(defvar clojure-dart-ts-mode-map
+(defvar clojure-ts-clojuredart-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map clojure-ts-mode-map)
     map))
 
-(defvar clojure-jank-ts-mode-map
+(defvar clojure-ts-jank-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map clojure-ts-mode-map)
     map))
@@ -965,25 +965,25 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
         (setq-local transpose-sexps-function #'transpose-sexps-default-function)))))
 
 ;;;###autoload
-(define-derived-mode clojurescript-ts-mode clojure-ts-mode "ClojureScript[TS]"
+(define-derived-mode clojure-ts-clojurescript-mode clojure-ts-mode "ClojureScript[TS]"
   "Major mode for editing ClojureScript code.
 
 \\{clojurescript-ts-mode-map}")
 
 ;;;###autoload
-(define-derived-mode clojurec-ts-mode clojure-ts-mode "ClojureC[TS]"
+(define-derived-mode clojure-ts-clojurec-mode clojure-ts-mode "ClojureC[TS]"
   "Major mode for editing ClojureC code.
 
 \\{clojurec-ts-mode-map}")
 
 ;;;###autoload
-(define-derived-mode clojure-dart-ts-mode clojure-ts-mode "ClojureDart[TS]"
+(define-derived-mode clojure-ts-clojuredart-mode clojure-ts-mode "ClojureDart[TS]"
   "Major mode for editing Clojure Dart code.
 
 \\{clojure-dart-ts-mode-map}")
 
 ;;;###autoload
-(define-derived-mode clojure-jank-ts-mode clojure-ts-mode "Jank[TS]"
+(define-derived-mode clojure-ts-jank-mode clojure-ts-mode "Jank[TS]"
   "Major mode for editing Jank code.
 
 \\{clojure-jank-ts-mode-map}")
