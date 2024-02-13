@@ -239,9 +239,9 @@ if a third argument (the value) is provided.
 (defconst clojure-ts--typedef-symbol-regexp
   (eval-and-compile
     (rx line-start
-      (or "defprotocol" "defmulti" "deftype" "defrecord"
-          "definterface" "defmethod" "defstruct")
-      line-end))
+        (or "defprotocol" "defmulti" "deftype" "defrecord"
+            "definterface" "defmethod" "defstruct")
+        line-end))
   "A regular expression matching a symbol used to define a type.")
 
 (defconst clojure-ts--type-symbol-regexp
@@ -773,7 +773,7 @@ forms like deftype, defrecord, reify, proxy, etc."
 
 (defun clojure-ts--match-fn-docstring (node)
   "Match NODE when it is a docstring for PARENT function definition node."
-   ;; A string that is the third node in a function defn block
+  ;; A string that is the third node in a function defn block
   (let ((parent (treesit-node-parent node)))
     (and (treesit-node-eq node (treesit-node-child parent 2 t))
          (let ((first-auncle (treesit-node-child parent 0 t)))
@@ -854,11 +854,11 @@ forms like deftype, defrecord, reify, proxy, etc."
 (defconst clojure-ts--thing-settings
   `((clojure
      (sexp ,(regexp-opt clojure-ts--sexp-nodes)
-      text ,(regexp-opt '("comment"))))))
+           text ,(regexp-opt '("comment"))))))
 
 (defvar clojure-ts-mode-map
   (let ((map (make-sparse-keymap)))
-    ;(set-keymap-parent map clojure-mode-map)
+    ;;(set-keymap-parent map clojure-mode-map)
     map))
 
 (defvar clojure-ts-clojurescript-mode-map
