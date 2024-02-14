@@ -2,6 +2,8 @@
 
 ## main (unreleased)
 
+- [#37]: Fix derived modes broken with [#36]
+
 ## 0.2.1 (2024-02-14)
 
 - [#36]: Rename all derived mode vars to match the package prefix.
