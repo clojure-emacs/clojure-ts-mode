@@ -968,51 +968,51 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
 (define-derived-mode clojure-ts-clojurescript-mode clojure-ts-mode "ClojureScript[TS]"
   "Major mode for editing ClojureScript code.
 
-\\{clojurescript-ts-mode-map}")
+\\{clojure-ts-clojurescript-mode-map}")
 
 ;;;###autoload
 (define-derived-mode clojure-ts-clojurec-mode clojure-ts-mode "ClojureC[TS]"
   "Major mode for editing ClojureC code.
 
-\\{clojurec-ts-mode-map}")
+\\{clojure-ts-clojurec-mode-map}")
 
 ;;;###autoload
 (define-derived-mode clojure-ts-clojuredart-mode clojure-ts-mode "ClojureDart[TS]"
   "Major mode for editing Clojure Dart code.
 
-\\{clojure-dart-ts-mode-map}")
+\\{clojure-ts-clojuredart-mode-map}")
 
 ;;;###autoload
 (define-derived-mode clojure-ts-jank-mode clojure-ts-mode "Jank[TS]"
   "Major mode for editing Jank code.
 
-\\{clojure-jank-ts-mode-map}")
+\\{clojure-ts-jank-mode-map}")
 
 (defun clojure-ts--register-novel-modes ()
   "Set up Clojure modes not present in progenitor clojure-mode.el."
-  (add-to-list 'auto-mode-alist '("\\.cljd\\'" . clojure-dart-ts-mode))
-  (add-to-list 'auto-mode-alist '("\\.jank\\'" . clojure-jank-ts-mode)))
+  (add-to-list 'auto-mode-alist '("\\.cljd\\'" . clojure-ts-clojuredart-mode))
+  (add-to-list 'auto-mode-alist '("\\.jank\\'" . clojure-ts-jank-mode)))
 
 ;; Redirect clojure-mode to clojure-ts-mode if clojure-mode is present
 (if (require 'clojure-mode nil 'noerror)
     (progn
       (add-to-list 'major-mode-remap-alist '(clojure-mode . clojure-ts-mode))
-      (add-to-list 'major-mode-remap-alist '(clojurescript-mode . clojurescript-ts-mode))
-      (add-to-list 'major-mode-remap-alist '(clojurec-mode . clojurec-ts-mode))
+      (add-to-list 'major-mode-remap-alist '(clojurescript-mode . clojure-ts-clojurescript-mode))
+      (add-to-list 'major-mode-remap-alist '(clojurec-mode . clojure-ts-clojurec-mode))
       (clojure-ts--register-novel-modes))
   ;; Clojure-mode is not present, setup auto-modes ourselves
   ;; Regular clojure/edn files
   ;; I believe dtm is for datomic queries and datoms, which are just edn.
   (add-to-list 'auto-mode-alist
                '("\\.\\(clj\\|dtm\\|edn\\)\\'" . clojure-ts-mode))
-  (add-to-list 'auto-mode-alist '("\\.cljs\\'" . clojurescript-ts-mode))
-  (add-to-list 'auto-mode-alist '("\\.cljc\\'" . clojurec-ts-mode))
+  (add-to-list 'auto-mode-alist '("\\.cljs\\'" . clojure-ts-clojurescript-mode))
+  (add-to-list 'auto-mode-alist '("\\.cljc\\'" . clojure-ts-clojurec-mode))
   ;; boot build scripts are Clojure source files
   (add-to-list 'auto-mode-alist '("\\(?:build\\|profile\\)\\.boot\\'" . clojure-ts-mode))
   ;; babashka scripts are Clojure source files
   (add-to-list 'interpreter-mode-alist '("bb" . clojure-ts-mode))
   ;; nbb scripts are ClojureScript source files
-  (add-to-list 'interpreter-mode-alist '("nbb" . clojurescript-ts-mode))
+  (add-to-list 'interpreter-mode-alist '("nbb" . clojure-ts-clojurescript-mode))
   (clojure-ts--register-novel-modes))
 
 (defvar clojure-ts--find-ns-query
