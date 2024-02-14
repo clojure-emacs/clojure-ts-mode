@@ -1,13 +1,16 @@
 # Changelog
 
 ## main (unreleased)
-- Rename all derived mode vars to match the package prefix. ([#36](https://github.com/clojure-emacs/clojure-ts-mode/pull/36))
-`clojurescript-ts-mode` -> `clojure-ts-clojurescript-mode`
-`clojurec-ts-mode` -> `clojure-ts-clojurec-mode`
-`clojure-dart-ts-mode` -> `clojure-ts-clojuredart-mode`
-`clojure-jank-ts-mode` -> `clojure-ts-jank-mode`
-- Add custom option `clojure-ts-toplevel-inside-comment-form` as an equivalent to `clojure-toplevel-inside-comment-form` in clojure-mode (#30)
-- Change behavior of `beginning-of-defun` and `end-of-defun` to consider all Clojure sexps as defuns (#32)
+
+## 0.2.1 (2024-02-14)
+
+- [#36]: Rename all derived mode vars to match the package prefix.
+    - `clojurescript-ts-mode` -> `clojure-ts-clojurescript-mode`
+    - `clojurec-ts-mode` -> `clojure-ts-clojurec-mode`
+    - `clojure-dart-ts-mode` -> `clojure-ts-clojuredart-mode`
+    - `clojure-jank-ts-mode` -> `clojure-ts-jank-mode`
+- [#30]: Add custom option `clojure-ts-toplevel-inside-comment-form` as an equivalent to `clojure-toplevel-inside-comment-form` in `clojure-mode`.
+- [#32]: Change behavior of `beginning-of-defun` and `end-of-defun` to consider all Clojure sexps as defuns.
 
 ## 0.2.0
 
