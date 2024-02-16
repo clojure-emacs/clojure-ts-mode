@@ -2,7 +2,9 @@
 
 ## main (unreleased)
 
-- [#37]: Fix derived modes broken with [#36]
+## 0.2.2 (2024-02-16)
+
+- [#37]: Fix derived modes broken with [#36].
 
 ## 0.2.1 (2024-02-14)
 
