@@ -2,6 +2,8 @@
 
 ## main (unreleased)
 
+- Add support for `in-ns` forms in `clojure-ts-find-ns`
+
 ## 0.2.2 (2024-02-16)
 
 - [#37]: Fix derived modes broken with [#36].
