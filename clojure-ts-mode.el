@@ -1031,7 +1031,7 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
 (defun clojure-ts-find-ns ()
   "Return the name of the current namespace."
   (let ((nodes (treesit-query-capture 'clojure clojure-ts--find-ns-query)))
-    (treesit-node-text (cdr (assoc 'ns-name nodes)))))
+    (treesit-node-text (cdr (assoc 'ns-name nodes)) t)))
 
 (provide 'clojure-ts-mode)
 
