@@ -1021,7 +1021,12 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
    '(((source (list_lit
                :anchor (sym_lit name: (sym_name) @ns)
                :anchor (sym_lit name: (sym_name) @ns-name)))
-      (:equal @ns "ns")))))
+      (:equal @ns "ns"))
+     ((source (list_lit
+               :anchor (sym_lit name: (sym_name) @in-ns)
+               :anchor (quoting_lit
+                        :anchor (sym_lit name: (sym_name) @ns-name))))
+      (:equal @in-ns "in-ns")))))
 
 (defun clojure-ts-find-ns ()
   "Return the name of the current namespace."
