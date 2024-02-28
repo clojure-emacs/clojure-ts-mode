@@ -35,7 +35,7 @@ Set the var `clojure-ts-indent-style` to change it.
 
 ### Font Locking
 
-Too highlight entire rich `comment` expression with the comment font face, set
+To highlight entire rich `comment` expression with the comment font face, set
 
 ``` emacs-lisp
 (setq clojure-ts-comment-macro-font-lock-body t)
@@ -84,6 +84,12 @@ This package requires Emacs 29 built with tree-sitter support from the [emacs-29
 If you decide to build Emacs from source there's some useful information on this in the Emacs repository:
 - [Emacs tree-sitter starter-guide](https://git.savannah.gnu.org/cgit/emacs.git/tree/admin/notes/tree-sitter/starter-guide?h=emacs-29)
 - [Emacs install instructions](https://git.savannah.gnu.org/cgit/emacs.git/tree/INSTALL.REPO).
+
+To check if your emacs already supports tree sitter run
+
+``` emacs-lisp
+(treesit-available-p)
+```
 
 ### Install clojure-ts-mode
 
@@ -180,11 +186,39 @@ Then tell Emacs where to find the shared library by adding something like this t
 OR you can move the `libtree-sitter-clojure.so`/`libtree-sitter-clojure.dylib` to a directory named `tree-sitter`
 under your `user-emacs-directory` (typically `~/.emacs.d` on Unix systems).
 
+## Migrating to clojure-ts-mode
+
+If you are migrating to `clojure-ts-mode` note that `clojure-mode` is still required for cider and clj-refactor packages to work properly.
+
+After installing the package do the following.
+
+- Check the value of `clojure-mode-hook` and copy all relevant hooks to `clojure-ts-mode-hook`.
+
+example:
+``` emacs-lisp
+(add-hook 'clojure-ts-mode-hook #'cider-mode)
+(add-hook 'clojure-ts-mode-hook #'enable-paredit-mode)
+(add-hook 'clojure-ts-mode-hook #'rainbow-delimiters-mode)
+(add-hook 'clojure-ts-mode-hook #'clj-refactor-mode)
+```
+
+- Update `.dir-locals.el` in all of your clojure projects to activate directory local variables in clojure-ts-mode.
+
+example:
+``` emacs-lisp
+((clojure-mode
+  (cider-clojure-cli-aliases . ":test:repl"))
+ (clojure-ts-mode
+  (cider-clojure-cli-aliases . ":test:repl")))
+```
+
 ## Frequently Asked Questions
 
 ### Does `clojure-ts-mode` work with CIDER?
 
-Not yet out of the box, but that [should change soon](https://github.com/clojure-emacs/cider/pull/3461). Feel free to help out with the remaining work, so we can expedite the process.
+~~Not yet out of the box, but that [should change soon](https://github.com/clojure-emacs/cider/pull/3461). Feel free to help out with the remaining work, so we can expedite the process.~~
+
+Support for clojure-ts-mode has landed on the master branch. Make sure to grab the latest cider from melpa/github.
 
 For now, when you take care of the keybindings for the cider functions you use and ensure `cider-mode` is enabled for `clojure-ts-mode` buffers in your config, most functionality should already work:
 
