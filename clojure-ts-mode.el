@@ -745,7 +745,7 @@ See `treesit-simple-indent-rules'."
 
 (defun clojure-ts--match-method-body (_node parent _bol)
   "Matches a `NODE' in the body of a `PARENT' method implementation.
-A method implementation referes to concrete implemntations being defined in
+A method implementation referes to concrete implementations being defined in
 forms like deftype, defrecord, reify, proxy, etc."
   (and
    (clojure-ts--list-node-p parent)
