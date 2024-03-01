@@ -993,27 +993,30 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
   (add-to-list 'auto-mode-alist '("\\.cljd\\'" . clojure-ts-clojuredart-mode))
   (add-to-list 'auto-mode-alist '("\\.jank\\'" . clojure-ts-jank-mode)))
 
-;; Redirect clojure-mode to clojure-ts-mode if clojure-mode is present
-(if (require 'clojure-mode nil 'noerror)
-    (progn
-      (add-to-list 'major-mode-remap-alist '(clojure-mode . clojure-ts-mode))
-      (add-to-list 'major-mode-remap-alist '(clojurescript-mode . clojure-ts-clojurescript-mode))
-      (add-to-list 'major-mode-remap-alist '(clojurec-mode . clojure-ts-clojurec-mode))
-      (clojure-ts--register-novel-modes))
-  ;; Clojure-mode is not present, setup auto-modes ourselves
-  ;; Regular clojure/edn files
-  ;; I believe dtm is for datomic queries and datoms, which are just edn.
-  (add-to-list 'auto-mode-alist
-               '("\\.\\(clj\\|dtm\\|edn\\)\\'" . clojure-ts-mode))
-  (add-to-list 'auto-mode-alist '("\\.cljs\\'" . clojure-ts-clojurescript-mode))
-  (add-to-list 'auto-mode-alist '("\\.cljc\\'" . clojure-ts-clojurec-mode))
-  ;; boot build scripts are Clojure source files
-  (add-to-list 'auto-mode-alist '("\\(?:build\\|profile\\)\\.boot\\'" . clojure-ts-mode))
-  ;; babashka scripts are Clojure source files
-  (add-to-list 'interpreter-mode-alist '("bb" . clojure-ts-mode))
-  ;; nbb scripts are ClojureScript source files
-  (add-to-list 'interpreter-mode-alist '("nbb" . clojure-ts-clojurescript-mode))
-  (clojure-ts--register-novel-modes))
+(if (treesit-available-p)
+    ;; Redirect clojure-mode to clojure-ts-mode if clojure-mode is present
+    (if (require 'clojure-mode nil 'noerror)
+        (progn
+          (add-to-list 'major-mode-remap-alist '(clojure-mode . clojure-ts-mode))
+          (add-to-list 'major-mode-remap-alist '(clojurescript-mode . clojure-ts-clojurescript-mode))
+          (add-to-list 'major-mode-remap-alist '(clojurec-mode . clojure-ts-clojurec-mode))
+          (clojure-ts--register-novel-modes))
+      ;; When Clojure-mode is not present, setup auto-modes ourselves
+      (progn
+        ;; Regular clojure/edn files
+        ;; I believe dtm is for datomic queries and datoms, which are just edn.
+        (add-to-list 'auto-mode-alist
+                     '("\\.\\(clj\\|dtm\\|edn\\)\\'" . clojure-ts-mode))
+        (add-to-list 'auto-mode-alist '("\\.cljs\\'" . clojure-ts-clojurescript-mode))
+        (add-to-list 'auto-mode-alist '("\\.cljc\\'" . clojure-ts-clojurec-mode))
+        ;; boot build scripts are Clojure source files
+        (add-to-list 'auto-mode-alist '("\\(?:build\\|profile\\)\\.boot\\'" . clojure-ts-mode))
+        ;; babashka scripts are Clojure source files
+        (add-to-list 'interpreter-mode-alist '("bb" . clojure-ts-mode))
+        ;; nbb scripts are ClojureScript source files
+        (add-to-list 'interpreter-mode-alist '("nbb" . clojure-ts-clojurescript-mode))
+        (clojure-ts--register-novel-modes)))
+  (message "Clojure TS Mode is not activated as tree-sitter support is missing."))
 
 (defvar clojure-ts--find-ns-query
   (treesit-query-compile
