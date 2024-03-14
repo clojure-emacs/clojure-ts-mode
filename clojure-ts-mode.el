@@ -580,7 +580,7 @@ Can be called directly, but intended for use as `treesit-defun-name-function'."
             (treesit-node-text name)))))))
 
 (defvar clojure-ts--function-type-regexp
-  (rx string-start (or "defn" "defmethod") string-end)
+  (rx string-start (or (seq "defn" (opt "-")) "defmethod") string-end)
   "Regular expression for matching definition nodes that resemble functions.")
 
 (defun clojure-ts--function-node-p (node)
