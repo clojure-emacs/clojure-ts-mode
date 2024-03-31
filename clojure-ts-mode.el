@@ -349,7 +349,7 @@ with the markdown_inline grammar."
 
     :feature 'builtin
     :language 'clojure
-    `(((list_lit :anchor (sym_lit (sym_name) @font-lock-keyword-face))
+    `(((list_lit meta: _ :? :anchor (sym_lit (sym_name) @font-lock-keyword-face))
        (:match ,clojure-ts--builtin-symbol-regexp @font-lock-keyword-face))
       ((sym_name) @font-lock-builtin-face
        (:match ,clojure-ts--builtin-dynamic-var-regexp @font-lock-builtin-face)))
