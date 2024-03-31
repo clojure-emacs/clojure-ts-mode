@@ -810,7 +810,7 @@ forms like deftype, defrecord, reify, proxy, etc."
            (clojure-ts--match-fn-docstring parent)
            (clojure-ts--match-method-docstring parent))))
 
-(defun clojure-ts--match-toplevel-with-meta (node parent _bol)
+(defun clojure-ts--match-toplevel-with-meta (_node parent _bol)
   "Match NODE when it is toplevel form and it has metadata"
   (let* ((grandparent (treesit-node-parent parent)))
     (and (string-equal "source" (treesit-node-type grandparent))
