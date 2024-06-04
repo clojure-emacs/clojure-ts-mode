@@ -54,7 +54,6 @@
 
 ;;; Code:
 (require 'treesit)
-(require 'lisp-mnt)
 
 (declare-function treesit-parser-create "treesit.c")
 (declare-function treesit-node-eq "treesit.c")
@@ -71,8 +70,7 @@
   :link '(emacs-commentary-link :tag "Commentary" "clojure-mode"))
 
 (defconst clojure-ts-mode-version
-  (eval-when-compile
-    (lm-version (or load-file-name buffer-file-name)))
+  "0.2.2"
   "The current version of `clojure-ts-mode'.")
 
 (defcustom clojure-ts-comment-macro-font-lock-body nil
@@ -884,7 +882,10 @@ forms like deftype, defrecord, reify, proxy, etc."
 (defun clojure-ts-mode-display-version ()
   "Display the current `clojure-mode-version' in the minibuffer."
   (interactive)
-  (message "clojure-ts-mode (version %s)" clojure-ts-mode-version))
+  (let ((pkg-version (package-get-version)))
+    (if pkg-version
+        (message "clojure-ts-mode %s (package: %s)" clojure-ts-mode-version pkg-version)
+      (message "clojure-ts-mode %s" clojure-ts-mode-version))))
 
 (defconst clojure-ts-grammar-recipes
   '((clojure "https://github.com/sogaiu/tree-sitter-clojure.git"
