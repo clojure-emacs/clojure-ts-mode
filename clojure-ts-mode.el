@@ -1016,7 +1016,7 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
         ;; nbb scripts are ClojureScript source files
         (add-to-list 'interpreter-mode-alist '("nbb" . clojure-ts-clojurescript-mode))
         (clojure-ts--register-novel-modes)))
-  (message "Clojure TS Mode is not activated as tree-sitter support is missing."))
+  (message "Clojure TS Mode will not be activated as tree-sitter support is missing."))
 
 (defvar clojure-ts--find-ns-query
   (treesit-query-compile
