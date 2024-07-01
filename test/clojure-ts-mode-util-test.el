@@ -23,7 +23,6 @@
 
 (require 'clojure-ts-mode)
 (require 'buttercup)
-(require 'test-helper "test/utils/test-helper")
 
 (describe "clojure-ts-mode-version"
   (it "should not be nil"
