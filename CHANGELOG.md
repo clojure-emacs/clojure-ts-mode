@@ -3,6 +3,7 @@
 ## main (unreleased)
 
 - [#38]: Add support for `in-ns` forms in `clojure-ts-find-ns`.
+- [#46]: Fix missing `comment-add` variable in `clojure-ts-mode-variables` mentioned in [#26]
 
 ## 0.2.2 (2024-02-16)
 
