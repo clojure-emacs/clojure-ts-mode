@@ -912,6 +912,7 @@ forms like deftype, defrecord, reify, proxy, etc."
 (defun clojure-ts-mode-variables (&optional markdown-available)
   "Initialize buffer-local variables for `clojure-ts-mode'.
 See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
+  (setq-local comment-add 1)
   (setq-local comment-start ";")
   (setq-local treesit-font-lock-settings
               (clojure-ts--font-lock-settings markdown-available))
