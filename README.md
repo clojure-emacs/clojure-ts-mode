@@ -214,9 +214,7 @@ After installing the package do the following.
 
 ### Does `clojure-ts-mode` work with CIDER?
 
-~~Not yet out of the box, but that [should change soon](https://github.com/clojure-emacs/cider/pull/3461). Feel free to help out with the remaining work, so we can expedite the process.~~
-
-Support for `clojure-ts-mode` has landed on the `master` branch of CIDER (and will be part of CIDER 1.14 when it's released). Make sure to grab the latest CIDER from MELPA/GitHub.
+Yes! Preliminary support for `clojure-ts-mode` was released in [CIDER 1.14](https://github.com/clojure-emacs/cider/releases/tag/v1.14.0). Make sure to grab the latest CIDER from MELPA/GitHub. Note that `clojure-mode` is still needed for some APIs that haven't yet been ported to `clojure-ts-mode`.
 
 For now, when you take care of the keybindings for the CIDER commands you use and ensure `cider-mode` is enabled for `clojure-ts-mode` buffers in your config, most functionality should already work:
 
@@ -228,7 +226,7 @@ Check out [this article](https://metaredux.com/posts/2024/02/19/cider-preliminar
 
 ### Does `clojure-ts-mode` work with `inf-clojure`?
 
-[Ditto.](https://github.com/clojure-emacs/inf-clojure/pull/215)
+Currently, there is an [open PR](https://github.com/clojure-emacs/inf-clojure/pull/215) adding support for inf-clojure.
 
 ## License
 
