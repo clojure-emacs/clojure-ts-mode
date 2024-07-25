@@ -60,6 +60,8 @@
 (clojure.core/filter even?
                      (range 1 10))
 
+(#'filter even?
+          (range 10))
 
 (filter
  even?

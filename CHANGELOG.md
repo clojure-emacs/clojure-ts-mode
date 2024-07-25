@@ -9,6 +9,7 @@
 - [#42]: Fix imenu support for definitions with metadata.
 - [#42]: Fix font locking of definitions with metadata
 - [#42]: Fix indentation of definitions with metadata
+- Fix semantic indentation of quoted functions
 
 ## 0.2.2 (2024-02-16)
 
