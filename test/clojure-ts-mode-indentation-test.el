@@ -135,4 +135,9 @@ DESCRIPTION is a string with the description of the spec."
 (defn c
   \"hello\"
   [_foo]
-  (+ 1 1))"))
+  (+ 1 1))")
+
+(when-indenting-it "should support function calls via vars"
+   "
+(#'foo 5
+       6)"))
