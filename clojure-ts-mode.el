@@ -520,6 +520,10 @@ with the markdown_inline grammar."
   "Return non-nil if NODE is a Clojure keyword."
   (string-equal "kwd_lit" (treesit-node-type node)))
 
+(defun clojure-ts--var-node-p (node)
+  "Return non-nil if NODE is a var (eg. #\\'foo)."
+  (string-equal "var_quoting_lit" (treesit-node-type node)))
+
 (defun clojure-ts--named-node-text (node)
   "Gets the name of a symbol or keyword NODE.
 This does not include the NODE's namespace."
@@ -603,13 +607,13 @@ Includes a dispatch value when applicable (defmethods)."
   "Return non-nil if NODE is a ns form."
   (clojure-ts--definition-node-p "ns" node))
 
-(defvar clojure-ts--variable-type-regexp
+(defvar clojure-ts--variable-definition-type-regexp
   (rx string-start (or "def" "defonce") string-end)
   "Regular expression for matching definition nodes that resemble variables.")
 
-(defun clojure-ts--variable-node-p (node)
+(defun clojure-ts--variable-definition-node-p (node)
   "Return non-nil if NODE is a def or defonce form."
-  (clojure-ts--definition-node-match-p clojure-ts--variable-type-regexp node))
+  (clojure-ts--definition-node-match-p clojure-ts--variable-definition-type-regexp node))
 
 (defvar clojure-ts--class-type-regexp
   (rx string-start (or "deftype" "defrecord" "defstruct") string-end)
@@ -634,7 +638,7 @@ Includes a dispatch value when applicable (defmethods)."
      ;; Used instead of treesit-defun-name-function.
      clojure-ts--function-node-name)
     ("Macro" "list_lit" clojure-ts--defmacro-node-p)
-    ("Variable" "list_lit" clojure-ts--variable-node-p)
+    ("Variable" "list_lit" clojure-ts--variable-definition-node-p)
     ("Interface" "list_lit" clojure-ts--interface-node-p)
     ("Class" "list_lit" clojure-ts--class-node-p))
   "The value for `treesit-simple-imenu-settings'.
@@ -722,7 +726,8 @@ https://github.com/weavejester/cljfmt/blob/fb26b22f569724b05c93eb2502592dfc2de89
        (not (treesit-node-eq (treesit-node-child parent 1 t) node))
        (let ((first-child (treesit-node-child parent 0 t)))
          (or (clojure-ts--symbol-node-p first-child)
-             (clojure-ts--keyword-node-p first-child)))))
+             (clojure-ts--keyword-node-p first-child)
+             (clojure-ts--var-node-p first-child)))))
 
 (defun clojure-ts--match-expression-in-body (_node parent _bol)
   "Match NODE if it is an expression used in a body argument.
