@@ -966,6 +966,11 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
       (when (fboundp 'transpose-sexps-default-function)
         (setq-local transpose-sexps-function #'transpose-sexps-default-function)))))
 
+;; For Emacs 30+, so that `clojure-ts-mode' is treated as deriving from
+;; `clojure-mode'
+(when (fboundp #'derived-mode-add-parents)
+  (derived-mode-add-parents 'clojure-ts-mode '(clojure-mode)))
+
 ;;;###autoload
 (define-derived-mode clojure-ts-clojurescript-mode clojure-ts-mode "ClojureScript[TS]"
   "Major mode for editing ClojureScript code.

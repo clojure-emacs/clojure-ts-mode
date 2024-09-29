@@ -5,6 +5,7 @@
 - [#38]: Add support for `in-ns` forms in `clojure-ts-find-ns`.
 - [#46]: Fix missing `comment-add` variable in `clojure-ts-mode-variables` mentioned in [#26]
 - Add imenu support for `deftest` definitions.
+- [#53]: Let `clojure-ts-mode` derive from `clojure-mode` for Emacs 30+.
 
 ## 0.2.2 (2024-02-16)
 
