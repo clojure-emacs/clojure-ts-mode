@@ -968,7 +968,7 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
 
 ;; For Emacs 30+, so that `clojure-ts-mode' is treated as deriving from
 ;; `clojure-mode'
-(when (fboundp #'derived-mode-add-parents)
+(when (fboundp 'derived-mode-add-parents)
   (derived-mode-add-parents 'clojure-ts-mode '(clojure-mode)))
 
 ;;;###autoload
