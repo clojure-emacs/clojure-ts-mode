@@ -118,3 +118,21 @@
           ([a] a)
           ([a b]
            b))})
+
+^:foo
+(def a 1)
+
+^{:foo true}
+(def b 2)
+
+^{:foo true}
+[1 2]
+
+(comment
+  ^{:a 1}
+  (def a 2))
+
+(defn hinted
+  (^String [])
+  (^java.util.List
+   [a & args]))

@@ -810,12 +810,11 @@ forms like deftype, defrecord, reify, proxy, etc."
            (clojure-ts--match-fn-docstring parent)
            (clojure-ts--match-method-docstring parent))))
 
-(defun clojure-ts--match-toplevel-with-meta (_node parent _bol)
-  "Match NODE when it is toplevel form and it has metadata"
-  (let* ((grandparent (treesit-node-parent parent)))
-    (and (string-equal "source" (treesit-node-type grandparent))
-         (clojure-ts--list-node-p parent)
-         (treesit-node-child-by-field-name parent "meta"))))
+(defun clojure-ts--match-with-meta (node _parent _bol)
+  "Match NODE when it has metadata"
+  (let ((prev-sibling (treesit-node-prev-sibling node)))
+    (and prev-sibling
+         (string-equal (treesit-node-type prev-sibling) "meta_lit"))))
 
 (defun clojure-ts--semantic-indent-rules ()
   "Return a list of indentation rules for `treesit-simple-indent-rules'."
@@ -829,7 +828,7 @@ forms like deftype, defrecord, reify, proxy, etc."
      (clojure-ts--match-threading-macro-arg prev-sibling 0)
      ;; https://guide.clojure.style/#vertically-align-fn-args
      (clojure-ts--match-function-call-arg (nth-sibling 2 nil) 0)
-     (clojure-ts--match-toplevel-with-meta parent 0)
+     (clojure-ts--match-with-meta parent 0)
      ;; Literal Sequences
      ((parent-is "list_lit") parent 1) ;; https://guide.clojure.style/#one-space-indent
      ((parent-is "vec_lit") parent 1) ;; https://guide.clojure.style/#bindings-alignment
