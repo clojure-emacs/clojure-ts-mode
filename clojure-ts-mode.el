@@ -811,7 +811,7 @@ forms like deftype, defrecord, reify, proxy, etc."
            (clojure-ts--match-method-docstring parent))))
 
 (defun clojure-ts--match-with-meta (node _parent _bol)
-  "Match NODE when it has metadata"
+  "Match NODE when it has metadata."
   (let ((prev-sibling (treesit-node-prev-sibling node)))
     (and prev-sibling
          (string-equal (treesit-node-type prev-sibling) "meta_lit"))))
