@@ -46,5 +46,4 @@ and point left there."
                              (delete-char -1)
                              ,@body)))
 
-(provide 'test-helper)
 ;;; test-helper.el ends here

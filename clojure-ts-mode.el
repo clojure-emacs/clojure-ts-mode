@@ -54,7 +54,6 @@
 
 ;;; Code:
 (require 'treesit)
-(require 'lisp-mnt)
 
 (declare-function treesit-parser-create "treesit.c")
 (declare-function treesit-node-eq "treesit.c")
@@ -71,8 +70,7 @@
   :link '(emacs-commentary-link :tag "Commentary" "clojure-mode"))
 
 (defconst clojure-ts-mode-version
-  (eval-when-compile
-    (lm-version (or load-file-name buffer-file-name)))
+  "0.2.2"
   "The current version of `clojure-ts-mode'.")
 
 (defcustom clojure-ts-comment-macro-font-lock-body nil
@@ -580,7 +578,7 @@ Can be called directly, but intended for use as `treesit-defun-name-function'."
             (treesit-node-text name)))))))
 
 (defvar clojure-ts--function-type-regexp
-  (rx string-start (or (seq "defn" (opt "-")) "defmethod") string-end)
+  (rx string-start (or (seq "defn" (opt "-")) "defmethod" "deftest") string-end)
   "Regular expression for matching definition nodes that resemble functions.")
 
 (defun clojure-ts--function-node-p (node)
@@ -891,7 +889,10 @@ forms like deftype, defrecord, reify, proxy, etc."
 (defun clojure-ts-mode-display-version ()
   "Display the current `clojure-mode-version' in the minibuffer."
   (interactive)
-  (message "clojure-ts-mode (version %s)" clojure-ts-mode-version))
+  (let ((pkg-version (package-get-version)))
+    (if pkg-version
+        (message "clojure-ts-mode %s (package: %s)" clojure-ts-mode-version pkg-version)
+      (message "clojure-ts-mode %s" clojure-ts-mode-version))))
 
 (defconst clojure-ts-grammar-recipes
   '((clojure "https://github.com/sogaiu/tree-sitter-clojure.git"
@@ -918,6 +919,7 @@ forms like deftype, defrecord, reify, proxy, etc."
 (defun clojure-ts-mode-variables (&optional markdown-available)
   "Initialize buffer-local variables for `clojure-ts-mode'.
 See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
+  (setq-local comment-add 1)
   (setq-local comment-start ";")
   (setq-local treesit-font-lock-settings
               (clojure-ts--font-lock-settings markdown-available))
@@ -971,6 +973,11 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
       (when (fboundp 'transpose-sexps-default-function)
         (setq-local transpose-sexps-function #'transpose-sexps-default-function)))))
 
+;; For Emacs 30+, so that `clojure-ts-mode' is treated as deriving from
+;; `clojure-mode'
+(when (fboundp 'derived-mode-add-parents)
+  (derived-mode-add-parents 'clojure-ts-mode '(clojure-mode)))
+
 ;;;###autoload
 (define-derived-mode clojure-ts-clojurescript-mode clojure-ts-mode "ClojureScript[TS]"
   "Major mode for editing ClojureScript code.
@@ -1000,27 +1007,30 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
   (add-to-list 'auto-mode-alist '("\\.cljd\\'" . clojure-ts-clojuredart-mode))
   (add-to-list 'auto-mode-alist '("\\.jank\\'" . clojure-ts-jank-mode)))
 
-;; Redirect clojure-mode to clojure-ts-mode if clojure-mode is present
-(if (require 'clojure-mode nil 'noerror)
-    (progn
-      (add-to-list 'major-mode-remap-alist '(clojure-mode . clojure-ts-mode))
-      (add-to-list 'major-mode-remap-alist '(clojurescript-mode . clojure-ts-clojurescript-mode))
-      (add-to-list 'major-mode-remap-alist '(clojurec-mode . clojure-ts-clojurec-mode))
-      (clojure-ts--register-novel-modes))
-  ;; Clojure-mode is not present, setup auto-modes ourselves
-  ;; Regular clojure/edn files
-  ;; I believe dtm is for datomic queries and datoms, which are just edn.
-  (add-to-list 'auto-mode-alist
-               '("\\.\\(clj\\|dtm\\|edn\\)\\'" . clojure-ts-mode))
-  (add-to-list 'auto-mode-alist '("\\.cljs\\'" . clojure-ts-clojurescript-mode))
-  (add-to-list 'auto-mode-alist '("\\.cljc\\'" . clojure-ts-clojurec-mode))
-  ;; boot build scripts are Clojure source files
-  (add-to-list 'auto-mode-alist '("\\(?:build\\|profile\\)\\.boot\\'" . clojure-ts-mode))
-  ;; babashka scripts are Clojure source files
-  (add-to-list 'interpreter-mode-alist '("bb" . clojure-ts-mode))
-  ;; nbb scripts are ClojureScript source files
-  (add-to-list 'interpreter-mode-alist '("nbb" . clojure-ts-clojurescript-mode))
-  (clojure-ts--register-novel-modes))
+(if (treesit-available-p)
+    ;; Redirect clojure-mode to clojure-ts-mode if clojure-mode is present
+    (if (require 'clojure-mode nil 'noerror)
+        (progn
+          (add-to-list 'major-mode-remap-alist '(clojure-mode . clojure-ts-mode))
+          (add-to-list 'major-mode-remap-alist '(clojurescript-mode . clojure-ts-clojurescript-mode))
+          (add-to-list 'major-mode-remap-alist '(clojurec-mode . clojure-ts-clojurec-mode))
+          (clojure-ts--register-novel-modes))
+      ;; When Clojure-mode is not present, setup auto-modes ourselves
+      (progn
+        ;; Regular clojure/edn files
+        ;; I believe dtm is for datomic queries and datoms, which are just edn.
+        (add-to-list 'auto-mode-alist
+                     '("\\.\\(clj\\|dtm\\|edn\\)\\'" . clojure-ts-mode))
+        (add-to-list 'auto-mode-alist '("\\.cljs\\'" . clojure-ts-clojurescript-mode))
+        (add-to-list 'auto-mode-alist '("\\.cljc\\'" . clojure-ts-clojurec-mode))
+        ;; boot build scripts are Clojure source files
+        (add-to-list 'auto-mode-alist '("\\(?:build\\|profile\\)\\.boot\\'" . clojure-ts-mode))
+        ;; babashka scripts are Clojure source files
+        (add-to-list 'interpreter-mode-alist '("bb" . clojure-ts-mode))
+        ;; nbb scripts are ClojureScript source files
+        (add-to-list 'interpreter-mode-alist '("nbb" . clojure-ts-clojurescript-mode))
+        (clojure-ts--register-novel-modes)))
+  (message "Clojure TS Mode will not be activated as tree-sitter support is missing."))
 
 (defvar clojure-ts--find-ns-query
   (treesit-query-compile
