@@ -822,7 +822,7 @@ forms like deftype, defrecord, reify, proxy, etc."
   "Match NODE when it has metadata."
   (let ((prev-sibling (treesit-node-prev-sibling node)))
     (and prev-sibling
-         (string-equal (treesit-node-type prev-sibling) "meta_lit"))))
+         (clojure-ts--meta-node-p prev-sibling))))
 
 (defun clojure-ts--semantic-indent-rules ()
   "Return a list of indentation rules for `treesit-simple-indent-rules'."
