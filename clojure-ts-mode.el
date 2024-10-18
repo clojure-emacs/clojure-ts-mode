@@ -371,7 +371,8 @@ with the markdown_inline grammar."
     ;; No wonder the tree-sitter-clojure grammar only touches syntax, and not semantics
     :feature 'definition ;; defn and defn like macros
     :language 'clojure
-    `(((list_lit :anchor (sym_lit (sym_name) @def)
+    `(((list_lit :anchor meta: _ :?
+                 :anchor (sym_lit (sym_name) @def)
                  :anchor (sym_lit (sym_name) @font-lock-function-name-face))
        (:match ,(rx-to-string
                  `(seq bol
@@ -412,7 +413,8 @@ with the markdown_inline grammar."
 
     :feature 'variable ;; def, defonce
     :language 'clojure
-    `(((list_lit :anchor (sym_lit (sym_name) @def)
+    `(((list_lit :anchor meta: _ :?
+                 :anchor (sym_lit (sym_name) @def)
                  :anchor (sym_lit (sym_name) @font-lock-variable-name-face))
        (:match ,clojure-ts--variable-definition-symbol-regexp @def)))
 
