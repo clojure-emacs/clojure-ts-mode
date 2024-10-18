@@ -742,20 +742,17 @@ PARENT is expected to be a list literal.
 See `treesit-simple-indent-rules'."
   (and
    (clojure-ts--list-node-p parent)
-   (let* ((first-child (treesit-node-child parent 0 t))
-          (non-meta-first-child (if (clojure-ts--meta-node-p first-child)
-                                    (treesit-node-child parent 1 t)
-                                  first-child)))
+   (let* ((first-child (clojure-ts--node-child-skip-meta parent 0)))
      (and
       (not
        (clojure-ts--symbol-matches-p
         ;; Symbols starting with this are false positives
         (rx line-start (or "default" "deflate" "defer"))
-        non-meta-first-child))
+        first-child))
       (not (clojure-ts--match-with-meta node parent _bol))
       (clojure-ts--symbol-matches-p
        clojure-ts--symbols-with-body-expressions-regexp
-       non-meta-first-child)))))
+       first-child)))))
 
 (defun clojure-ts--match-method-body (_node parent _bol)
   "Matches a `NODE' in the body of a `PARENT' method implementation.
