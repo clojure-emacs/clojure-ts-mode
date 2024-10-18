@@ -260,7 +260,8 @@ if a third argument (the value) is provided.
 (defun clojure-ts--docstring-query (capture-symbol)
   "Return a query that captures docstrings with CAPTURE-SYMBOL."
   `(;; Captures docstrings in def
-    ((list_lit :anchor (sym_lit) @_def_symbol
+    ((list_lit :anchor (meta_lit) :?
+               :anchor (sym_lit) @_def_symbol
                :anchor (comment) :?
                :anchor (sym_lit) ; variable name
                :anchor (comment) :?
@@ -288,7 +289,8 @@ if a third argument (the value) is provided.
              @_def_symbol)
      (:equal @_doc-keyword ":doc"))
     ;; Captures docstrings defn, defmacro, ns, and things like that
-    ((list_lit :anchor (sym_lit) @_def_symbol
+    ((list_lit :anchor (meta_lit) :?
+               :anchor (sym_lit) @_def_symbol
                :anchor (comment) :?
                :anchor (sym_lit) ; function_name
                :anchor (comment) :?
