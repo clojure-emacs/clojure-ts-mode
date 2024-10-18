@@ -536,6 +536,12 @@ This does not include the NODE's namespace."
   (and (clojure-ts--symbol-node-p node)
        (string-equal expected-symbol-name (clojure-ts--named-node-text node))))
 
+(defun clojure-ts--node-child-skip-meta (node n)
+  "Returns the Nth child of node like treesit-node-child, but skips the optional meta node at pos 0."
+  (let* ((first-child (treesit-node-child node 0 t))
+         (n1 (if (clojure-ts--meta-node-p first-child) (1+ n) n)))
+    (treesit-node-child node n1 t)))
+
 (defun clojure-ts--symbol-matches-p (symbol-regexp node)
   "Return non-nil if NODE is a symbol that matches SYMBOL-REGEXP."
   (and (clojure-ts--symbol-node-p node)
@@ -556,7 +562,7 @@ like \"defn\".
 See `clojure-ts--definition-node-p' when an exact match is possible."
   (and
    (clojure-ts--list-node-p node)
-   (let* ((child (treesit-node-child node 0 t))
+   (let* ((child (clojure-ts--node-child-skip-meta node 0))
           (child-txt (clojure-ts--named-node-text child)))
      (and (clojure-ts--symbol-node-p child)
           (string-match-p definition-type-regexp child-txt)))))
@@ -571,8 +577,8 @@ that a node is a definition is intended to be done elsewhere.
 
 Can be called directly, but intended for use as `treesit-defun-name-function'."
   (when (and (clojure-ts--list-node-p node)
-             (clojure-ts--symbol-node-p (treesit-node-child node 0 t)))
-    (let ((sym (treesit-node-child node 1 t)))
+             (clojure-ts--symbol-node-p (clojure-ts--node-child-skip-meta node 0)))
+    (let ((sym (clojure-ts--node-child-skip-meta node 1)))
       (when (clojure-ts--symbol-node-p sym)
         ;; Extracts ns and name, and recreates the full var name.
         ;; We can't just get the node-text of the full symbol because
