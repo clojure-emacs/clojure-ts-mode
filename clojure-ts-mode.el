@@ -738,7 +738,7 @@ https://github.com/weavejester/cljfmt/blob/fb26b22f569724b05c93eb2502592dfc2de89
          (or (clojure-ts--symbol-node-p first-child)
              (clojure-ts--keyword-node-p first-child)))))
 
-(defun clojure-ts--match-expression-in-body (node parent _bol)
+(defun clojure-ts--match-expression-in-body (node parent bol)
   "Match NODE if it is an expression used in a body argument.
 PARENT is expected to be a list literal.
 See `treesit-simple-indent-rules'."
@@ -751,7 +751,7 @@ See `treesit-simple-indent-rules'."
         ;; Symbols starting with this are false positives
         (rx line-start (or "default" "deflate" "defer"))
         first-child))
-      (not (clojure-ts--match-with-meta node parent _bol))
+      (not (clojure-ts--match-with-meta node parent bol))
       (clojure-ts--symbol-matches-p
        clojure-ts--symbols-with-body-expressions-regexp
        first-child)))))
