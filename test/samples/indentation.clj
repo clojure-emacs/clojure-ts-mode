@@ -136,3 +136,9 @@
   (^String [])
   (^java.util.List
    [a & args]))
+
+^{:foo true}
+(defn c
+  "hello"
+  [_foo]
+  (+ 1 1))
