@@ -93,7 +93,7 @@
   IProto
   (foo [this x] x))
 
-(defn foo2 [x]b)
+(defn foo2 [x] b)
 
 (reify
   IProto
