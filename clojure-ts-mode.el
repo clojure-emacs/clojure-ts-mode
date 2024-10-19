@@ -539,10 +539,9 @@ This does not include the NODE's namespace."
        (string-equal expected-symbol-name (clojure-ts--named-node-text node))))
 
 (defun clojure-ts--node-child-skip-metadata (node n)
-  "Return the Nth child of node like treesit-node-child, but skips the optional meta node at pos 0."
-  (let* ((first-child (treesit-node-child node 0 t))
-         (n1 (if (clojure-ts--metadata-node-p first-child) (1+ n) n)))
-    (treesit-node-child node n1 t)))
+  "Return the Nth child of NODE like `treesit-node-child`, skipping the optional metadata node at pos 0 if present."
+  (let ((first-child (treesit-node-child node 0 t)))
+    (treesit-node-child node (if (clojure-ts--metadata-node-p first-child) (1+ n) n) t)))
 
 (defun clojure-ts--symbol-matches-p (symbol-regexp node)
   "Return non-nil if NODE is a symbol that matches SYMBOL-REGEXP."
