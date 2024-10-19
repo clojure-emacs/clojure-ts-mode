@@ -524,7 +524,7 @@ with the markdown_inline grammar."
   "Return non-nil if NODE is a Clojure keyword."
   (string-equal "kwd_lit" (treesit-node-type node)))
 
-(defun clojure-ts--meta-node-p (node)
+(defun clojure-ts--metadata-node-p (node)
   "Return non-nil if NODE is a Clojure metadata node."
   (string-equal "meta_lit" (treesit-node-type node) ))
 
@@ -538,10 +538,10 @@ This does not include the NODE's namespace."
   (and (clojure-ts--symbol-node-p node)
        (string-equal expected-symbol-name (clojure-ts--named-node-text node))))
 
-(defun clojure-ts--node-child-skip-meta (node n)
-  "Returns the Nth child of node like treesit-node-child, but skips the optional meta node at pos 0."
+(defun clojure-ts--node-child-skip-metadata (node n)
+  "Return the Nth child of node like treesit-node-child, but skips the optional meta node at pos 0."
   (let* ((first-child (treesit-node-child node 0 t))
-         (n1 (if (clojure-ts--meta-node-p first-child) (1+ n) n)))
+         (n1 (if (clojure-ts--metadata-node-p first-child) (1+ n) n)))
     (treesit-node-child node n1 t)))
 
 (defun clojure-ts--symbol-matches-p (symbol-regexp node)
@@ -564,7 +564,7 @@ like \"defn\".
 See `clojure-ts--definition-node-p' when an exact match is possible."
   (and
    (clojure-ts--list-node-p node)
-   (let* ((child (clojure-ts--node-child-skip-meta node 0))
+   (let* ((child (clojure-ts--node-child-skip-metadata node 0))
           (child-txt (clojure-ts--named-node-text child)))
      (and (clojure-ts--symbol-node-p child)
           (string-match-p definition-type-regexp child-txt)))))
@@ -579,8 +579,8 @@ that a node is a definition is intended to be done elsewhere.
 
 Can be called directly, but intended for use as `treesit-defun-name-function'."
   (when (and (clojure-ts--list-node-p node)
-             (clojure-ts--symbol-node-p (clojure-ts--node-child-skip-meta node 0)))
-    (let ((sym (clojure-ts--node-child-skip-meta node 1)))
+             (clojure-ts--symbol-node-p (clojure-ts--node-child-skip-metadata node 0)))
+    (let ((sym (clojure-ts--node-child-skip-metadata node 1)))
       (when (clojure-ts--symbol-node-p sym)
         ;; Extracts ns and name, and recreates the full var name.
         ;; We can't just get the node-text of the full symbol because
@@ -744,14 +744,14 @@ PARENT is expected to be a list literal.
 See `treesit-simple-indent-rules'."
   (and
    (clojure-ts--list-node-p parent)
-   (let* ((first-child (clojure-ts--node-child-skip-meta parent 0)))
+   (let* ((first-child (clojure-ts--node-child-skip-metadata parent 0)))
      (and
       (not
        (clojure-ts--symbol-matches-p
         ;; Symbols starting with this are false positives
         (rx line-start (or "default" "deflate" "defer"))
         first-child))
-      (not (clojure-ts--match-with-meta node parent bol))
+      (not (clojure-ts--match-with-metadata node parent bol))
       (clojure-ts--symbol-matches-p
        clojure-ts--symbols-with-body-expressions-regexp
        first-child)))))
@@ -823,11 +823,11 @@ forms like deftype, defrecord, reify, proxy, etc."
            (clojure-ts--match-fn-docstring parent)
            (clojure-ts--match-method-docstring parent))))
 
-(defun clojure-ts--match-with-meta (node _parent _bol)
+(defun clojure-ts--match-with-metadata (node _parent _bol)
   "Match NODE when it has metadata."
   (let ((prev-sibling (treesit-node-prev-sibling node)))
     (and prev-sibling
-         (clojure-ts--meta-node-p prev-sibling))))
+         (clojure-ts--metadata-node-p prev-sibling))))
 
 (defun clojure-ts--semantic-indent-rules ()
   "Return a list of indentation rules for `treesit-simple-indent-rules'."
@@ -841,7 +841,7 @@ forms like deftype, defrecord, reify, proxy, etc."
      (clojure-ts--match-threading-macro-arg prev-sibling 0)
      ;; https://guide.clojure.style/#vertically-align-fn-args
      (clojure-ts--match-function-call-arg (nth-sibling 2 nil) 0)
-     (clojure-ts--match-with-meta parent 0)
+     (clojure-ts--match-with-metadata parent 0)
      ;; Literal Sequences
      ((parent-is "list_lit") parent 1) ;; https://guide.clojure.style/#one-space-indent
      ((parent-is "vec_lit") parent 1) ;; https://guide.clojure.style/#bindings-alignment
