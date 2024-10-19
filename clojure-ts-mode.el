@@ -750,7 +750,7 @@ See `treesit-simple-indent-rules'."
         ;; Symbols starting with this are false positives
         (rx line-start (or "default" "deflate" "defer"))
         first-child))
-      (not (clojure-ts--match-with-metadata node parent bol))
+      (not (clojure-ts--match-with-metadata node))
       (clojure-ts--symbol-matches-p
        clojure-ts--symbols-with-body-expressions-regexp
        first-child)))))
@@ -822,7 +822,7 @@ forms like deftype, defrecord, reify, proxy, etc."
            (clojure-ts--match-fn-docstring parent)
            (clojure-ts--match-method-docstring parent))))
 
-(defun clojure-ts--match-with-metadata (node _parent _bol)
+(defun clojure-ts--match-with-metadata (node)
   "Match NODE when it has metadata."
   (let ((prev-sibling (treesit-node-prev-sibling node)))
     (and prev-sibling
