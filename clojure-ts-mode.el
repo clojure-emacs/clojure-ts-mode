@@ -743,7 +743,7 @@ PARENT is expected to be a list literal.
 See `treesit-simple-indent-rules'."
   (and
    (clojure-ts--list-node-p parent)
-   (let* ((first-child (clojure-ts--node-child-skip-metadata parent 0)))
+   (let ((first-child (clojure-ts--node-child-skip-metadata parent 0)))
      (and
       (not
        (clojure-ts--symbol-matches-p
