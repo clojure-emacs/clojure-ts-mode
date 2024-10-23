@@ -520,6 +520,10 @@ with the markdown_inline grammar."
   "Return non-nil if NODE is a Clojure keyword."
   (string-equal "kwd_lit" (treesit-node-type node)))
 
+(defun clojure-ts--metadata-node-p (node)
+  "Return non-nil if NODE is a Clojure metadata node."
+  (string-equal "meta_lit" (treesit-node-type node)))
+
 (defun clojure-ts--named-node-text (node)
   "Gets the name of a symbol or keyword NODE.
 This does not include the NODE's namespace."
@@ -529,6 +533,11 @@ This does not include the NODE's namespace."
   "Return non-nil if NODE is a symbol with text matching EXPECTED-SYMBOL-NAME."
   (and (clojure-ts--symbol-node-p node)
        (string-equal expected-symbol-name (clojure-ts--named-node-text node))))
+
+(defun clojure-ts--node-child-skip-metadata (node n)
+  "Return the Nth child of NODE like `treesit-node-child`, skipping the optional metadata node at pos 0 if present."
+  (let ((first-child (treesit-node-child node 0 t)))
+    (treesit-node-child node (if (clojure-ts--metadata-node-p first-child) (1+ n) n) t)))
 
 (defun clojure-ts--symbol-matches-p (symbol-regexp node)
   "Return non-nil if NODE is a symbol that matches SYMBOL-REGEXP."
@@ -550,7 +559,7 @@ like \"defn\".
 See `clojure-ts--definition-node-p' when an exact match is possible."
   (and
    (clojure-ts--list-node-p node)
-   (let* ((child (treesit-node-child node 0 t))
+   (let* ((child (clojure-ts--node-child-skip-metadata node 0))
           (child-txt (clojure-ts--named-node-text child)))
      (and (clojure-ts--symbol-node-p child)
           (string-match-p definition-type-regexp child-txt)))))
@@ -565,8 +574,8 @@ that a node is a definition is intended to be done elsewhere.
 
 Can be called directly, but intended for use as `treesit-defun-name-function'."
   (when (and (clojure-ts--list-node-p node)
-             (clojure-ts--symbol-node-p (treesit-node-child node 0 t)))
-    (let ((sym (treesit-node-child node 1 t)))
+             (clojure-ts--symbol-node-p (clojure-ts--node-child-skip-metadata node 0)))
+    (let ((sym (clojure-ts--node-child-skip-metadata node 1)))
       (when (clojure-ts--symbol-node-p sym)
         ;; Extracts ns and name, and recreates the full var name.
         ;; We can't just get the node-text of the full symbol because
