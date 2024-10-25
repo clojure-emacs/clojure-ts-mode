@@ -7,6 +7,7 @@
 - Add imenu support for `deftest` definitions.
 - [#53]: Let `clojure-ts-mode` derive from `clojure-mode` for Emacs 30+.
 - [#42]: Fix imenu support for definitions with metadata.
+- [#42]: Fix font locking of definitions with metadata
 
 ## 0.2.2 (2024-02-16)
 
