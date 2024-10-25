@@ -289,6 +289,9 @@ clojure.core/map
 
 (def ^Integer x 1)
 
+^{:foo true}
+(defn b "hello" [] "world")
+
 (comment
   (defrecord TestRecord [field]
     AutoCloseable
