@@ -87,7 +87,19 @@ DESCRIPTION is the description of the spec."
     ("(defrecord a [b c])" (2 10 font-lock-keyword-face))
     ("(deftype a [b c])" (2 8 font-lock-keyword-face))
     ("(defstruct a :b :c)" (2 10 font-lock-keyword-face))
-    ("(deftest a (is (= 1 1)))" (2 8 font-lock-keyword-face)))
+    ("(deftest a (is (= 1 1)))" (2 8 font-lock-keyword-face))
+
+
+  ;; TODO: copied from clojure-mode, but failing
+  ;; ("(defne [x y])" (2 6 font-lock-keyword-face))
+  ;; ("(defnm a b)" (2 6 font-lock-keyword-face))
+  ;; ("(defnu)" (2 6 font-lock-keyword-face))
+  ;; ("(defnc [a])" (2 6 font-lock-keyword-face))
+  ;; ("(defna)" (2 6 font-lock-keyword-face))
+  ;; ("(deftask a)" (2 8 font-lock-keyword-face))
+  ;; ("(defstate a :start \"b\" :stop \"c\")" (2 9 font-lock-keyword-face))
+
+    )
 
   (when-fontifying-it "variable-def-string-with-docstring"
     ("(def foo \"usage\" \"hello\")"
@@ -112,12 +124,16 @@ DESCRIPTION is the description of the spec."
      (25 26 font-lock-string-face)
      (27 46 font-lock-string-face)))
 
-  ;; TODO: copied from clojure-mode, but failing
-  ;; ("(defne [x y])" (2 6 font-lock-keyword-face))
-  ;; ("(defnm a b)" (2 6 font-lock-keyword-face))
-  ;; ("(defnu)" (2 6 font-lock-keyword-face))
-  ;; ("(defnc [a])" (2 6 font-lock-keyword-face))
-  ;; ("(defna)" (2 6 font-lock-keyword-face))
-  ;; ("(deftask a)" (2 8 font-lock-keyword-face))
-  ;; ("(defstate a :start \"b\" :stop \"c\")" (2 9 font-lock-keyword-face))
-)
+  (when-fontifying-it "variable-def-with-metadata-and-docstring"
+    ("^{:foo bar}(def foo \n  \"usage\" \n  \"hello\")"
+     (13 15 font-lock-keyword-face)
+     (17 19 font-lock-variable-name-face)
+     (24 30 font-lock-doc-face)
+     (35 41 font-lock-string-face)))
+
+  (when-fontifying-it "defn-with-metadata-and-docstring"
+    ("^{:foo bar}(defn foo \n  \"usage\" \n [] \n \"hello\")"
+     (13 16 font-lock-keyword-face)
+     (18 20 font-lock-function-name-face)
+     (25 31 font-lock-doc-face)
+     (40 46 font-lock-string-face))))
