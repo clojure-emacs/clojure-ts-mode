@@ -1,4 +1,4 @@
-;;; clojure-ts-mode-util-test.el --- Clojure TS Mode: util test suite  -*- lexical-binding: t; -*-
+;;; clojure-ts-mode-imenu-test.el --- Clojure TS Mode: imenu test suite  -*- lexical-binding: t; -*-
 
 ;; Copyright © 2022-2024 Danny Freeman
 
