@@ -737,19 +737,20 @@ https://github.com/weavejester/cljfmt/blob/fb26b22f569724b05c93eb2502592dfc2de89
          (or (clojure-ts--symbol-node-p first-child)
              (clojure-ts--keyword-node-p first-child)))))
 
-(defun clojure-ts--match-expression-in-body (_node parent _bol)
+(defun clojure-ts--match-expression-in-body (node parent _bol)
   "Match NODE if it is an expression used in a body argument.
 PARENT is expected to be a list literal.
 See `treesit-simple-indent-rules'."
   (and
    (clojure-ts--list-node-p parent)
-   (let ((first-child (treesit-node-child parent 0 t)))
+   (let ((first-child (clojure-ts--node-child-skip-metadata parent 0)))
      (and
       (not
        (clojure-ts--symbol-matches-p
         ;; Symbols starting with this are false positives
         (rx line-start (or "default" "deflate" "defer"))
         first-child))
+      (not (clojure-ts--match-with-metadata node))
       (clojure-ts--symbol-matches-p
        clojure-ts--symbols-with-body-expressions-regexp
        first-child)))))
@@ -821,6 +822,12 @@ forms like deftype, defrecord, reify, proxy, etc."
            (clojure-ts--match-fn-docstring parent)
            (clojure-ts--match-method-docstring parent))))
 
+(defun clojure-ts--match-with-metadata (node &optional _parent _bol)
+  "Match NODE when it has metadata."
+  (let ((prev-sibling (treesit-node-prev-sibling node)))
+    (and prev-sibling
+         (clojure-ts--metadata-node-p prev-sibling))))
+
 (defun clojure-ts--semantic-indent-rules ()
   "Return a list of indentation rules for `treesit-simple-indent-rules'."
   `((clojure
@@ -833,6 +840,7 @@ forms like deftype, defrecord, reify, proxy, etc."
      (clojure-ts--match-threading-macro-arg prev-sibling 0)
      ;; https://guide.clojure.style/#vertically-align-fn-args
      (clojure-ts--match-function-call-arg (nth-sibling 2 nil) 0)
+     (clojure-ts--match-with-metadata parent 0)
      ;; Literal Sequences
      ((parent-is "list_lit") parent 1) ;; https://guide.clojure.style/#one-space-indent
      ((parent-is "vec_lit") parent 1) ;; https://guide.clojure.style/#bindings-alignment
