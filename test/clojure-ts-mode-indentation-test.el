@@ -107,4 +107,32 @@ DESCRIPTION is a string with the description of the spec."
     "
 {\"1\" 2
  *3 4}")
-)
+
+  (when-indenting-it "should have no indentation at top level lists with metadata"
+    "
+^{:foo true}
+(def b 2)")
+
+  (when-indenting-it "should have no indentation at top level vectors with metadata"
+    "
+^{:foo true}
+[1 2]")
+
+  (when-indenting-it "should have no indentation at top level maps with metadata"
+    "
+^{:foo true}
+{:a 1}")
+
+  (when-indenting-it "should have no indentation with metadata inside comment"
+    "
+(comment
+  ^{:a 1}
+  (def a 2))")
+
+  (when-indenting-it "should have params, docstring and body correctly indented in presence of metadata"
+    "
+^{:foo true}
+(defn c
+  \"hello\"
+  [_foo]
+  (+ 1 1))"))
