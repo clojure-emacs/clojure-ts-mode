@@ -43,7 +43,7 @@ DESCRIPTION is a string with the description of the spec."
   (declare (indent 1))
   `(it ,description
     (let* ((after ,after)
-           (expected-cursor-pos (1+ (s-index-of "|" after)))
+           (expected-cursor-pos (1+ (clojure-ts--s-index-of "|" after)))
            (expected-state (delete ?| after)))
       (with-clojure-ts-buffer ,before
         (goto-char (point-min))
