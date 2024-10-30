@@ -10,7 +10,7 @@
 
 (eldev-use-plugin 'autoloads)
 
-(eldev-add-extra-dependencies 'test 'buttercup 's)
+(eldev-add-extra-dependencies 'test 'buttercup)
 
 (setq byte-compile-docstring-max-column 240)
 (setq checkdoc-force-docstrings-flag nil)
