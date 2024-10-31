@@ -55,4 +55,56 @@ attention to case differences."
   (let ((case-fold-search ignore-case))
     (string-match-p (regexp-quote needle) s)))
 
+(defmacro when-refactoring-it (description before after &rest body)
+  "Return a buttercup spec.
+
+Insert BEFORE into a buffer, evaluate BODY and compare the resulting buffer to
+AFTER.
+
+BODY should contain the refactoring that transforms BEFORE into AFTER.
+
+DESCRIPTION is the description of the spec."
+  (declare (indent 1))
+  `(it ,description
+     (with-clojure-ts-buffer ,before
+       ,@body
+       (expect (buffer-string) :to-equal ,after))))
+
+(defmacro when-refactoring-with-point-it (description before after &rest body)
+  "Return a buttercup spec.
+
+Like when-refactor-it but also checks whether point is moved to the expected
+position.
+
+BEFORE is the buffer string before refactoring, where a pipe (|) represents
+point.
+
+AFTER is the expected buffer string after refactoring, where a pipe (|)
+represents the expected position of point.
+
+DESCRIPTION is a string with the description of the spec."
+  (declare (indent 1))
+  `(it ,description
+     (let* ((after ,after)
+            (expected-cursor-pos (1+ (clojure-ts--s-index-of "|" after)))
+            (expected-state (delete ?| after)))
+       (with-clojure-ts-buffer ,before
+         (goto-char (point-min))
+         (search-forward "|")
+         (delete-char -1)
+         ,@body
+         (expect (buffer-string) :to-equal expected-state)
+         (expect (point) :to-equal expected-cursor-pos)))))
+
+
+;; https://emacs.stackexchange.com/a/55031
+(defmacro with-temp-dir (temp-dir &rest body)
+  "Create a temporary directory and bind its to TEMP-DIR while evaluating BODY.
+Removes the temp directory at the end of evaluation."
+  `(let ((,temp-dir (make-temp-file "" t)))
+    (unwind-protect
+      (progn
+        ,@body)
+      (delete-directory ,temp-dir t))))
+
 ;;; test-helper.el ends here
