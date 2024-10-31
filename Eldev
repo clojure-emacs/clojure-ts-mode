@@ -25,3 +25,8 @@
         enable-local-variables        :safe))
 
 (setq eldev-project-main-file "clojure-ts-mode.el")
+
+;; Exclude tests merged from clojure-mode
+(setf eldev-test-fileset
+      `(:and ,eldev-test-fileset
+             (:not "./clojure-mode-*")))
