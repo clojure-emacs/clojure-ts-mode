@@ -29,8 +29,8 @@
 ;; Exclude tests merged from clojure-mode from running, linting and byte compiling
 (setf eldev-test-fileset
       `(:and ,eldev-test-fileset
-             (:not "./clojure-mode-*")))
+             (:not "./clojure-mode-tests/*")))
 (setf eldev-standard-excludes
-      `(:or ,eldev-standard-excludes "./clojure-mode-*"))
+      `(:or ,eldev-standard-excludes "./clojure-mode-tests/*"))
 (setf eldev-lint-ignored-fileset
-      `(:or ,eldev-lint-ignored-fileset "./clojure-mode-*"))
+      `(:or ,eldev-lint-ignored-fileset "./clojure-mode-tests/*"))
