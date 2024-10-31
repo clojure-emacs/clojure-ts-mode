@@ -26,7 +26,9 @@
 
 (setq eldev-project-main-file "clojure-ts-mode.el")
 
-;; Exclude tests merged from clojure-mode
+;; Exclude tests merged from clojure-mode from running and linting
 (setf eldev-test-fileset
       `(:and ,eldev-test-fileset
              (:not "./clojure-mode-*")))
+(setf eldev-lint-ignored-fileset
+      `(:or ,eldev-lint-ignored-fileset "./clojure-mode-*"))
