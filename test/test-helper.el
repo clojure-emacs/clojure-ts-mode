@@ -46,4 +46,13 @@ and point left there."
                              (delete-char -1)
                              ,@body)))
 
+(defun clojure-ts--s-index-of (needle s &optional ignore-case)
+  "Returns first index of NEEDLE in S, or nil.
+
+If IGNORE-CASE is non-nil, the comparison is done without paying
+attention to case differences."
+  (declare (pure t) (side-effect-free t))
+  (let ((case-fold-search ignore-case))
+    (string-match-p (regexp-quote needle) s)))
+
 ;;; test-helper.el ends here
