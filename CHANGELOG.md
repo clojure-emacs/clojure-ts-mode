@@ -10,6 +10,8 @@
 - [#42]: Fix font locking of definitions with metadata
 - [#42]: Fix indentation of definitions with metadata
 - Fix semantic indentation of quoted functions
+- Add custom `fill-paragraph-function` which respects docstrings similar to
+  `clojure-mode`.
 
 ## 0.2.2 (2024-02-16)
 

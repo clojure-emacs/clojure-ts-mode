@@ -97,6 +97,21 @@ itself."
   :safe #'booleanp
   :package-version '(clojure-ts-mode . "0.2.1"))
 
+(defcustom clojure-ts-docstring-fill-column fill-column
+  "Value of `fill-column' to use when filling a docstring."
+  :type 'integer
+  :safe #'integerp
+  :package-version '(clojure-ts-mode . "0.2.3"))
+
+(defcustom clojure-ts-docstring-fill-prefix-width 2
+  "Width of `fill-prefix' when filling a docstring.
+The default value conforms with the de facto convention for
+Clojure docstrings, aligning the second line with the opening
+double quotes on the third column."
+  :type 'integer
+  :safe #'integerp
+  :package-version '(clojure-ts-mode . "0.2.3"))
+
 (defvar clojure-ts--debug nil
   "Enables debugging messages, shows current node in mode-line.
 Only intended for use at development time.")
@@ -863,6 +878,27 @@ forms like deftype, defrecord, reify, proxy, etc."
         '(semantic fixed)
         clojure-ts-indent-style)))))
 
+(defun clojure-ts--docstring-fill-prefix ()
+  "The prefix string used by `clojure-ts--fill-paragraph'.
+It is simply `clojure-ts-docstring-fill-prefix-width' number of spaces."
+  (make-string clojure-ts-docstring-fill-prefix-width ? ))
+
+(defun clojure-ts--fill-paragraph (&optional justify)
+  "Like `fill-paragraph', but can handler Clojure docstrings.
+If JUSTIFY is non-nil, justify as well as fill the paragraph."
+  (let ((current-node (treesit-node-at (point))))
+    (if (clojure-ts--match-docstring nil current-node nil)
+        (let ((fill-column (or clojure-ts-docstring-fill-column fill-column))
+              (fill-prefix (clojure-ts--docstring-fill-prefix))
+              (beg-doc (treesit-node-start current-node))
+              (end-doc (treesit-node-end current-node)))
+          (save-restriction
+            (narrow-to-region beg-doc end-doc)
+            (fill-paragraph justify)))
+      (or (fill-comment-paragraph justify)
+          (fill-paragraph justify)))
+    t))
+
 (defconst clojure-ts--sexp-nodes
   '("#_" ;; transpose-sexp near a discard macro moves it around.
     "num_lit" "sym_lit" "kwd_lit" "nil_lit" "bool_lit"
@@ -963,6 +999,7 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
                 (keyword string char symbol builtin type)
                 (constant number quote metadata doc)
                 (bracket deref function regex tagged-literals)))
+  (setq-local fill-paragraph-function #'clojure-ts--fill-paragraph)
   (when (boundp 'treesit-thing-settings) ;; Emacs 30+
     (setq-local treesit-thing-settings clojure-ts--thing-settings)))
 
