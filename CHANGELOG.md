@@ -12,6 +12,8 @@
 - Fix semantic indentation of quoted functions
 - Add custom `fill-paragraph-function` which respects docstrings similar to
   `clojure-mode`.
+- Add customization option to disable markdown syntax highlighting in the
+  docstrings.
 
 ## 0.2.2 (2024-02-16)
 

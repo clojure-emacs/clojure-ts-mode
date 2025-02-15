@@ -44,6 +44,15 @@ To highlight entire rich `comment` expression with the comment font face, set
 By default this is `nil`, so that anything within a `comment` expression is
 highlighted like regular clojure code.
 
+### Highlight markdown syntax in docstrings
+
+By default markdown syntax is highlighted in the docstrings using
+`markdown_inline` grammar. To disable this feature set
+
+``` emacs-lisp
+(setopt clojure-ts-use-markdown-inline nil)
+```
+
 ### Navigation and Evaluation
 
 To make forms inside of `(comment ...)` forms appear as top-level forms for evaluation and navigation, set
