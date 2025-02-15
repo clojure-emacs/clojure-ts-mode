@@ -112,6 +112,12 @@ double quotes on the third column."
   :safe #'integerp
   :package-version '(clojure-ts-mode . "0.2.3"))
 
+(defcustom clojure-ts-use-markdown-inline t
+  "When non-nil, use Markdown inline grammar for docstrings."
+  :type 'boolean
+  :safe #'booleanp
+  :package-version '(clojure-ts-mode . "0.2.3"))
+
 (defvar clojure-ts--debug nil
   "Enables debugging messages, shows current node in mode-line.
 Only intended for use at development time.")
@@ -1010,13 +1016,14 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
 \\{clojure-ts-mode-map}"
   :syntax-table clojure-ts-mode-syntax-table
   (clojure-ts--ensure-grammars)
-  (let ((markdown-available (treesit-ready-p 'markdown_inline t)))
-    (when markdown-available
+  (let ((use-markdown-inline (and clojure-ts-use-markdown-inline
+                                  (treesit-ready-p 'markdown_inline t))))
+    (when use-markdown-inline
       (treesit-parser-create 'markdown_inline)
       (setq-local treesit-range-settings clojure-ts--treesit-range-settings))
     (when (treesit-ready-p 'clojure)
       (treesit-parser-create 'clojure)
-      (clojure-ts-mode-variables markdown-available)
+      (clojure-ts-mode-variables use-markdown-inline)
       (when clojure-ts--debug
         (setq-local treesit--indent-verbose t)
         (when (eq clojure-ts--debug 'font-lock)
