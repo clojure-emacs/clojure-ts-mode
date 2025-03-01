@@ -87,7 +87,9 @@ Keep in mind that the transition to `clojure-ts-mode` won't happen overnight for
 - tools that depend on `clojure-mode` will need to be updated to work with `clojure-ts-mode`
 - we still need to support users of older Emacs versions that don't support Tree-sitter
 
-That's why `clojure-ts-mode` is being developed independently of `clojure-mode` and will one day replace it when the time is right. (e.g. 3 major Emacs version down the road, so circa Emacs 32)
+That's why `clojure-ts-mode` is being developed independently of `clojure-mode`
+and will one day replace it when the time is right. (e.g. 3 major Emacs version
+down the road, so circa Emacs 32)
 
 You can read more about the vision for `clojure-ts-mode` [here](https://metaredux.com/posts/2023/03/12/clojure-mode-meets-tree-sitter.html).
 
@@ -102,6 +104,7 @@ You can read more about the vision for `clojure-ts-mode` [here](https://metaredu
 This package requires Emacs 29 built with tree-sitter support from the [emacs-29 branch](https://git.savannah.gnu.org/cgit/emacs.git/log/?h=emacs-29).
 
 If you decide to build Emacs from source there's some useful information on this in the Emacs repository:
+
 - [Emacs tree-sitter starter-guide](https://git.savannah.gnu.org/cgit/emacs.git/tree/admin/notes/tree-sitter/starter-guide?h=emacs-29)
 - [Emacs install instructions](https://git.savannah.gnu.org/cgit/emacs.git/tree/INSTALL.REPO).
 
@@ -148,11 +151,14 @@ Once installed, evaluate clojure-ts-mode.el and you should be ready to go.
 ### Install tree-sitter grammars
 
 The compile tree-sitter clojure shared library must be available to Emacs.
-Additionally, the tree-sitter [markdown_inline](https://github.com/MDeiml/tree-sitter-markdown) shared library will also be used for docstrings if available.
+Additionally, the tree-sitter
+[markdown_inline](https://github.com/MDeiml/tree-sitter-markdown) shared library
+will also be used for docstrings if available.
 
-If you have `git` and a C compiler (`cc`) available on your system's `PATH`, **then these steps should not be necessary**.
-clojure-ts-mode will install the grammars when you first open a Clojure file and
-`clojure-ts-ensure-grammars` is set to `t` (the default).
+If you have `git` and a C compiler (`cc`) available on your system's `PATH`,
+**then these steps should not be necessary**.  clojure-ts-mode will install the
+grammars when you first open a Clojure file and `clojure-ts-ensure-grammars` is
+set to `t` (the default).
 
 If clojure-ts-mode fails to automatically install the grammar, you have the option to install it manually.
 
@@ -234,9 +240,14 @@ After installing the package do the following.
 
 ### Does `clojure-ts-mode` work with CIDER?
 
-Yes! Preliminary support for `clojure-ts-mode` was released in [CIDER 1.14](https://github.com/clojure-emacs/cider/releases/tag/v1.14.0). Make sure to grab the latest CIDER from MELPA/GitHub. Note that `clojure-mode` is still needed for some APIs that haven't yet been ported to `clojure-ts-mode`.
+Yes! Preliminary support for `clojure-ts-mode` was released in [CIDER
+1.14](https://github.com/clojure-emacs/cider/releases/tag/v1.14.0). Make sure to
+grab the latest CIDER from MELPA/GitHub. Note that `clojure-mode` is still
+needed for some APIs that haven't yet been ported to `clojure-ts-mode`.
 
-For now, when you take care of the keybindings for the CIDER commands you use and ensure `cider-mode` is enabled for `clojure-ts-mode` buffers in your config, most functionality should already work:
+For now, when you take care of the keybindings for the CIDER commands you use
+and ensure `cider-mode` is enabled for `clojure-ts-mode` buffers in your config,
+most functionality should already work:
 
 ```emacs-lisp
 (add-hook 'clojure-ts-mode-hook #'cider-mode)
