@@ -7,9 +7,9 @@
 - Add imenu support for `deftest` definitions.
 - [#53]: Let `clojure-ts-mode` derive from `clojure-mode` for Emacs 30+.
 - [#42]: Fix imenu support for definitions with metadata.
-- [#42]: Fix font locking of definitions with metadata
-- [#42]: Fix indentation of definitions with metadata
-- Fix semantic indentation of quoted functions
+- [#42]: Fix font locking of definitions with metadata.
+- [#42]: Fix indentation of definitions with metadata.
+- Fix semantic indentation of quoted functions.
 - Add custom `fill-paragraph-function` which respects docstrings similar to
   `clojure-mode`.
 - Add customization option to disable markdown syntax highlighting in the
