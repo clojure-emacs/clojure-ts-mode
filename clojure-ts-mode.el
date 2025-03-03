@@ -53,6 +53,7 @@
 ;; Boston, MA 02110-1301, USA.
 
 ;;; Code:
+
 (require 'treesit)
 
 (declare-function treesit-parser-create "treesit.c")
