@@ -2,6 +2,8 @@
 
 ## main (unreleased)
 
+## 0.2.3 (2025-03-04)
+
 - [#38]: Add support for `in-ns` forms in `clojure-ts-find-ns`.
 - [#46]: Fix missing `comment-add` variable in `clojure-ts-mode-variables` mentioned in [#26]
 - Add imenu support for `deftest` definitions.

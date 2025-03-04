@@ -6,7 +6,7 @@
 ;; Maintainer: Danny Freeman <danny@dfreeman.email>
 ;; URL: http://github.com/clojure-emacs/clojure-ts-mode
 ;; Keywords: languages clojure clojurescript lisp
-;; Version: 0.2.2
+;; Version: 0.2.3
 ;; Package-Requires: ((emacs "29.1"))
 
 ;; This file is not part of GNU Emacs.
@@ -71,7 +71,7 @@
   :link '(emacs-commentary-link :tag "Commentary" "clojure-mode"))
 
 (defconst clojure-ts-mode-version
-  "0.2.2"
+  "0.2.3"
   "The current version of `clojure-ts-mode'.")
 
 (defcustom clojure-ts-comment-macro-font-lock-body nil
