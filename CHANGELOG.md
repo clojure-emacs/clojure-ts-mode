@@ -9,10 +9,10 @@
 - [#42]: Fix imenu support for definitions with metadata.
 - [#42]: Fix font locking of definitions with metadata.
 - [#42]: Fix indentation of definitions with metadata.
-- Fix semantic indentation of quoted functions.
-- Add custom `fill-paragraph-function` which respects docstrings similar to
+- [#49]: Fix semantic indentation of quoted functions.
+- [#58]: Add custom `fill-paragraph-function` which respects docstrings similar to
   `clojure-mode`.
-- Add customization option to disable markdown syntax highlighting in the
+- [#59]: Add customization option to disable markdown syntax highlighting in the
   docstrings.
 
 ## 0.2.2 (2024-02-16)
