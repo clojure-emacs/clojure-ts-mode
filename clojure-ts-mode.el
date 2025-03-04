@@ -983,8 +983,15 @@ If JUSTIFY is non-nil, justify as well as fill the paragraph."
 See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
   (setq-local comment-add 1)
   (setq-local comment-start ";")
+
   (setq-local treesit-font-lock-settings
               (clojure-ts--font-lock-settings markdown-available))
+  (setq-local treesit-font-lock-feature-list
+              '((comment definition variable)
+                (keyword string char symbol builtin type)
+                (constant number quote metadata doc)
+                (bracket deref function regex tagged-literals)))
+
   (setq-local treesit-defun-prefer-top-level t)
   (setq-local treesit-defun-tactic 'top-level)
   (setq-local treesit-defun-type-regexp
@@ -995,18 +1002,16 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
                (lambda (node)
                  (or (not clojure-ts-toplevel-inside-comment-form)
                      (not (clojure-ts--definition-node-p "comment" node))))))
-  (setq-local treesit-simple-indent-rules
-              (clojure-ts--configured-indent-rules))
   (setq-local treesit-defun-name-function
               #'clojure-ts--standard-definition-node-name)
+
+  (setq-local treesit-simple-indent-rules
+              (clojure-ts--configured-indent-rules))
+  (setq-local fill-paragraph-function #'clojure-ts--fill-paragraph)
+
   (setq-local treesit-simple-imenu-settings
               clojure-ts--imenu-settings)
-  (setq-local treesit-font-lock-feature-list
-              '((comment definition variable)
-                (keyword string char symbol builtin type)
-                (constant number quote metadata doc)
-                (bracket deref function regex tagged-literals)))
-  (setq-local fill-paragraph-function #'clojure-ts--fill-paragraph)
+
   (when (boundp 'treesit-thing-settings) ;; Emacs 30+
     (setq-local treesit-thing-settings clojure-ts--thing-settings)))
 
@@ -1022,15 +1027,19 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
     (when use-markdown-inline
       (treesit-parser-create 'markdown_inline)
       (setq-local treesit-range-settings clojure-ts--treesit-range-settings))
+
     (when (treesit-ready-p 'clojure)
       (treesit-parser-create 'clojure)
       (clojure-ts-mode-variables use-markdown-inline)
+
       (when clojure-ts--debug
         (setq-local treesit--indent-verbose t)
         (when (eq clojure-ts--debug 'font-lock)
           (setq-local treesit--font-lock-verbose t))
         (treesit-inspect-mode))
+
       (treesit-major-mode-setup)
+
       ;; Workaround for treesit-transpose-sexps not correctly working with
       ;; treesit-thing-settings on Emacs 30.
       ;; Once treesit-transpose-sexps it working again this can be removed
