@@ -119,6 +119,18 @@ double quotes on the third column."
   :safe #'booleanp
   :package-version '(clojure-ts-mode . "0.2.3"))
 
+(defcustom clojure-ts-auto-redirect t
+  "When non-nil, redirect all `clojure-mode' buffers to `clojure-ts-mode'."
+  :safe #'booleanp
+  :type 'boolean
+  :package-version '(clojure-ts-mode . "0.2.4"))
+
+(defvar clojure-ts-mode-remappings
+  '((clojure-mode . clojure-ts-mode)
+    (clojurescript-mode . clojure-ts-clojurescript-mode)
+    (clojurec-mode . clojure-ts-clojurec-mode))
+  "Alist of entries to `major-mode-remap-alist'.")
+
 (defvar clojure-ts--debug nil
   "Enables debugging messages, shows current node in mode-line.
 Only intended for use at development time.")
@@ -1087,13 +1099,24 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
   (add-to-list 'auto-mode-alist '("\\.cljd\\'" . clojure-ts-clojuredart-mode))
   (add-to-list 'auto-mode-alist '("\\.jank\\'" . clojure-ts-jank-mode)))
 
+(defun clojure-ts-activate ()
+  "Redirect all `clojure-mode' buffers to use `clojure-ts-mode'."
+  (interactive)
+  (dolist (entry clojure-ts-mode-remappings)
+    (add-to-list 'major-mode-remap-alist entry)))
+
+(defun clojure-ts-deactivate ()
+  "Revert the redirecting of of `clojure-mode' buffers to `clojure-ts-mode'."
+  (interactive)
+  (dolist (entry clojure-ts-mode-remappings)
+    (setq major-mode-remap-alist (remove entry major-mode-remap-alist))))
+
 (if (treesit-available-p)
     ;; Redirect clojure-mode to clojure-ts-mode if clojure-mode is present
     (if (require 'clojure-mode nil 'noerror)
         (progn
-          (add-to-list 'major-mode-remap-alist '(clojure-mode . clojure-ts-mode))
-          (add-to-list 'major-mode-remap-alist '(clojurescript-mode . clojure-ts-clojurescript-mode))
-          (add-to-list 'major-mode-remap-alist '(clojurec-mode . clojure-ts-clojurec-mode))
+          (when clojure-ts-auto-redirect
+            (clojure-ts-activate))
           (clojure-ts--register-novel-modes))
       ;; When Clojure-mode is not present, setup auto-modes ourselves
       (progn
