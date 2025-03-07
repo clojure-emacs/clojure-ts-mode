@@ -163,6 +163,14 @@ To highlight entire rich `comment` expression with the comment font face, set
 By default this is `nil`, so that anything within a `comment` expression is
 highlighted like regular clojure code.
 
+> [!TIP]
+>
+> You can customize the exact level of font-locking via the variables
+> `treesit-font-lock-level` (the default value is 3) and
+> `treesit-font-lock-features-list`. Check [this
+> section](https://www.gnu.org/software/emacs/manual/html_node/emacs/Parser_002dbased-Font-Lock.html)
+> of the Emacs manual for more details.
+
 ### Highlight markdown syntax in docstrings
 
 By default markdown syntax is highlighted in the docstrings using
