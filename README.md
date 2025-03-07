@@ -51,22 +51,28 @@ Those will be addressed over the time, as more and more people use `clojure-ts-m
 
 ## Installation
 
-### Emacs 29
+### Requirements
 
-This package requires Emacs 29 built with tree-sitter support from the [emacs-29 branch](https://git.savannah.gnu.org/cgit/emacs.git/log/?h=emacs-29).
-
-If you decide to build Emacs from source there's some useful information on this in the Emacs repository:
-
-- [Emacs tree-sitter starter-guide](https://git.savannah.gnu.org/cgit/emacs.git/tree/admin/notes/tree-sitter/starter-guide?h=emacs-29)
-- [Emacs install instructions](https://git.savannah.gnu.org/cgit/emacs.git/tree/INSTALL.REPO).
-
+For `clojure-ts-mode` to work, you need Emacs 29+ built with TreeSitter support.
 To check if your Emacs supports tree sitter run the following (e.g. by using `M-:`):
 
 ``` emacs-lisp
 (treesit-available-p)
 ```
 
+Additionally, you'll need to have Git and some C compiler (`cc`) installed and available
+in your `$PATH` (or Emacs's `exec-path`), for `clojure-ts-mode` to be able to install the required
+TreeSitter grammars automatically.
+
 ### Install clojure-ts-mode
+
+> [!NOTE]
+>
+> That's the recommended way to install `clojure-ts-mode`.
+
+If you have `git` and a C compiler (`cc`) available on your system's `PATH`,
+`clojure-ts-mode` will install the
+grammars
 
 clojure-ts-mode is available on [MElPA](https://melpa.org/#/clojure-ts-mode) and
 [NonGNU ELPA](https://elpa.nongnu.org/nongnu/clojure-ts-mode.html).
@@ -101,6 +107,11 @@ git clone https://github.com/clojure-emacs/clojure-ts-mode.git
 Once installed, evaluate clojure-ts-mode.el and you should be ready to go.
 
 ### Install tree-sitter grammars
+
+> [!NOTE]
+>
+> `clojure-ts-mode` install the required grammars automatically, so for most
+> people no manual actions will be required.
 
 `clojure-ts-mode` makes use of two TreeSitter grammars to work properly:
 
