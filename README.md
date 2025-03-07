@@ -18,8 +18,15 @@ highlighting), indentation, and navigation support for the
 for a very long time, but it suffers from a few [long-standing
 problems](https://github.com/clojure-emacs/clojure-mode#caveats), related to
 Emacs limitations baked into its design. The introduction of built-in support
-for Tree-sitter in Emacs 29 provides a natural opportunity to address many of
-them. Enter `clojure-ts-mode`.
+for Tree-sitter in Emacs 29 presents a natural opportunity to address many of
+them. Enter `clojure-ts-mode`, which makes use of TreeSitter to provide:
+
+- fast, accurate and more granular font-locking
+- fast indentation
+- common Emacs functionality like structured navigation, `imenu` (an outline of a source buffer), current form inference (used internally by various Emacs modes and utilities), etc
+
+Working with TreeSitter is significantly easier than the legacy Emacs APIs for font-locking and
+indentation, which makes it easier to contribute to `clojure-ts-mode`, and to improve it in general.
 
 Keep in mind that the transition to `clojure-ts-mode` won't happen overnight for several reasons:
 
@@ -36,6 +43,11 @@ You can read more about the vision for `clojure-ts-mode` [here](https://metaredu
 ## Current Status
 
 **This library is still under active development. Breaking changes should be expected.**
+
+The currently provided functionality should cover the needs of most Clojure programmers, but you
+can expect to encounter some bugs and missing functionality here and there.
+
+Those will be addressed over the time, as more and more people use `clojure-ts-mode`.
 
 ## Installation
 
