@@ -12,66 +12,6 @@ highlighting), indentation, and navigation support for the
 [tree-sitter-clojure](https://github.com/sogaiu/tree-sitter-clojure)
 [tree-sitter](https://tree-sitter.github.io/tree-sitter/) grammar.
 
-## Configuration
-
-To see a list of available configuration options do `M-x customize-group <RET> clojure-ts`.
-
-Most configuration changes will require reverting any active `clojure-ts-mode` buffers.
-
-### Indentation
-
-`clojure-ts-mode` currently supports 2 different indentation strategies:
-
-- `semantic`, the default, which tries to match the indentation of `clojure-mode` and `cljfmt`
-- `fixed`, [a simple indentation strategy outlined by Tonsky in a blog post](https://tonsky.me/blog/clojurefmt/)
-
-Set the var `clojure-ts-indent-style` to change it.
-
-``` emacs-lisp
-(setq clojure-ts-indent-style 'fixed)
-```
-
-**Note:** You can find [this article](https://metaredux.com/posts/2020/12/06/semantic-clojure-formatting.html) comparing semantic and fixed indentation useful.
-
-### Font Locking
-
-To highlight entire rich `comment` expression with the comment font face, set
-
-``` emacs-lisp
-(setq clojure-ts-comment-macro-font-lock-body t)
-```
-
-By default this is `nil`, so that anything within a `comment` expression is
-highlighted like regular clojure code.
-
-### Highlight markdown syntax in docstrings
-
-By default markdown syntax is highlighted in the docstrings using
-`markdown_inline` grammar. To disable this feature set
-
-``` emacs-lisp
-(setopt clojure-ts-use-markdown-inline nil)
-```
-
-### Navigation and Evaluation
-
-To make forms inside of `(comment ...)` forms appear as top-level forms for evaluation and navigation, set
-
-``` emacs-lisp
-(setq clojure-ts-toplevel-inside-comment-form t)
-```
-
-### Fill paragraph
-
-To change the maximal line length used by `M-x prog-fill-reindent-defun` (also
-bound to `M-q` by default) to reformat docstrings and comments it's possible to
-customize `clojure-ts-fill-paragraph` variable (by default set to the value of
-Emacs' `fill-paragraph` value).
-
-Every new line in the docstrings is indented by
-`clojure-ts-docstring-fill-prefix-width` number of spaces (set to 2 by default
-which matches the `clojure-mode` settings).
-
 ## Rationale
 
 [clojure-mode](https://github.com/clojure-emacs/clojure-mode) has served us well
@@ -165,6 +105,66 @@ If `clojure-ts-mode` fails to automatically install the grammar, you have the
 option to install it manually, Please, refer to the installation instructions of
 each required grammar and make sure you're install the versions expected. (see
 `clojure-ts-grammar-recipes` for details)
+
+## Configuration
+
+To see a list of available configuration options do `M-x customize-group <RET> clojure-ts`.
+
+Most configuration changes will require reverting any active `clojure-ts-mode` buffers.
+
+### Indentation
+
+`clojure-ts-mode` currently supports 2 different indentation strategies:
+
+- `semantic`, the default, which tries to match the indentation of `clojure-mode` and `cljfmt`
+- `fixed`, [a simple indentation strategy outlined by Tonsky in a blog post](https://tonsky.me/blog/clojurefmt/)
+
+Set the var `clojure-ts-indent-style` to change it.
+
+``` emacs-lisp
+(setq clojure-ts-indent-style 'fixed)
+```
+
+**Note:** You can find [this article](https://metaredux.com/posts/2020/12/06/semantic-clojure-formatting.html) comparing semantic and fixed indentation useful.
+
+### Font Locking
+
+To highlight entire rich `comment` expression with the comment font face, set
+
+``` emacs-lisp
+(setq clojure-ts-comment-macro-font-lock-body t)
+```
+
+By default this is `nil`, so that anything within a `comment` expression is
+highlighted like regular clojure code.
+
+### Highlight markdown syntax in docstrings
+
+By default markdown syntax is highlighted in the docstrings using
+`markdown_inline` grammar. To disable this feature set
+
+``` emacs-lisp
+(setopt clojure-ts-use-markdown-inline nil)
+```
+
+### Navigation and Evaluation
+
+To make forms inside of `(comment ...)` forms appear as top-level forms for evaluation and navigation, set
+
+``` emacs-lisp
+(setq clojure-ts-toplevel-inside-comment-form t)
+```
+
+### Fill paragraph
+
+To change the maximal line length used by `M-x prog-fill-reindent-defun` (also
+bound to `M-q` by default) to reformat docstrings and comments it's possible to
+customize `clojure-ts-fill-paragraph` variable (by default set to the value of
+Emacs' `fill-paragraph` value).
+
+Every new line in the docstrings is indented by
+`clojure-ts-docstring-fill-prefix-width` number of spaces (set to 2 by default
+which matches the `clojure-mode` settings).
 
 ## Migrating to clojure-ts-mode
 
