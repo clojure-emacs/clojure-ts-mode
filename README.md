@@ -148,7 +148,9 @@ Set the var `clojure-ts-indent-style` to change it.
 (setq clojure-ts-indent-style 'fixed)
 ```
 
-**Note:** You can find [this article](https://metaredux.com/posts/2020/12/06/semantic-clojure-formatting.html) comparing semantic and fixed indentation useful.
+> [!TIP]
+>
+> You can find [this article](https://metaredux.com/posts/2020/12/06/semantic-clojure-formatting.html) comparing semantic and fixed indentation useful.
 
 ### Font Locking
 
