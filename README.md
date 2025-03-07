@@ -223,7 +223,21 @@ After installing the package do the following.
   (cider-clojure-cli-aliases . ":test:repl")))
 ```
 
+## Caveats
+
+As the TreeSitter Emacs APIs are new and keep evolving there are some
+differences in the behavior of `clojure-ts-mode` on different Emacs versions.
+Here are some notable examples:
+
+- On Emacs 29 the parent mode is `prog-mode`, but on Emacs 30+ it's both `prog-mode`
+and `clojure-mode` (this is very helpful when dealing with `derived-mode-p` checks)
+
 ## Frequently Asked Questions
+
+### What `clojure-mode` features are currently missing?
+
+As of version 0.2.x, the most obvious missing feature are the various
+refactoring commands in `clojure-mode`.
 
 ### Does `clojure-ts-mode` work with CIDER?
 
