@@ -918,10 +918,16 @@ If JUSTIFY is non-nil, justify as well as fill the paragraph."
     "unquote_splicing_lit" "unquoting_lit")
   "A regular expression that matches nodes that can be treated as s-expressions.")
 
+(defconst clojure-ts--list-nodes
+  '("list_lit" "anon_fn_lit" "read_cond_lit" "splicing_read_cond_lit"
+    "map_lit" "ns_map_lit" "vec_lit" "set_lit")
+  "A regular expression that matches nodes that can be treated as lists.")
+
 (defconst clojure-ts--thing-settings
   `((clojure
-     (sexp ,(regexp-opt clojure-ts--sexp-nodes)
-           text ,(regexp-opt '("comment"))))))
+     (sexp ,(regexp-opt clojure-ts--sexp-nodes))
+     (list ,(regexp-opt clojure-ts--list-nodes))
+     (text ,(regexp-opt '("comment"))))))
 
 (defvar clojure-ts-mode-map
   (let ((map (make-sparse-keymap)))
@@ -1043,7 +1049,8 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
       ;; Workaround for treesit-transpose-sexps not correctly working with
       ;; treesit-thing-settings on Emacs 30.
       ;; Once treesit-transpose-sexps it working again this can be removed
-      (when (fboundp 'transpose-sexps-default-function)
+      (when (and (fboundp 'transpose-sexps-default-function)
+                 (< emacs-major-version 31))
         (setq-local transpose-sexps-function #'transpose-sexps-default-function)))))
 
 ;; For Emacs 30+, so that `clojure-ts-mode' is treated as deriving from

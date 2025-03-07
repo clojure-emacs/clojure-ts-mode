@@ -2,6 +2,8 @@
 
 ## main (unreleased)
 
+- [[#62](https://github.com/clojure-emacs/clojure-ts-mode/issues/62)]: Define `list` "thing" to improve navigation in Emacs 31.
+
 ## 0.2.3 (2025-03-04)
 
 - [#38]: Add support for `in-ns` forms in `clojure-ts-find-ns`.

@@ -231,6 +231,9 @@ Here are some notable examples:
 
 - On Emacs 29 the parent mode is `prog-mode`, but on Emacs 30+ it's both `prog-mode`
 and `clojure-mode` (this is very helpful when dealing with `derived-mode-p` checks)
+- Navigation by sexp/lists might work differently on Emacs versions lower
+  than 31. Starting with version 31, Emacs uses TreeSitter 'things' settings, if
+  available, to rebind some commands.
 
 ## Frequently Asked Questions
 
