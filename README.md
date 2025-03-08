@@ -143,6 +143,16 @@ To see a list of available configuration options do `M-x customize-group <RET> c
 
 Most configuration changes will require reverting any active `clojure-ts-mode` buffers.
 
+### Remapping of `clojure-mode` buffers
+
+By default, `clojure-ts-mode` assumes command over all buffers and file extensions previously associated with `clojure-mode` (and derived major modes like `clojurescript-mode`). To disable this remapping, set
+
+``` emacs-lisp
+(setopt clojure-ts-auto-remap nil)
+```
+
+You can also use the commands `clojure-ts-activate` / `clojure-ts-deactivate` to interactively change this behavior.
+
 ### Indentation
 
 `clojure-ts-mode` currently supports 2 different indentation strategies:
