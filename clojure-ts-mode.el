@@ -119,7 +119,7 @@ double quotes on the third column."
   :safe #'booleanp
   :package-version '(clojure-ts-mode . "0.2.3"))
 
-(defcustom clojure-ts-auto-redirect t
+(defcustom clojure-ts-auto-remap t
   "When non-nil, redirect all `clojure-mode' buffers to `clojure-ts-mode'."
   :safe #'booleanp
   :type 'boolean
@@ -1115,7 +1115,7 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
     ;; Redirect clojure-mode to clojure-ts-mode if clojure-mode is present
     (if (require 'clojure-mode nil 'noerror)
         (progn
-          (when clojure-ts-auto-redirect
+          (when clojure-ts-auto-remap
             (clojure-ts-activate))
           (clojure-ts--register-novel-modes))
       ;; When Clojure-mode is not present, setup auto-modes ourselves
