@@ -42,7 +42,9 @@ You can read more about the vision for `clojure-ts-mode` [here](https://metaredu
 
 ## Current Status
 
-**This library is still under active development. Breaking changes should be expected.**
+> [!WARNING]
+>
+> This library is still under active development. Breaking changes should be expected.
 
 The currently provided functionality should cover the needs of most Clojure programmers, but you
 can expect to encounter some bugs and missing functionality here and there.
