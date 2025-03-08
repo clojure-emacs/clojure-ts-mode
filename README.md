@@ -66,6 +66,12 @@ Additionally, you'll need to have Git and some C compiler (`cc`) installed and a
 in your `$PATH` (or Emacs's `exec-path`), for `clojure-ts-mode` to be able to install the required
 TreeSitter grammars automatically.
 
+> [!TIP]
+>
+> As the TreeSitter support in Emacs is still fairly new and under active development itself, for optimal
+> results you should use the latest stable Emacs release or even the development version of Emacs.
+> See the "Caveats" section for more on the subject.
+
 ### Install clojure-ts-mode
 
 > [!NOTE]
