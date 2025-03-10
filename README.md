@@ -55,7 +55,7 @@ Those will be addressed over the time, as more and more people use `clojure-ts-m
 
 ### Requirements
 
-For `clojure-ts-mode` to work, you need Emacs 29+ built with TreeSitter support.
+For `clojure-ts-mode` to work, you need Emacs 30+ built with TreeSitter support.
 To check if your Emacs supports tree sitter run the following (e.g. by using `M-:`):
 
 ``` emacs-lisp
