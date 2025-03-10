@@ -129,7 +129,10 @@ double quotes on the third column."
   '((clojure-mode . clojure-ts-mode)
     (clojurescript-mode . clojure-ts-clojurescript-mode)
     (clojurec-mode . clojure-ts-clojurec-mode))
-  "Alist of entries to `major-mode-remap-alist'.")
+  "Alist of entries to `major-mode-remap-defaults'.
+
+See also `clojure-ts-activate-mode-remappings' and
+`clojure-ts-definition-docstring-symbols'.")
 
 (defvar clojure-ts--debug nil
   "Enables debugging messages, shows current node in mode-line.
@@ -1099,24 +1102,29 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
   (add-to-list 'auto-mode-alist '("\\.cljd\\'" . clojure-ts-clojuredart-mode))
   (add-to-list 'auto-mode-alist '("\\.jank\\'" . clojure-ts-jank-mode)))
 
-(defun clojure-ts-activate ()
-  "Redirect all `clojure-mode' buffers to use `clojure-ts-mode'."
-  (interactive)
-  (dolist (entry clojure-ts-mode-remappings)
-    (add-to-list 'major-mode-remap-alist entry)))
+(defun clojure-ts-activate-mode-remappings ()
+  "Remap all `clojure-mode' file-specified modes to use `clojure-ts-mode'.
 
-(defun clojure-ts-deactivate ()
-  "Revert the redirecting of of `clojure-mode' buffers to `clojure-ts-mode'."
+Useful if you want to try out `clojure-ts-mode' without having to manually
+update the mode mappings."
   (interactive)
   (dolist (entry clojure-ts-mode-remappings)
-    (setq major-mode-remap-alist (remove entry major-mode-remap-alist))))
+    (add-to-list 'major-mode-remap-defaults entry)))
+
+(defun clojure-ts-deactivate-mode-remappings ()
+  "Undo `clojure-ts-mode' file-specified mode remappings.
+
+Useful if you want to switch to the `clojure-mode's mode mappings."
+  (interactive)
+  (dolist (entry clojure-ts-mode-remappings)
+    (setq major-mode-remap-defaults (remove entry major-mode-remap-defaults))))
 
 (if (treesit-available-p)
     ;; Redirect clojure-mode to clojure-ts-mode if clojure-mode is present
     (if (require 'clojure-mode nil 'noerror)
         (progn
           (when clojure-ts-auto-remap
-            (clojure-ts-activate))
+            (clojure-ts-activate-mode-remappings))
           (clojure-ts--register-novel-modes))
       ;; When Clojure-mode is not present, setup auto-modes ourselves
       (progn
