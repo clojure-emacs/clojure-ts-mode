@@ -2,7 +2,7 @@
 
 ## main (unreleased)
 
-- [[#62](https://github.com/clojure-emacs/clojure-ts-mode/issues/62)]: Define `list` "thing" to improve navigation in Emacs 31.
+- [#62](https://github.com/clojure-emacs/clojure-ts-mode/issues/62): Define `list` "thing" to improve navigation in Emacs 31.
 - [#64]: Add defcustom `clojure-ts-auto-remap` to control remapping of `clojure-mode` buffers.
 
 ## 0.2.3 (2025-03-04)
