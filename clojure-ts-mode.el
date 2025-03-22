@@ -384,9 +384,16 @@ with the markdown_inline grammar."
        marker: _ @clojure-ts-keyword-face
        delimiter: _ :? @default))
 
+    ;; Highlight as built-in only if there is no namespace or namespace is
+    ;; `clojure.core'.
     :feature 'builtin
     :language 'clojure
-    `(((list_lit meta: _ :? :anchor (sym_lit (sym_name) @font-lock-keyword-face))
+    `(((list_lit meta: _ :? :anchor (sym_lit !namespace name: (sym_name) @font-lock-keyword-face))
+       (:match ,clojure-ts--builtin-symbol-regexp @font-lock-keyword-face))
+      ((list_lit meta: _ :? :anchor
+                 (sym_lit namespace: ((sym_ns) @ns
+                                      (:equal "clojure.core" @ns))
+                          name: (sym_name) @font-lock-keyword-face))
        (:match ,clojure-ts--builtin-symbol-regexp @font-lock-keyword-face))
       ((sym_name) @font-lock-builtin-face
        (:match ,clojure-ts--builtin-dynamic-var-regexp @font-lock-builtin-face)))
@@ -408,12 +415,13 @@ with the markdown_inline grammar."
     ;; No wonder the tree-sitter-clojure grammar only touches syntax, and not semantics
     :feature 'definition ;; defn and defn like macros
     :language 'clojure
-    `(((list_lit :anchor meta: _ :?
-                 :anchor (sym_lit (sym_name) @def)
+    `(((list_lit :anchor meta: _ :*
+                 :anchor (sym_lit (sym_name) @font-lock-keyword-face)
                  :anchor (sym_lit (sym_name) @font-lock-function-name-face))
        (:match ,(rx-to-string
                  `(seq bol
                        (or
+                        "fn"
                         "defn"
                         "defn-"
                         "defmulti"
@@ -423,7 +431,7 @@ with the markdown_inline grammar."
                         "defmacro"
                         "definline")
                        eol))
-               @def))
+               @font-lock-keyword-face))
       ((anon_fn_lit
         marker: "#" @font-lock-property-face))
       ;; Methods implementation
@@ -450,10 +458,10 @@ with the markdown_inline grammar."
 
     :feature 'variable ;; def, defonce
     :language 'clojure
-    `(((list_lit :anchor meta: _ :?
-                 :anchor (sym_lit (sym_name) @def)
+    `(((list_lit :anchor meta: _ :*
+                 :anchor (sym_lit (sym_name) @font-lock-keyword-face)
                  :anchor (sym_lit (sym_name) @font-lock-variable-name-face))
-       (:match ,clojure-ts--variable-definition-symbol-regexp @def)))
+       (:match ,clojure-ts--variable-definition-symbol-regexp @font-lock-keyword-face)))
 
     ;; Can we support declarations in the namespace form?
     :feature 'type
@@ -479,10 +487,10 @@ with the markdown_inline grammar."
     :override t
     `((meta_lit
        marker: "^" @font-lock-operator-face
-       value: (kwd_lit (kwd_name) @font-lock-property-name-face))
+       value: (kwd_lit (kwd_name) @clojure-ts-keyword-face))
       (old_meta_lit
        marker: "#^" @font-lock-operator-face
-       value: (kwd_lit (kwd_name) @font-lock-property-name-face)))
+       value: (kwd_lit (kwd_name) @clojure-ts-keyword-face)))
 
     :feature 'tagged-literals
     :language 'clojure

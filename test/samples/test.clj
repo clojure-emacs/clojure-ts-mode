@@ -13,12 +13,19 @@
 
 (fn ^:m hello [x] @x)
 
+(def ^:private my-var true)
+
 (def ^Boolean x true)
 
 (clojure.core/defmacro my-mac []
   `(let [x 1]
      ~x
      ~@x))
+
+;; Built-ins should be highlighted only for `clojure.core` namespace.
+(for [])
+(clojure.core/for [])
+(honey.sql/for {})
 
 ;; the myfn sexp should have a comment face
 (mysfn 101
@@ -237,7 +244,6 @@
   ([x y & more]
      (reduce1 max (max x y) more)))
 
-
 ;; definitions with metadata only don't cause freezing
 (def ^String)
 ;; clojure-mode regression: the hanging metadata doesn't cause freezing
@@ -291,6 +297,9 @@ clojure.core/map
 
 ^{:foo true}
 (defn b "hello" [] "world")
+
+^{:foo bar}
+(def foo "usage" "hello")
 
 (comment
   (defrecord TestRecord [field]
