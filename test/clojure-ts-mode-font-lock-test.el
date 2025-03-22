@@ -136,4 +136,30 @@ DESCRIPTION is the description of the spec."
      (13 16 font-lock-keyword-face)
      (18 20 font-lock-function-name-face)
      (25 31 font-lock-doc-face)
-     (40 46 font-lock-string-face))))
+     (40 46 font-lock-string-face)))
+
+  (when-fontifying-it "fn-with-name"
+    ("(fn named-lambda [x] x)"
+     (2 3 font-lock-keyword-face)
+     (5 16 font-lock-function-name-face)))
+
+  (when-fontifying-it "single-keyword-metadata"
+    ("(def ^:private my-private-var true)"
+     (2 4 font-lock-keyword-face)
+     (6 6 font-lock-operator-face)
+     (7 14 clojure-ts-keyword-face)
+     (16 29 font-lock-variable-name-face)
+     (31 34 font-lock-constant-face)))
+
+  (when-fontifying-it "built-ins"
+    ("(for [x [1 2 3]] x)"
+     (2 4 font-lock-keyword-face))
+
+    ("(clojure.core/for [x [1 2 3]] x)"
+     (2 13 font-lock-type-face)
+     (15 17 font-lock-keyword-face)))
+
+  (when-fontifying-it "non-built-ins-with-same-name"
+    ("(h/for query {})"
+     (2 2 font-lock-type-face)
+     (4 6 nil))))

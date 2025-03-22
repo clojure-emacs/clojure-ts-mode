@@ -4,6 +4,12 @@
 
 - [#62](https://github.com/clojure-emacs/clojure-ts-mode/issues/62): Define `list` "thing" to improve navigation in Emacs 31.
 - [#64]: Add defcustom `clojure-ts-auto-remap` to control remapping of `clojure-mode` buffers.
+- Improve syntax highlighting:
+  - Highlight metadata with single keyword with `clojure-ts-keyword-face`.
+  - Only highlight built-ins from `clojure.core` namespace.
+  - Highlight named lambda functions properly.
+  - Fix syntax highlighting for functions and vars with metadata on the previous
+    line.
 
 ## 0.2.3 (2025-03-04)
 
