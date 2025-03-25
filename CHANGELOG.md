@@ -10,6 +10,8 @@
   - Highlight named lambda functions properly.
   - Fix syntax highlighting for functions and vars with metadata on the previous
     line.
+- Improve semantic indentation rules to be more consistent with cljfmt.
+- Introduce `clojure-ts-semantic-indent-rules` customization option.
 
 ## 0.2.3 (2025-03-04)
 

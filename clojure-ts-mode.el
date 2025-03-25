@@ -125,6 +125,23 @@ double quotes on the third column."
   :type 'boolean
   :package-version '(clojure-ts-mode . "0.2.4"))
 
+(defcustom clojure-ts-semantic-indent-rules nil
+  "Custom rules to extend default indentation rules for `semantic' style.
+
+Each rule is an alist entry which looks like `(\"symbol-name\"
+. (rule-type rule-value))', where rule-type is one either `:block' or
+`:inner' and rule-value is an integer.  The semantic is similar to
+cljfmt indentation rules.
+
+Default set of rules is defined in
+`clojure-ts--semantic-indent-rules-defaults'."
+  :safe #'listp
+  :type '(alist :key-type string
+                :value-type (list (choice (const :tag "Block indentation rule" :block)
+                                          (const :tag "Inner indentation rule" :inner))
+                                  integer))
+  :package-version '(clojure-ts-mode . "0.2.4"))
+
 (defvar clojure-ts-mode-remappings
   '((clojure-mode . clojure-ts-mode)
     (clojurescript-mode . clojure-ts-clojurescript-mode)
@@ -181,7 +198,6 @@ Only intended for use at development time.")
 
     table)
   "Syntax table for `clojure-ts-mode'.")
-
 
 (defconst clojure-ts--builtin-dynamic-var-regexp
   (eval-and-compile
@@ -746,34 +762,135 @@ The possible values for this variable are
      ((parent-is "list_lit") parent 1)
      ((parent-is "set_lit") parent 2))))
 
-(defvar clojure-ts--symbols-with-body-expressions-regexp
-  (eval-and-compile
-    (rx (or
-         ;; Match def* symbols,
-         ;; we also explicitly do not match symbols beginning with
-         ;; "default" "deflate" and "defer", like cljfmt
-         (and line-start "def")
-         ;; Match with-* symbols
-         (and line-start "with-")
-         ;; Exact matches
-         (and line-start
-              (or "alt!" "alt!!" "are" "as->"
-                  "binding" "bound-fn"
-                  "case" "catch" "comment" "cond" "condp" "cond->" "cond->>"
-                  "delay" "do" "doseq" "dotimes" "doto"
-                  "extend" "extend-protocol" "extend-type"
-                  "fdef" "finally" "fn" "for" "future"
-                  "go" "go-loop"
-                  "if" "if-let" "if-not" "if-some"
-                  "let" "letfn" "locking" "loop"
-                  "match" "ns" "proxy" "reify" "struct-map"
-                  "testing" "thread" "try"
-                  "use-fixtures"
-                  "when" "when-first" "when-let" "when-not" "when-some" "while")
-              line-end))))
-  "A regex to match symbols that are functions/macros with a body argument.
-Taken from cljfmt:
-https://github.com/weavejester/cljfmt/blob/fb26b22f569724b05c93eb2502592dfc2de898c3/cljfmt/resources/cljfmt/indents/clojure.clj")
+(defvar clojure-ts--semantic-indent-rules-defaults
+  '(("alt!"            . (:block 0))
+    ("alt!!"           . (:block 0))
+    ("comment"         . (:block 0))
+    ("cond"            . (:block 0))
+    ("delay"           . (:block 0))
+    ("do"              . (:block 0))
+    ("finally"         . (:block 0))
+    ("future"          . (:block 0))
+    ("go"              . (:block 0))
+    ("thread"          . (:block 0))
+    ("try"             . (:block 0))
+    ("with-out-str"    . (:block 0))
+    ("defprotocol"     . (:block 1))
+    ("binding"         . (:block 1))
+    ("defprotocol"     . (:block 1))
+    ("binding"         . (:block 1))
+    ("case"            . (:block 1))
+    ("cond->"          . (:block 1))
+    ("cond->>"         . (:block 1))
+    ("doseq"           . (:block 1))
+    ("dotimes"         . (:block 1))
+    ("doto"            . (:block 1))
+    ("extend"          . (:block 1))
+    ("extend-protocol" . (:block 1))
+    ("extend-type"     . (:block 1))
+    ("for"             . (:block 1))
+    ("go-loop"         . (:block 1))
+    ("if"              . (:block 1))
+    ("if-let"          . (:block 1))
+    ("if-not"          . (:block 1))
+    ("if-some"         . (:block 1))
+    ("let"             . (:block 1))
+    ("letfn"           . (:block 1))
+    ("locking"         . (:block 1))
+    ("loop"            . (:block 1))
+    ("match"           . (:block 1))
+    ("ns"              . (:block 1))
+    ("struct-map"      . (:block 1))
+    ("testing"         . (:block 1))
+    ("when"            . (:block 1))
+    ("when-first"      . (:block 1))
+    ("when-let"        . (:block 1))
+    ("when-not"        . (:block 1))
+    ("when-some"       . (:block 1))
+    ("while"           . (:block 1))
+    ("with-local-vars" . (:block 1))
+    ("with-open"       . (:block 1))
+    ("with-precision"  . (:block 1))
+    ("with-redefs"     . (:block 1))
+    ("defrecord"       . (:block 2))
+    ("deftype"         . (:block 2))
+    ("are"             . (:block 2))
+    ("as->"            . (:block 2))
+    ("catch"           . (:block 2))
+    ("condp"           . (:block 2))
+    ("bound-fn"        . (:inner 0))
+    ("def"             . (:inner 0))
+    ("defmacro"        . (:inner 0))
+    ("defmethod"       . (:inner 0))
+    ("defmulti"        . (:inner 0))
+    ("defn"            . (:inner 0))
+    ("defn-"           . (:inner 0))
+    ("defonce"         . (:inner 0))
+    ("deftest"         . (:inner 0))
+    ("fdef"            . (:inner 0))
+    ("fn"              . (:inner 0))
+    ("reify"           . (:inner 0))
+    ("use-fixtures"    . (:inner 0)))
+  "Default semantic indentation rules.
+
+The format reflects cljfmt indentation rules.  All the default rules are
+aligned with
+https://github.com/weavejester/cljfmt/blob/0.13.0/cljfmt/resources/cljfmt/indents/clojure.clj")
+
+(defun clojure-ts--match-block-0-body (bol first-child)
+  "Match if expression body is not at the same line as FIRST-CHILD.
+
+If there is no body, check that BOL is not at the same line."
+  (let* ((body-pos (if-let* ((body (treesit-node-next-sibling first-child)))
+                       (treesit-node-start body)
+                     bol)))
+    (< (line-number-at-pos (treesit-node-start first-child))
+       (line-number-at-pos body-pos))))
+
+(defun clojure-ts--node-pos-match-block (node parent bol block)
+  "Return TRUE if NODE index in the PARENT matches requested BLOCK.
+
+NODE might be nil (when we insert an empty line for example), in this
+case we look for next available child node in the PARENT after BOL
+position.
+
+The first node in the expression is usually an opening paren, the last
+node is usually a closing paren (unless some automatic parens mode is
+not enabled).  If requested BLOCK is 1, the NODE index should be at
+least 3 (first node is opening paren, second node is matched symbol,
+third node is first argument, and the rest is body which should be
+indented.)"
+  (if node
+      (> (treesit-node-index node) (1+ block))
+    (when-let* ((node-after-bol (treesit-node-first-child-for-pos parent bol)))
+      (> (treesit-node-index node-after-bol) (1+ block)))))
+
+(defun clojure-ts--match-form-body (node parent bol)
+  "Match if NODE has to be indented as a for body.
+
+PARENT not should be a list.  If first symbol in the expression has an
+indentation rule in `clojure-ts--semantic-indent-rules-defaults' or
+`clojure-ts-semantic-indent-rules' check if NODE should be indented
+according to the rule.  If NODE is nil, use next node after BOL."
+  (and (clojure-ts--list-node-p parent)
+       (let ((first-child (clojure-ts--node-child-skip-metadata parent 0)))
+         (when-let* ((rule (alist-get (clojure-ts--named-node-text first-child)
+                                      (seq-union clojure-ts-semantic-indent-rules
+                                                 clojure-ts--semantic-indent-rules-defaults
+                                                 (lambda (e1 e2) (equal (car e1) (car e2))))
+                                      nil
+                                      nil
+                                      #'equal)))
+           (and (not (clojure-ts--match-with-metadata node))
+                (let ((rule-type (car rule))
+                      (rule-value (cadr rule)))
+                  (if (equal rule-type :block)
+                      (if (zerop rule-value)
+                          ;; Special treatment for block 0 rule.
+                          (clojure-ts--match-block-0-body bol first-child)
+                        (clojure-ts--node-pos-match-block node parent bol rule-value))
+                    ;; Return true for any inner rule.
+                    t)))))))
 
 (defun clojure-ts--match-function-call-arg (node parent _bol)
   "Match NODE if PARENT is a list expressing a function or macro call."
@@ -786,24 +903,6 @@ https://github.com/weavejester/cljfmt/blob/fb26b22f569724b05c93eb2502592dfc2de89
          (or (clojure-ts--symbol-node-p first-child)
              (clojure-ts--keyword-node-p first-child)
              (clojure-ts--var-node-p first-child)))))
-
-(defun clojure-ts--match-expression-in-body (node parent _bol)
-  "Match NODE if it is an expression used in a body argument.
-PARENT is expected to be a list literal.
-See `treesit-simple-indent-rules'."
-  (and
-   (clojure-ts--list-node-p parent)
-   (let ((first-child (clojure-ts--node-child-skip-metadata parent 0)))
-     (and
-      (not
-       (clojure-ts--symbol-matches-p
-        ;; Symbols starting with this are false positives
-        (rx line-start (or "default" "deflate" "defer"))
-        first-child))
-      (not (clojure-ts--match-with-metadata node))
-      (clojure-ts--symbol-matches-p
-       clojure-ts--symbols-with-body-expressions-regexp
-       first-child)))))
 
 (defun clojure-ts--match-method-body (_node parent _bol)
   "Matches a `NODE' in the body of a `PARENT' method implementation.
@@ -885,7 +984,7 @@ forms like deftype, defrecord, reify, proxy, etc."
      (clojure-ts--match-docstring parent 0)
      ;; https://guide.clojure.style/#body-indentation
      (clojure-ts--match-method-body parent 2)
-     (clojure-ts--match-expression-in-body parent 2)
+     (clojure-ts--match-form-body parent 2)
      ;; https://guide.clojure.style/#threading-macros-alignment
      (clojure-ts--match-threading-macro-arg prev-sibling 0)
      ;; https://guide.clojure.style/#vertically-align-fn-args

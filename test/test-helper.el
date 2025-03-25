@@ -24,7 +24,8 @@
 ;;; Code:
 
 (defmacro with-clojure-ts-buffer (text &rest body)
-  "Create a temporary buffer, insert TEXT,switch to clojure-ts-mode.
+  "Create a temporary buffer, insert TEXT, switch to `clojure-ts-mode'.
+
 And evaluate BODY."
   (declare (indent 1))
   `(with-temp-buffer

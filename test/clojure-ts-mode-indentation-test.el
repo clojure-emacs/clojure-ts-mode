@@ -140,4 +140,103 @@ DESCRIPTION is a string with the description of the spec."
 (when-indenting-it "should support function calls via vars"
    "
 (#'foo 5
-       6)"))
+       6)")
+
+(when-indenting-it "should support block-0 expressions"
+  "
+(do (aligned)
+    (vertically))"
+
+  "
+(do
+  (indented)
+  (with-2-spaces))"
+
+  "
+(future
+  (body is indented))"
+
+  "
+(try
+  (something)
+  ;; A bit of block 2 rule
+  (catch Exception e
+    \"Third argument is indented with 2 spaces.\")
+  (catch ExceptionInfo
+         e-info
+    \"Second argument is aligned vertically with the first one.\"))")
+
+(when-indenting-it "should support block-1 expressions"
+  "
+(case x
+  2 (print 2)
+  3 (print 3)
+  (print \"Default\"))"
+
+  "
+(cond-> {}
+  :always (assoc :hello \"World\")
+  false (do nothing))"
+
+  "
+(with-precision 32
+  (/ (bigdec 20) (bigdec 30)))"
+
+  "
+(testing \"Something should work\"
+  (is (something-working?)))")
+
+(when-indenting-it "should support block-2 expressions"
+  "
+(are [x y]
+     (= x y)
+  2 3
+  4 5
+  6 6)"
+
+  "
+(as-> {} $
+  (assoc $ :hello \"World\"))"
+
+  "
+(as-> {}
+      my-map
+  (assoc my-map :hello \"World\"))"
+
+  "
+(defrecord MyThingR []
+  IProto
+  (foo [this x] x))")
+
+(when-indenting-it "should support inner-0 expressions"
+  "
+(fn named-lambda [x]
+  (+ x x))"
+
+  "
+(defmethod hello :world
+  [arg1 arg2]
+  (+ arg1 arg2))"
+
+  "
+(reify
+  AutoCloseable
+  (close
+    [this]
+    (is properly indented)))")
+
+(it "should prioritize custom semantic indentation rules"
+  (with-clojure-ts-buffer "
+(are [x y]
+     (= x y)
+  2 3
+  4 5
+  6 6)"
+    (setopt clojure-ts-semantic-indent-rules '(("are" . (:block 1))))
+    (indent-region (point-min) (point-max))
+    (expect (buffer-string) :to-equal "
+(are [x y]
+  (= x y)
+  2 3
+  4 5
+  6 6)"))))

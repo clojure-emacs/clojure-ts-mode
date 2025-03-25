@@ -170,6 +170,45 @@ Set the var `clojure-ts-indent-style` to change it.
 >
 > You can find [this article](https://metaredux.com/posts/2020/12/06/semantic-clojure-formatting.html) comparing semantic and fixed indentation useful.
 
+#### Customizing semantic indentation
+
+The indentation of special forms and macros with bodies is controlled via
+`clojure-ts-semantic-indent-rules`. Nearly all special forms and built-in macros
+with bodies have special indentation settings in clojure-ts-mode, which are
+aligned with cljfmt indent rules. You can add/alter the indentation settings in
+your personal config. Let's assume you want to indent `->>` and `->` like this:
+
+```clojure
+(->> something
+  ala
+  bala
+  portokala)
+```
+
+You can do so by putting the following in your config:
+
+```emacs-lisp
+(setopt clojure-ts-semantic-indent-rules '(("->" . (:block 1))
+                                           ("->>" . (:block 1))))
+```
+
+This means that the body of the `->`/`->>` is after the first argument.
+
+The default set of rules is defined as
+`clojure-ts--semantic-indent-rules-defaults`, any rule can be overridden using
+customization option.
+
+There are 2 types of rules supported: `:block` and `:inner`, similarly to
+cljfmt. If rule is defined as `:block n`, `n` means a number of arguments after
+which begins the body. If rule is defined as `:inner n`, each form in the body
+is indented with 2 spaces regardless of `n` value (currently all default rules
+has 0 value).
+
+For example:
+- `do` has a rule `:block 0`.
+- `when` has a rule `:block 1`.
+- `defn` and `fn` have a rule `:inner 0`.
+
 ### Font Locking
 
 To highlight entire rich `comment` expression with the comment font face, set
