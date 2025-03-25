@@ -79,8 +79,6 @@
   :another-keyword 2}
  "default value")
 
-
-
 (defprotocol IProto
   (foo [this x]
     "`this` is a docstring.")
@@ -121,7 +119,6 @@
           ([a b]
            b))})
 
-
 ^:foo
 (def a 1)
 
@@ -145,3 +142,71 @@
   "hello"
   [_foo]
   (+ 1 1))
+
+;;; Block 0 rule
+
+(do (aligned)
+    (vertically))
+
+(do
+  (indented)
+  (with-2-spaces))
+
+(future
+  (body is indented))
+
+(try
+  (something)
+  ;; A bit of block 2 rule
+  (catch Exception e
+    "Third argument is indented with 2 spaces.")
+  (catch ExceptionInfo
+         e-info
+    "Second argument is aligned vertically with the first one."))
+
+;;; Block 1 rule
+
+(case x
+  2 (print 2)
+  3 (print 3)
+  (print "Default"))
+
+(cond-> {}
+  :always (assoc :hello "World")
+  false (do nothing))
+
+(with-precision 32
+  (/ (bigdec 20) (bigdec 30)))
+
+(testing "Something should work"
+  (is (something-working?)))
+
+;;; Block 2 rule
+
+(are [x y]
+     (= x y)
+  2 3
+  4 5
+  6 6)
+
+(as-> {} $
+  (assoc $ :hello "World"))
+
+(as-> {}
+      my-map
+  (assoc my-map :hello "World"))
+
+;;; Inner 0 rule
+
+(fn named-lambda [x]
+  (+ x x))
+
+(defmethod hello :world
+  [arg1 arg2]
+  (+ arg1 arg2))
+
+(reify
+  AutoCloseable
+  (close
+    [this]
+    (is properly indented)))
