@@ -291,6 +291,11 @@ and `clojure-mode` (this is very helpful when dealing with `derived-mode-p` chec
 - Navigation by sexp/lists might work differently on Emacs versions lower
   than 31. Starting with version 31, Emacs uses TreeSitter 'things' settings, if
   available, to rebind some commands.
+- The indentation of list elements with metadata is inconsistent with other
+  collections. This inconsistency stems from the grammar's interpretation of
+  nearly every definition or function call as a list. Therefore, modifying the
+  indentation for list elements would adversely affect the indentation of
+  numerous other forms.
 
 ## Frequently Asked Questions
 

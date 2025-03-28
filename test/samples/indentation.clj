@@ -210,3 +210,59 @@
   (close
     [this]
     (is properly indented)))
+
+(def x
+  [a b [c ^:foo
+        d
+        e]])
+
+#{x
+  y ^:foo
+  z}
+
+{:hello ^:foo
+ "world"
+ :foo
+ "bar"}
+
+;; NOTE: List elements with metadata are not indented correctly.
+'(one
+  two ^:foo
+      three)
+
+^{:nextjournal.clerk/visibility {:code :hide}}
+(defn actual
+  [args])
+
+(def ^:private hello
+  "World")
+
+;; A few examples from clojure core.
+
+;; NOTE: This one is not indented correctly, I'm keeping it here as a reminder
+;; to fix it later.
+(defonce ^:dynamic
+         ^{:private true
+           :doc "A ref to a sorted set of symbols representing loaded libs"}
+         *loaded-libs* (ref (sorted-set)))
+
+(defn index-of
+  "Return index of value (string or char) in s, optionally searching
+  forward from from-index. Return nil if value not found."
+  {:added "1.8"}
+  ([^CharSequence s value]
+   (let [result ^long
+         (if (instance? Character value)
+           (.indexOf (.toString s) ^int (.charValue ^Character value))
+           (.indexOf (.toString s) ^String value))]
+     (if (= result -1)
+       nil
+       result)))
+  ([^CharSequence s value ^long from-index]
+   (let [result ^long
+         (if (instance? Character value)
+           (.indexOf (.toString s) ^int (.charValue ^Character value) (unchecked-int from-index))
+           (.indexOf (.toString s) ^String value (unchecked-int from-index)))]
+     (if (= result -1)
+       nil
+       result))))

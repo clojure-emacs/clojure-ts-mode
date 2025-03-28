@@ -12,6 +12,8 @@
     line.
 - Improve semantic indentation rules to be more consistent with cljfmt.
 - Introduce `clojure-ts-semantic-indent-rules` customization option.
+- [#61](https://github.com/clojure-emacs/clojure-ts-mode/issues/61): Fix issue with indentation of collection items with metadata.
+- Proper syntax highlighting for expressions with metadata.
 
 ## 0.2.3 (2025-03-04)
 
