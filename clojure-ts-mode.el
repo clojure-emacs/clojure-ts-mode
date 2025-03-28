@@ -404,9 +404,9 @@ with the markdown_inline grammar."
     ;; `clojure.core'.
     :feature 'builtin
     :language 'clojure
-    `(((list_lit meta: _ :? :anchor (sym_lit !namespace name: (sym_name) @font-lock-keyword-face))
+    `(((list_lit meta: _ :* :anchor (sym_lit !namespace name: (sym_name) @font-lock-keyword-face))
        (:match ,clojure-ts--builtin-symbol-regexp @font-lock-keyword-face))
-      ((list_lit meta: _ :? :anchor
+      ((list_lit meta: _ :* :anchor
                  (sym_lit namespace: ((sym_ns) @ns
                                       (:equal "clojure.core" @ns))
                           name: (sym_name) @font-lock-keyword-face))
@@ -607,6 +607,12 @@ This does not include the NODE's namespace."
   "Return the Nth child of NODE like `treesit-node-child`, skipping the optional metadata node at pos 0 if present."
   (let ((first-child (treesit-node-child node 0 t)))
     (treesit-node-child node (if (clojure-ts--metadata-node-p first-child) (1+ n) n) t)))
+
+(defun clojure-ts--node-with-metadata-parent (node)
+  "Return parent for NODE only if NODE has metadata, otherwise returns nil."
+  (when-let* ((prev-sibling (treesit-node-prev-sibling node))
+              ((clojure-ts--metadata-node-p prev-sibling)))
+    (treesit-node-parent (treesit-node-parent node))))
 
 (defun clojure-ts--symbol-matches-p (symbol-regexp node)
   "Return non-nil if NODE is a symbol that matches SYMBOL-REGEXP."
@@ -977,6 +983,30 @@ forms like deftype, defrecord, reify, proxy, etc."
     (and prev-sibling
          (clojure-ts--metadata-node-p prev-sibling))))
 
+(defun clojure-ts--anchor-parent-skip-metadata (_node parent _bol)
+  "Anchor function that returns position of PARENT start for NODE.
+
+If PARENT has optional metadata we skip it and return starting position
+of the first child's opening paren.
+
+NOTE: This anchor is used to fix indentation issue for forms with type
+hints."
+  (let ((first-child (treesit-node-child parent 0 t)))
+    (if (clojure-ts--metadata-node-p first-child)
+        ;; We don't need named node here
+        (treesit-node-start (treesit-node-child parent 1))
+      (treesit-node-start parent))))
+
+(defun clojure-ts--match-collection-item-with-metadata (node-type)
+  "Returns a matcher for a collection item with metadata by NODE-TYPE.
+
+The returned matcher accepts NODE, PARENT and BOL and returns true only
+if NODE has metadata and its parent has type NODE-TYPE."
+  (lambda (node _parent _bol)
+    (string-equal node-type
+                  (treesit-node-type
+                   (clojure-ts--node-with-metadata-parent node)))))
+
 (defun clojure-ts--semantic-indent-rules ()
   "Return a list of indentation rules for `treesit-simple-indent-rules'."
   `((clojure
@@ -984,11 +1014,23 @@ forms like deftype, defrecord, reify, proxy, etc."
      (clojure-ts--match-docstring parent 0)
      ;; https://guide.clojure.style/#body-indentation
      (clojure-ts--match-method-body parent 2)
-     (clojure-ts--match-form-body parent 2)
+     (clojure-ts--match-form-body clojure-ts--anchor-parent-skip-metadata 2)
      ;; https://guide.clojure.style/#threading-macros-alignment
      (clojure-ts--match-threading-macro-arg prev-sibling 0)
      ;; https://guide.clojure.style/#vertically-align-fn-args
      (clojure-ts--match-function-call-arg (nth-sibling 2 nil) 0)
+     ;; Collections items with metadata.
+     ;;
+     ;; This should be before `clojure-ts--match-with-metadata', otherwise they
+     ;; will never be matched.
+     (,(clojure-ts--match-collection-item-with-metadata "vec_lit") grand-parent 1)
+     (,(clojure-ts--match-collection-item-with-metadata "map_lit") grand-parent 1)
+     (,(clojure-ts--match-collection-item-with-metadata "set_lit") grand-parent 2)
+     ;;
+     ;; If we enable this rule for lists, it will break many things.
+     ;; (,(clojure-ts--match-collection-item-with-metadata "list_lit") grand-parent 1)
+     ;;
+     ;; All other forms with metadata.
      (clojure-ts--match-with-metadata parent 0)
      ;; Literal Sequences
      ((parent-is "list_lit") parent 1) ;; https://guide.clojure.style/#one-space-indent

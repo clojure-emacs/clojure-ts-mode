@@ -239,4 +239,29 @@ DESCRIPTION is a string with the description of the spec."
   (= x y)
   2 3
   4 5
-  6 6)"))))
+  6 6)")))
+
+(it "should indent collections elements with metadata correctly"
+  "
+(def x
+  [a b [c ^:foo
+        d
+        e]])"
+
+  "
+#{x
+  y ^:foo
+  z}"
+
+  "
+{:hello ^:foo
+ \"world\"
+ :foo
+ \"bar\"}")
+
+(it "should indent body of special forms correctly considering metadata"
+  "
+(let [result ^long
+      (if true
+        1
+        2)])"))
