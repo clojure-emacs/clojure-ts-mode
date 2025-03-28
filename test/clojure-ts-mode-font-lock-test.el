@@ -162,4 +162,9 @@ DESCRIPTION is the description of the spec."
   (when-fontifying-it "non-built-ins-with-same-name"
     ("(h/for query {})"
      (2 2 font-lock-type-face)
-     (4 6 nil))))
+     (4 6 nil)))
+
+  (when-fontifying-it "special-forms-with-metadata"
+    ("^long (if true 1 2)"
+     (2 5 font-lock-type-face)
+     (8 9 font-lock-keyword-face))))
