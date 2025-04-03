@@ -89,6 +89,16 @@ DESCRIPTION is a string with the description of the spec."
     (2 font-lock-function-name-face))))
 
 
+;; Mock `cider--get-symbol-indent' function
+
+(defun cider--get-symbol-indent-mock (symbol-name)
+  "Returns static mocked indentation specs for SYMBOL-NAME if available."
+  (when (stringp symbol-name)
+    (cond
+     ((string-equal symbol-name "my-with-in-str") 1)
+     ((string-equal symbol-name "my-letfn") '(1 ((:defn) (:form)))))))
+
+
 (describe "indentation"
   (it "should not hang on end of buffer"
     (with-clojure-ts-buffer "(let [a b]"
@@ -264,4 +274,51 @@ DESCRIPTION is a string with the description of the spec."
 (let [result ^long
       (if true
         1
-        2)])"))
+        2)])")
+
+(it "should pick up dynamic indentation rules from clojure-ts-get-indent-function"
+  (with-clojure-ts-buffer "
+(defmacro my-with-in-str
+  \"[DOCSTRING]\"
+  {:style/indent 1}
+  [s & body]
+  ~@body)
+
+(my-with-in-str \"34\"
+(prompt \"How old are you?\"))"
+    (setq-local clojure-ts-get-indent-function #'cider--get-symbol-indent-mock)
+    (indent-region (point-min) (point-max))
+    (expect (buffer-string) :to-equal "
+(defmacro my-with-in-str
+  \"[DOCSTRING]\"
+  {:style/indent 1}
+  [s & body]
+  ~@body)
+
+(my-with-in-str \"34\"
+  (prompt \"How old are you?\"))"))
+
+  (with-clojure-ts-buffer "
+(defmacro my-letfn
+  \"[DOCSTRING]\"
+  {:style/indent [1 [[:defn]] :form]}
+  [fnspecs & body]
+  ~@body)
+
+(my-letfn [(twice [x] (* x 2))
+           (six-times [y] (* (twice y) 3))]
+(println \"Twice 15 =\" (twice 15))
+(println \"Six times 15 =\" (six-times 15)))"
+    (setq-local clojure-ts-get-indent-function #'cider--get-symbol-indent-mock)
+    (indent-region (point-min) (point-max))
+    (expect (buffer-string) :to-equal "
+(defmacro my-letfn
+  \"[DOCSTRING]\"
+  {:style/indent [1 [[:defn]] :form]}
+  [fnspecs & body]
+  ~@body)
+
+(my-letfn [(twice [x] (* x 2))
+           (six-times [y] (* (twice y) 3))]
+  (println \"Twice 15 =\" (twice 15))
+  (println \"Six times 15 =\" (six-times 15)))"))))
