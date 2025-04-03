@@ -871,6 +871,34 @@ indented.)"
     (when-let* ((node-after-bol (treesit-node-first-child-for-pos parent bol)))
       (> (treesit-node-index node-after-bol) (1+ block)))))
 
+(defvar clojure-ts-get-indent-function nil
+  "Function to get the indent spec of a symbol.
+
+This function should take one argument, the name of the symbol as a
+string.  This name will be exactly as it appears in the buffer, so it
+might start with a namespace alias.
+
+The returned value is expected to be the same as
+`clojure-get-indent-function' from `clojure-mode' for compatibility
+reasons.")
+
+(defun clojure-ts--dynamic-indent-for-symbol (symbol-name)
+  "Return dynamic indentation spec for SYMBOL-NAME if found.
+
+If function `clojure-ts-get-indent-function' is not nil, call it and
+produce a valid indentation spec from the returned value.
+
+The indentation rules for `clojure-ts-mode' are simpler than for
+`clojure-mode' so we only take the first integer N and produce `(:block
+N)' rule.  If an integer cannot be found, this function returns nil and
+the default rule is used."
+  (when (functionp clojure-ts-get-indent-function)
+    (let ((spec (funcall clojure-ts-get-indent-function symbol-name)))
+      (if (consp spec)
+          `(:block ,(car spec))
+        (when (integerp spec)
+          `(:block ,spec))))))
+
 (defun clojure-ts--match-form-body (node parent bol)
   "Match if NODE has to be indented as a for body.
 
@@ -879,14 +907,16 @@ indentation rule in `clojure-ts--semantic-indent-rules-defaults' or
 `clojure-ts-semantic-indent-rules' check if NODE should be indented
 according to the rule.  If NODE is nil, use next node after BOL."
   (and (clojure-ts--list-node-p parent)
-       (let ((first-child (clojure-ts--node-child-skip-metadata parent 0)))
-         (when-let* ((rule (alist-get (clojure-ts--named-node-text first-child)
-                                      (seq-union clojure-ts-semantic-indent-rules
-                                                 clojure-ts--semantic-indent-rules-defaults
-                                                 (lambda (e1 e2) (equal (car e1) (car e2))))
-                                      nil
-                                      nil
-                                      #'equal)))
+       (let* ((first-child (clojure-ts--node-child-skip-metadata parent 0))
+              (symbol-name (clojure-ts--named-node-text first-child)))
+         (when-let* ((rule (or (clojure-ts--dynamic-indent-for-symbol symbol-name)
+                               (alist-get symbol-name
+                                          (seq-union clojure-ts-semantic-indent-rules
+                                                     clojure-ts--semantic-indent-rules-defaults
+                                                     (lambda (e1 e2) (equal (car e1) (car e2))))
+                                          nil
+                                          nil
+                                          #'equal))))
            (and (not (clojure-ts--match-with-metadata node))
                 (let ((rule-type (car rule))
                       (rule-value (cadr rule)))

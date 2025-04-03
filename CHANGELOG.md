@@ -14,6 +14,7 @@
 - Introduce `clojure-ts-semantic-indent-rules` customization option.
 - [#61](https://github.com/clojure-emacs/clojure-ts-mode/issues/61): Fix issue with indentation of collection items with metadata.
 - Proper syntax highlighting for expressions with metadata.
+- Add basic support for dynamic indentation via `clojure-ts-get-indent-function`.
 
 ## 0.2.3 (2025-03-04)
 
