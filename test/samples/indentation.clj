@@ -89,11 +89,13 @@
   (foo [this x]
     x))
 
-(defrecord MyThingR []
+(defrecord MyThingR
+           []
   IProto
-  (foo [this x] x))
+  (foo [this x]
+    x))
 
-(defn foo2 [x]b)
+(defn foo2 [x] b)
 
 (reify
   IProto
@@ -102,7 +104,8 @@
 
 (extend-type MyThing
   clojure.lang.IFn
-  (invoke [this] 1))
+  (invoke [this]
+    1))
 
 (extend-protocol clojure.lang.IFn
   MyThingR
@@ -266,3 +269,15 @@
      (if (= result -1)
        nil
        result))))
+
+;; Nested rules
+
+(letfn [(add [x y]
+          (+ x y))
+        (hello [user]
+          (println "Hello" user))]
+  (let [x 2
+        y 3
+        user "John Doe"]
+    (dotimes [_ (add x y)]
+      (hello user))))

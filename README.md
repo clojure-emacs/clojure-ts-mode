@@ -188,8 +188,8 @@ your personal config. Let's assume you want to indent `->>` and `->` like this:
 You can do so by putting the following in your config:
 
 ```emacs-lisp
-(setopt clojure-ts-semantic-indent-rules '(("->" . (:block 1))
-                                           ("->>" . (:block 1))))
+(setopt clojure-ts-semantic-indent-rules '(("->" . ((:block 1)))
+                                           ("->>" . ((:block 1)))))
 ```
 
 This means that the body of the `->`/`->>` is after the first argument.
@@ -198,16 +198,17 @@ The default set of rules is defined as
 `clojure-ts--semantic-indent-rules-defaults`, any rule can be overridden using
 customization option.
 
-There are 2 types of rules supported: `:block` and `:inner`, similarly to
-cljfmt. If rule is defined as `:block n`, `n` means a number of arguments after
-which begins the body. If rule is defined as `:inner n`, each form in the body
-is indented with 2 spaces regardless of `n` value (currently all default rules
-has 0 value).
+Two types of rules are supported: `:block` and `:inner`, mirroring those in
+cljfmt. When a rule is defined as `:block n`, `n` represents the number of
+arguments preceding the body. When a rule is defined as `:inner n`, each form
+within the expression's body, nested `n` levels deep, is indented by two
+spaces. These rule definitions fully reflect the [cljfmt rules](https://github.com/weavejester/cljfmt/blob/0.13.0/docs/INDENTS.md).
 
 For example:
-- `do` has a rule `:block 0`.
-- `when` has a rule `:block 1`.
-- `defn` and `fn` have a rule `:inner 0`.
+- `do` has a rule `((:block 0))`.
+- `when` has a rule `((:block 1))`.
+- `defn` and `fn` have a rule `((:inner 0))`.
+- `letfn` has a rule `((:block 1) (:inner 2 0))`.
 
 ### Font Locking
 
