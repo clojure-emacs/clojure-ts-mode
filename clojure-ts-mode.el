@@ -137,9 +137,12 @@ Default set of rules is defined in
 `clojure-ts--semantic-indent-rules-defaults'."
   :safe #'listp
   :type '(alist :key-type string
-                :value-type (list (choice (const :tag "Block indentation rule" :block)
-                                          (const :tag "Inner indentation rule" :inner))
-                                  integer))
+                :value-type (repeat (choice (list (choice (const :tag "Block indentation rule" :block)
+                                                          (const :tag "Inner indentation rule" :inner))
+                                                  integer)
+                                            (list (const :tag "Inner indentation rule" :inner)
+                                                  integer
+                                                  integer))))
   :package-version '(clojure-ts-mode . "0.2.4"))
 
 (defvar clojure-ts-mode-remappings
@@ -769,74 +772,73 @@ The possible values for this variable are
      ((parent-is "set_lit") parent 2))))
 
 (defvar clojure-ts--semantic-indent-rules-defaults
-  '(("alt!"            . (:block 0))
-    ("alt!!"           . (:block 0))
-    ("comment"         . (:block 0))
-    ("cond"            . (:block 0))
-    ("delay"           . (:block 0))
-    ("do"              . (:block 0))
-    ("finally"         . (:block 0))
-    ("future"          . (:block 0))
-    ("go"              . (:block 0))
-    ("thread"          . (:block 0))
-    ("try"             . (:block 0))
-    ("with-out-str"    . (:block 0))
-    ("defprotocol"     . (:block 1))
-    ("binding"         . (:block 1))
-    ("defprotocol"     . (:block 1))
-    ("binding"         . (:block 1))
-    ("case"            . (:block 1))
-    ("cond->"          . (:block 1))
-    ("cond->>"         . (:block 1))
-    ("doseq"           . (:block 1))
-    ("dotimes"         . (:block 1))
-    ("doto"            . (:block 1))
-    ("extend"          . (:block 1))
-    ("extend-protocol" . (:block 1))
-    ("extend-type"     . (:block 1))
-    ("for"             . (:block 1))
-    ("go-loop"         . (:block 1))
-    ("if"              . (:block 1))
-    ("if-let"          . (:block 1))
-    ("if-not"          . (:block 1))
-    ("if-some"         . (:block 1))
-    ("let"             . (:block 1))
-    ("letfn"           . (:block 1))
-    ("locking"         . (:block 1))
-    ("loop"            . (:block 1))
-    ("match"           . (:block 1))
-    ("ns"              . (:block 1))
-    ("struct-map"      . (:block 1))
-    ("testing"         . (:block 1))
-    ("when"            . (:block 1))
-    ("when-first"      . (:block 1))
-    ("when-let"        . (:block 1))
-    ("when-not"        . (:block 1))
-    ("when-some"       . (:block 1))
-    ("while"           . (:block 1))
-    ("with-local-vars" . (:block 1))
-    ("with-open"       . (:block 1))
-    ("with-precision"  . (:block 1))
-    ("with-redefs"     . (:block 1))
-    ("defrecord"       . (:block 2))
-    ("deftype"         . (:block 2))
-    ("are"             . (:block 2))
-    ("as->"            . (:block 2))
-    ("catch"           . (:block 2))
-    ("condp"           . (:block 2))
-    ("bound-fn"        . (:inner 0))
-    ("def"             . (:inner 0))
-    ("defmacro"        . (:inner 0))
-    ("defmethod"       . (:inner 0))
-    ("defmulti"        . (:inner 0))
-    ("defn"            . (:inner 0))
-    ("defn-"           . (:inner 0))
-    ("defonce"         . (:inner 0))
-    ("deftest"         . (:inner 0))
-    ("fdef"            . (:inner 0))
-    ("fn"              . (:inner 0))
-    ("reify"           . (:inner 0))
-    ("use-fixtures"    . (:inner 0)))
+  '(("alt!"            . ((:block 0)))
+    ("alt!!"           . ((:block 0)))
+    ("comment"         . ((:block 0)))
+    ("cond"            . ((:block 0)))
+    ("delay"           . ((:block 0)))
+    ("do"              . ((:block 0)))
+    ("finally"         . ((:block 0)))
+    ("future"          . ((:block 0)))
+    ("go"              . ((:block 0)))
+    ("thread"          . ((:block 0)))
+    ("try"             . ((:block 0)))
+    ("with-out-str"    . ((:block 0)))
+    ("defprotocol"     . ((:block 1) (:inner 1)))
+    ("binding"         . ((:block 1)))
+    ("case"            . ((:block 1)))
+    ("cond->"          . ((:block 1)))
+    ("cond->>"         . ((:block 1)))
+    ("doseq"           . ((:block 1)))
+    ("dotimes"         . ((:block 1)))
+    ("doto"            . ((:block 1)))
+    ("extend"          . ((:block 1)))
+    ("extend-protocol" . ((:block 1) (:inner 1)))
+    ("extend-type"     . ((:block 1) (:inner 1)))
+    ("for"             . ((:block 1)))
+    ("go-loop"         . ((:block 1)))
+    ("if"              . ((:block 1)))
+    ("if-let"          . ((:block 1)))
+    ("if-not"          . ((:block 1)))
+    ("if-some"         . ((:block 1)))
+    ("let"             . ((:block 1)))
+    ("letfn"           . ((:block 1) (:inner 2 0)))
+    ("locking"         . ((:block 1)))
+    ("loop"            . ((:block 1)))
+    ("match"           . ((:block 1)))
+    ("ns"              . ((:block 1)))
+    ("struct-map"      . ((:block 1)))
+    ("testing"         . ((:block 1)))
+    ("when"            . ((:block 1)))
+    ("when-first"      . ((:block 1)))
+    ("when-let"        . ((:block 1)))
+    ("when-not"        . ((:block 1)))
+    ("when-some"       . ((:block 1)))
+    ("while"           . ((:block 1)))
+    ("with-local-vars" . ((:block 1)))
+    ("with-open"       . ((:block 1)))
+    ("with-precision"  . ((:block 1)))
+    ("with-redefs"     . ((:block 1)))
+    ("defrecord"       . ((:block 2) (:inner 1)))
+    ("deftype"         . ((:block 2) (:inner 1)))
+    ("are"             . ((:block 2)))
+    ("as->"            . ((:block 2)))
+    ("catch"           . ((:block 2)))
+    ("condp"           . ((:block 2)))
+    ("bound-fn"        . ((:inner 0)))
+    ("def"             . ((:inner 0)))
+    ("defmacro"        . ((:inner 0)))
+    ("defmethod"       . ((:inner 0)))
+    ("defmulti"        . ((:inner 0)))
+    ("defn"            . ((:inner 0)))
+    ("defn-"           . ((:inner 0)))
+    ("defonce"         . ((:inner 0)))
+    ("deftest"         . ((:inner 0)))
+    ("fdef"            . ((:inner 0)))
+    ("fn"              . ((:inner 0)))
+    ("reify"           . ((:inner 0) (:inner 1)))
+    ("proxy"           . ((:block 2) (:inner 1)))
+    ("use-fixtures"    . ((:inner 0))))
   "Default semantic indentation rules.
 
 The format reflects cljfmt indentation rules.  All the default rules are
@@ -882,22 +884,87 @@ The returned value is expected to be the same as
 `clojure-get-indent-function' from `clojure-mode' for compatibility
 reasons.")
 
+(defun clojure-ts--unwrap-dynamic-spec (spec current-depth)
+  "Recursively unwrap SPEC, incrementally increasing the CURRENT-DEPTH.
+
+This function accepts a list SPEC, like ((:defn)) and produce a proper
+indent rule.  For example, ((:defn)) is converted to (:inner 2),
+and (:defn) is converted to (:inner 1)."
+  (if (consp spec)
+      (clojure-ts--unwrap-dynamic-spec (car spec) (1+ current-depth))
+    (cond
+     ((equal spec :defn) (list :inner current-depth))
+     (t nil))))
+
 (defun clojure-ts--dynamic-indent-for-symbol (symbol-name)
-  "Return dynamic indentation spec for SYMBOL-NAME if found.
+  "Returns the dynamic indentation specification for SYMBOL-NAME, if found.
 
-If function `clojure-ts-get-indent-function' is not nil, call it and
-produce a valid indentation spec from the returned value.
+If the function `clojure-ts-get-indent-function' is defined, call it and
+produce a valid indentation specification from its return value.
 
-The indentation rules for `clojure-ts-mode' are simpler than for
-`clojure-mode' so we only take the first integer N and produce `(:block
-N)' rule.  If an integer cannot be found, this function returns nil and
-the default rule is used."
+The `clojure-ts-get-indent-function' should return an indentation
+specification compatible with `clojure-mode', which will then be
+converted to a suitable `clojure-ts-mode' specification.
+
+For example, (1 ((:defn)) nil) is converted to ((:block 1) (:inner 2))."
   (when (functionp clojure-ts-get-indent-function)
     (let ((spec (funcall clojure-ts-get-indent-function symbol-name)))
-      (if (consp spec)
-          `(:block ,(car spec))
-        (when (integerp spec)
-          `(:block ,spec))))))
+      (if (integerp spec)
+          (list (list :block spec))
+        (when (sequencep spec)
+          (thread-last spec
+                       (seq-map (lambda (el)
+                                  (cond
+                                   ((integerp el) (list :block el))
+                                   ((equal el :defn) (list :inner 0))
+                                   ((consp el) (clojure-ts--unwrap-dynamic-spec el 0))
+                                   (t nil))))
+                       (seq-remove #'null)
+                       ;; Always put `:block' to the beginning.
+                       (seq-sort (lambda (spec1 _spec2)
+                                   (equal (car spec1) :block)))))))))
+
+(defun clojure-ts--find-semantic-rule (node parent current-depth)
+  "Returns a suitable indentation rule for NODE, considering the CURRENT-DEPTH.
+
+Attempts to find an indentation rule by examining the symbol name of the
+PARENT's first child.  If a rule is not found, it navigates up the
+syntax tree and recursively attempts to find a rule, incrementally
+increasing the CURRENT-DEPTH.  If a rule is not found upon reaching the
+root of the syntax tree, it returns nil.  A rule is considered a match
+only if the CURRENT-DEPTH matches the rule's required depth."
+  (let* ((first-child (clojure-ts--node-child-skip-metadata parent 0))
+         (symbol-name (clojure-ts--named-node-text first-child))
+         (idx (- (treesit-node-index node) 2)))
+    (if-let* ((rule-set (or (clojure-ts--dynamic-indent-for-symbol symbol-name)
+                            (alist-get symbol-name
+                                       (seq-union clojure-ts-semantic-indent-rules
+                                                  clojure-ts--semantic-indent-rules-defaults
+                                                  (lambda (e1 e2) (equal (car e1) (car e2))))
+                                       nil
+                                       nil
+                                       #'equal))))
+        (if (zerop current-depth)
+            (let ((rule (car rule-set)))
+              (if (equal (car rule) :block)
+                  rule
+                (pcase-let ((`(,_ ,rule-depth ,rule-idx) rule))
+                  (when (and (equal rule-depth current-depth)
+                             (or (null rule-idx)
+                                 (equal rule-idx idx)))
+                    rule))))
+          (thread-last rule-set
+                       (seq-filter (lambda (rule)
+                                     (pcase-let ((`(,rule-type ,rule-depth ,rule-idx) rule))
+                                       (and (equal rule-type :inner)
+                                            (equal rule-depth current-depth)
+                                            (or (null rule-idx)
+                                                (equal rule-idx idx))))))
+                       (seq-first)))
+      (when-let* ((new-parent (treesit-node-parent parent)))
+        (clojure-ts--find-semantic-rule parent
+                                        new-parent
+                                        (1+ current-depth))))))
 
 (defun clojure-ts--match-form-body (node parent bol)
   "Match if NODE has to be indented as a for body.
@@ -907,16 +974,8 @@ indentation rule in `clojure-ts--semantic-indent-rules-defaults' or
 `clojure-ts-semantic-indent-rules' check if NODE should be indented
 according to the rule.  If NODE is nil, use next node after BOL."
   (and (clojure-ts--list-node-p parent)
-       (let* ((first-child (clojure-ts--node-child-skip-metadata parent 0))
-              (symbol-name (clojure-ts--named-node-text first-child)))
-         (when-let* ((rule (or (clojure-ts--dynamic-indent-for-symbol symbol-name)
-                               (alist-get symbol-name
-                                          (seq-union clojure-ts-semantic-indent-rules
-                                                     clojure-ts--semantic-indent-rules-defaults
-                                                     (lambda (e1 e2) (equal (car e1) (car e2))))
-                                          nil
-                                          nil
-                                          #'equal))))
+       (let* ((first-child (clojure-ts--node-child-skip-metadata parent 0)))
+         (when-let* ((rule (clojure-ts--find-semantic-rule node parent 0)))
            (and (not (clojure-ts--match-with-metadata node))
                 (let ((rule-type (car rule))
                       (rule-value (cadr rule)))
@@ -939,19 +998,6 @@ according to the rule.  If NODE is nil, use next node after BOL."
          (or (clojure-ts--symbol-node-p first-child)
              (clojure-ts--keyword-node-p first-child)
              (clojure-ts--var-node-p first-child)))))
-
-(defun clojure-ts--match-method-body (_node parent _bol)
-  "Matches a `NODE' in the body of a `PARENT' method implementation.
-A method implementation referes to concrete implementations being defined in
-forms like deftype, defrecord, reify, proxy, etc."
-  (and
-   (clojure-ts--list-node-p parent)
-   (let* ((grandparent (treesit-node-parent parent))
-          ;; auncle: gender neutral sibling of parent, aka child of grandparent
-          (first-auncle (treesit-node-child grandparent 0 t)))
-     (and (clojure-ts--list-node-p grandparent)
-          (clojure-ts--symbol-matches-p clojure-ts--type-symbol-regexp
-                                        first-auncle)))))
 
 (defvar clojure-ts--threading-macro
   (eval-and-compile
@@ -1043,7 +1089,6 @@ if NODE has metadata and its parent has type NODE-TYPE."
      ((parent-is "source") parent-bol 0)
      (clojure-ts--match-docstring parent 0)
      ;; https://guide.clojure.style/#body-indentation
-     (clojure-ts--match-method-body parent 2)
      (clojure-ts--match-form-body clojure-ts--anchor-parent-skip-metadata 2)
      ;; https://guide.clojure.style/#threading-macros-alignment
      (clojure-ts--match-threading-macro-arg prev-sibling 0)

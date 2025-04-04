@@ -96,7 +96,7 @@ DESCRIPTION is a string with the description of the spec."
   (when (stringp symbol-name)
     (cond
      ((string-equal symbol-name "my-with-in-str") 1)
-     ((string-equal symbol-name "my-letfn") '(1 ((:defn) (:form)))))))
+     ((string-equal symbol-name "my-letfn") '(1 ((:defn)) :form)))))
 
 
 (describe "indentation"
@@ -242,7 +242,7 @@ DESCRIPTION is a string with the description of the spec."
   2 3
   4 5
   6 6)"
-    (setopt clojure-ts-semantic-indent-rules '(("are" . (:block 1))))
+    (setopt clojure-ts-semantic-indent-rules '(("are" . ((:block 1)))))
     (indent-region (point-min) (point-max))
     (expect (buffer-string) :to-equal "
 (are [x y]
@@ -305,8 +305,10 @@ DESCRIPTION is a string with the description of the spec."
   [fnspecs & body]
   ~@body)
 
-(my-letfn [(twice [x] (* x 2))
-           (six-times [y] (* (twice y) 3))]
+(my-letfn [(twice [x]
+          (* x 2))
+          (six-times [y]
+          (* (twice y) 3))]
 (println \"Twice 15 =\" (twice 15))
 (println \"Six times 15 =\" (six-times 15)))"
     (setq-local clojure-ts-get-indent-function #'cider--get-symbol-indent-mock)
@@ -318,7 +320,9 @@ DESCRIPTION is a string with the description of the spec."
   [fnspecs & body]
   ~@body)
 
-(my-letfn [(twice [x] (* x 2))
-           (six-times [y] (* (twice y) 3))]
+(my-letfn [(twice [x]
+             (* x 2))
+           (six-times [y]
+             (* (twice y) 3))]
   (println \"Twice 15 =\" (twice 15))
   (println \"Six times 15 =\" (six-times 15)))"))))
