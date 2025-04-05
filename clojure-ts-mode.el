@@ -608,6 +608,12 @@ with the markdown_inline grammar."
 This does not include the NODE's namespace."
   (treesit-node-text (treesit-node-child-by-field-name node "name")))
 
+(defun clojure-ts--node-namespace-text (node)
+  "Gets the namespace of a symbol or keyword NODE.
+
+If there is no namespace, returns nil."
+  (treesit-node-text (treesit-node-child-by-field-name node "namespace")))
+
 (defun clojure-ts--symbol-named-p (expected-symbol-name node)
   "Return non-nil if NODE is a symbol with text matching EXPECTED-SYMBOL-NAME."
   (and (clojure-ts--symbol-node-p node)
@@ -909,8 +915,8 @@ and (:defn) is converted to (:inner 1)."
      ((equal spec :defn) (list :inner current-depth))
      (t nil))))
 
-(defun clojure-ts--dynamic-indent-for-symbol (symbol-name)
-  "Returns the dynamic indentation specification for SYMBOL-NAME, if found.
+(defun clojure-ts--dynamic-indent-for-symbol (sym &optional ns)
+  "Returns the dynamic indentation specification for SYM, if found.
 
 If the function `clojure-ts-get-indent-function' is defined, call it and
 produce a valid indentation specification from its return value.
@@ -919,9 +925,15 @@ The `clojure-ts-get-indent-function' should return an indentation
 specification compatible with `clojure-mode', which will then be
 converted to a suitable `clojure-ts-mode' specification.
 
-For example, (1 ((:defn)) nil) is converted to ((:block 1) (:inner 2))."
+For example, (1 ((:defn)) nil) is converted to ((:block 1) (:inner 2)).
+
+If NS is defined, then the fully qualified symbol is passed to
+`clojure-ts-get-indent-function'."
   (when (functionp clojure-ts-get-indent-function)
-    (let ((spec (funcall clojure-ts-get-indent-function symbol-name)))
+    (let* ((full-symbol (if ns
+                            (concat ns "/" sym)
+                          sym))
+           (spec (funcall clojure-ts-get-indent-function full-symbol)))
       (if (integerp spec)
           (list (list :block spec))
         (when (sequencep spec)
@@ -948,8 +960,9 @@ root of the syntax tree, it returns nil.  A rule is considered a match
 only if the CURRENT-DEPTH matches the rule's required depth."
   (let* ((first-child (clojure-ts--node-child-skip-metadata parent 0))
          (symbol-name (clojure-ts--named-node-text first-child))
+         (symbol-namespace (clojure-ts--node-namespace-text first-child))
          (idx (- (treesit-node-index node) 2)))
-    (if-let* ((rule-set (or (clojure-ts--dynamic-indent-for-symbol symbol-name)
+    (if-let* ((rule-set (or (clojure-ts--dynamic-indent-for-symbol symbol-name symbol-namespace)
                             (alist-get symbol-name
                                        (seq-union clojure-ts-semantic-indent-rules
                                                   clojure-ts--semantic-indent-rules-defaults
