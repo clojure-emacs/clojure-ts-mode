@@ -3,19 +3,20 @@
 ## main (unreleased)
 
 - [#62](https://github.com/clojure-emacs/clojure-ts-mode/issues/62): Define `list` "thing" to improve navigation in Emacs 31.
-- [#64]: Add defcustom `clojure-ts-auto-remap` to control remapping of `clojure-mode` buffers.
-- Improve syntax highlighting:
+- [#64](https://github.com/clojure-emacs/clojure-ts-mode/pull/64): Add defcustom `clojure-ts-auto-remap` to control remapping of `clojure-mode` buffers.
+- [#66](https://github.com/clojure-emacs/clojure-ts-mode/pull/66): Improve syntax highlighting:
   - Highlight metadata with single keyword with `clojure-ts-keyword-face`.
   - Only highlight built-ins from `clojure.core` namespace.
   - Highlight named lambda functions properly.
   - Fix syntax highlighting for functions and vars with metadata on the previous
     line.
-- Improve semantic indentation rules to be more consistent with cljfmt.
-- Introduce `clojure-ts-semantic-indent-rules` customization option.
+- [#67](https://github.com/clojure-emacs/clojure-ts-mode/pull/67): Improve semantic indentation rules to be more consistent with cljfmt.
+- [#67](https://github.com/clojure-emacs/clojure-ts-mode/pull/67): Introduce `clojure-ts-semantic-indent-rules` customization option.
 - [#61](https://github.com/clojure-emacs/clojure-ts-mode/issues/61): Fix issue with indentation of collection items with metadata.
-- Proper syntax highlighting for expressions with metadata.
-- Add basic support for dynamic indentation via `clojure-ts-get-indent-function`.
-- Add support for nested indentation rules.
+- [#68](https://github.com/clojure-emacs/clojure-ts-mode/pull/68): Proper syntax highlighting for expressions with metadata.
+- [#69](https://github.com/clojure-emacs/clojure-ts-mode/pull/69): Add basic support for dynamic indentation via `clojure-ts-get-indent-function`.
+- [#70](https://github.com/clojure-emacs/clojure-ts-mode/pull/70): Add support for nested indentation rules.
+- [#71](https://github.com/clojure-emacs/clojure-ts-mode/pull/71): Properly highlight function name in `letfn` form.
 
 ## 0.2.3 (2025-03-04)
 

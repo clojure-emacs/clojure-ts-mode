@@ -27,6 +27,14 @@
 (clojure.core/for [])
 (honey.sql/for {})
 
+;; the "add" and "hello" should both have a function name face
+(letfn [(add [x y]
+          (+ x y))
+        (hello [user]
+          (println "Hello" user))]
+  (dotimes [_ (add 6 8)]
+    (hello "John Doe")))
+
 ;; the myfn sexp should have a comment face
 (mysfn 101
        foo
