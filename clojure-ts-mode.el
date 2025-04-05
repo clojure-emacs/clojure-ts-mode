@@ -619,7 +619,7 @@ This does not include the NODE's namespace."
     (treesit-node-child node (if (clojure-ts--metadata-node-p first-child) (1+ n) n) t)))
 
 (defun clojure-ts--node-with-metadata-parent (node)
-  "Return parent for NODE only if NODE has metadata, otherwise returns nil."
+  "Return parent for NODE only if NODE has metadata, otherwise return nil."
   (when-let* ((prev-sibling (treesit-node-prev-sibling node))
               ((clojure-ts--metadata-node-p prev-sibling)))
     (treesit-node-parent (treesit-node-parent node))))
