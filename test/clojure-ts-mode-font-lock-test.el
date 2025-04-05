@@ -167,4 +167,56 @@ DESCRIPTION is the description of the spec."
   (when-fontifying-it "special-forms-with-metadata"
     ("^long (if true 1 2)"
      (2 5 font-lock-type-face)
-     (8 9 font-lock-keyword-face))))
+     (8 9 font-lock-keyword-face)))
+
+  (when-fontifying-it "should highlight function name in all known forms"
+    ("(letfn [(add [x y]
+          (+ x y))
+        (hello [user]
+          (println \"Hello\" user))]
+  (dotimes [_ (add 6 8)]
+    (hello \"John Doe\")))"
+     (2 6 font-lock-keyword-face)
+     (10 12 font-lock-function-name-face)
+     (48 52 font-lock-function-name-face))
+
+    ("(reify
+  AutoCloseable
+  (close [this] (.close this)))"
+     (2 6 font-lock-keyword-face)
+     (27 31 font-lock-function-name-face))
+
+    ("(defrecord TestRecord [field]
+  AutoCloseable
+  (close [this]
+    (.close this)))"
+     (2 10 font-lock-keyword-face)
+     (12 21 font-lock-type-face)
+     (50 54 font-lock-function-name-face))
+
+    ("(definterface MyInterface
+  (^String name [])
+  (^double mass []))"
+     (2 13 font-lock-keyword-face)
+     (15 25 font-lock-type-face)
+     (31 36 font-lock-type-face)
+     (38 41 font-lock-function-name-face)
+     (51 56 font-lock-type-face)
+     (58 61 font-lock-function-name-face))
+
+    ("(deftype ImageSelection [data]
+  Transferable
+  (getTransferDataFlavors
+    [this]
+    (into-array DataFlavor [DataFlavor/imageFlavor])))"
+     (2 8 font-lock-keyword-face)
+     (10 23 font-lock-type-face)
+     (50 71 font-lock-function-name-face))
+
+    ("(defprotocol P
+  (foo [this])
+  (bar-me [this] [this y]))"
+     (2 12 font-lock-keyword-face)
+     (14 14 font-lock-type-face)
+     (19 21 font-lock-function-name-face)
+     (34 39 font-lock-function-name-face))))

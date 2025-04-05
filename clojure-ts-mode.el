@@ -473,7 +473,14 @@ with the markdown_inline grammar."
         ((sym_lit name: (sym_name) @def)
          ((:equal "reify" @def)))
         (list_lit
-         (sym_lit name: (sym_name) @font-lock-function-name-face)))))
+         (sym_lit name: (sym_name) @font-lock-function-name-face))))
+      ;; letfn
+      ((list_lit
+        ((sym_lit name: (sym_name) @symbol)
+         ((:equal "letfn" @symbol)))
+        (vec_lit
+         (list_lit
+          (sym_lit name: (sym_name) @font-lock-function-name-face))))))
 
     :feature 'variable ;; def, defonce
     :language 'clojure
