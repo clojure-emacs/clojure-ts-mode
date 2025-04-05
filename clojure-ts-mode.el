@@ -6,7 +6,7 @@
 ;; Maintainer: Danny Freeman <danny@dfreeman.email>
 ;; URL: http://github.com/clojure-emacs/clojure-ts-mode
 ;; Keywords: languages clojure clojurescript lisp
-;; Version: 0.2.4-snapshot
+;; Version: 0.3.0-snapshot
 ;; Package-Requires: ((emacs "30.1"))
 
 ;; This file is not part of GNU Emacs.
@@ -71,7 +71,7 @@
   :link '(emacs-commentary-link :tag "Commentary" "clojure-mode"))
 
 (defconst clojure-ts-mode-version
-  "0.2.4-snapshot"
+  "0.3.0-snapshot"
   "The current version of `clojure-ts-mode'.")
 
 (defcustom clojure-ts-comment-macro-font-lock-body nil
@@ -123,7 +123,7 @@ double quotes on the third column."
   "When non-nil, redirect all `clojure-mode' buffers to `clojure-ts-mode'."
   :safe #'booleanp
   :type 'boolean
-  :package-version '(clojure-ts-mode . "0.2.4"))
+  :package-version '(clojure-ts-mode . "0.3"))
 
 (defcustom clojure-ts-semantic-indent-rules nil
   "Custom rules to extend default indentation rules for `semantic' style.
@@ -143,7 +143,7 @@ Default set of rules is defined in
                                             (list (const :tag "Inner indentation rule" :inner)
                                                   integer
                                                   integer))))
-  :package-version '(clojure-ts-mode . "0.2.4"))
+  :package-version '(clojure-ts-mode . "0.3"))
 
 (defvar clojure-ts-mode-remappings
   '((clojure-mode . clojure-ts-mode)
