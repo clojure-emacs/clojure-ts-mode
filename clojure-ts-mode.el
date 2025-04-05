@@ -614,9 +614,15 @@ This does not include the NODE's namespace."
        (string-equal expected-symbol-name (clojure-ts--named-node-text node))))
 
 (defun clojure-ts--node-child-skip-metadata (node n)
-  "Return the Nth child of NODE like `treesit-node-child`, skipping the optional metadata node at pos 0 if present."
+  "Return the Nth child of NODE like `treesit-node-child', sans metadata.
+Skip the optional metadata node at pos 0 if present."
   (let ((first-child (treesit-node-child node 0 t)))
-    (treesit-node-child node (if (clojure-ts--metadata-node-p first-child) (1+ n) n) t)))
+    (treesit-node-child
+     node
+     (if (clojure-ts--metadata-node-p first-child)
+         (1+ n)
+       n)
+     t)))
 
 (defun clojure-ts--node-with-metadata-parent (node)
   "Return parent for NODE only if NODE has metadata, otherwise return nil."
