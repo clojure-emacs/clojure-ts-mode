@@ -17,6 +17,7 @@
 - [#69](https://github.com/clojure-emacs/clojure-ts-mode/pull/69): Add basic support for dynamic indentation via `clojure-ts-get-indent-function`.
 - [#70](https://github.com/clojure-emacs/clojure-ts-mode/pull/70): Add support for nested indentation rules.
 - [#71](https://github.com/clojure-emacs/clojure-ts-mode/pull/71): Properly highlight function name in `letfn` form.
+- [#72](https://github.com/clojure-emacs/clojure-ts-mode/pull/72): Pass fully qualified symbol to `clojure-ts-get-indent-function`.
 
 ## 0.2.3 (2025-03-04)
 
