@@ -29,10 +29,18 @@
 (describe "clojure-ts-mode imenu integration"
   (it "should index def with meta data"
     (with-clojure-ts-buffer "^{:foo 1}(def a 1)"
-      (expect (imenu--in-alist "a" (imenu--make-index-alist))
-              :not :to-be nil)))
+      (let ((flatten-index (imenu--flatten-index-alist (imenu--make-index-alist) t)))
+        (expect (imenu-find-default "a" flatten-index)
+                :to-equal "Variable:a"))))
 
   (it "should index defn with meta data"
     (with-clojure-ts-buffer "^{:foo 1}(defn a [])"
-      (expect (imenu--in-alist "a" (imenu--make-index-alist))
-              :not :to-be nil))))
+      (let ((flatten-index (imenu--flatten-index-alist (imenu--make-index-alist) t)))
+        (expect (imenu-find-default "a" flatten-index)
+                :to-equal "Function:a"))))
+
+  (it "should index def with keywords as a first item"
+    (with-clojure-ts-buffer "(s/def ::username string?)"
+      (let ((flatten-index (imenu--flatten-index-alist (imenu--make-index-alist) t)))
+        (expect (imenu-find-default "username" flatten-index)
+                :to-equal "Keyword:username")))))

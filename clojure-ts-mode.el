@@ -637,17 +637,33 @@ See `clojure-ts--definition-node-p' when an exact match is possible."
   (and
    (clojure-ts--list-node-p node)
    (let* ((child (clojure-ts--node-child-skip-metadata node 0))
-          (child-txt (clojure-ts--named-node-text child)))
+          (child-txt (clojure-ts--named-node-text child))
+          (name-sym (clojure-ts--node-child-skip-metadata node 1)))
      (and (clojure-ts--symbol-node-p child)
+          (clojure-ts--symbol-node-p name-sym)
           (string-match-p definition-type-regexp child-txt)))))
+
+(defun clojure-ts--kwd-definition-node-match-p (node)
+  "Return non-nil if the NODE is a keyword definition."
+  (and (clojure-ts--list-node-p node)
+       (let* ((child (clojure-ts--node-child-skip-metadata node 0))
+              (child-txt (clojure-ts--named-node-text child))
+              (child-ns (clojure-ts--node-namespace-text child))
+              (name-kwd (clojure-ts--node-child-skip-metadata node 1)))
+         (and child-ns
+              (clojure-ts--symbol-node-p child)
+              (clojure-ts--keyword-node-p name-kwd)
+              (string-equal child-txt "def")))))
 
 (defun clojure-ts--standard-definition-node-name (node)
   "Return the definition name for the given NODE.
-Returns nil if NODE is not a list with symbols as the first two children.
-For example the node representing the expression (def foo 1) would return foo.
-The node representing (ns user) would return user.
-Does not does any matching on the first symbol (def, defn, etc), so identifying
-that a node is a definition is intended to be done elsewhere.
+
+Returns nil if NODE is not a list with symbols as the first two
+children.  For example the node representing the expression (def foo 1)
+would return foo.  The node representing (ns user) would return user.
+Does not do any matching on the first symbol (def, defn, etc), so
+identifying that a node is a definition is intended to be done
+elsewhere.
 
 Can be called directly, but intended for use as `treesit-defun-name-function'."
   (when (and (clojure-ts--list-node-p node)
@@ -662,6 +678,21 @@ Can be called directly, but intended for use as `treesit-defun-name-function'."
           (if ns
               (concat (treesit-node-text ns) "/" (treesit-node-text name))
             (treesit-node-text name)))))))
+
+(defun clojure-ts--kwd-definition-node-name (node)
+  "Return the keyword name for the given NODE.
+
+Returns nil if NODE is not a list where the first element is a symbol
+and the second is a keyword.  For example, a node representing the
+expression (s/def ::foo int?) would return foo.
+
+Can be called directly, but intended for use as
+`treesit-defun-name-function'."
+  (when (and (clojure-ts--list-node-p node)
+             (clojure-ts--symbol-node-p (clojure-ts--node-child-skip-metadata node 0)))
+    (let ((kwd (clojure-ts--node-child-skip-metadata node 1)))
+      (when (clojure-ts--keyword-node-p kwd)
+        (treesit-node-text (treesit-node-child-by-field-name kwd "name"))))))
 
 (defvar clojure-ts--function-type-regexp
   (rx string-start (or (seq "defn" (opt "-")) "defmethod" "deftest") string-end)
@@ -713,7 +744,6 @@ Includes a dispatch value when applicable (defmethods)."
   "Return non-nil if NODE represents a protocol or interface definition."
   (clojure-ts--definition-node-match-p clojure-ts--interface-type-regexp node))
 
-
 (defvar clojure-ts--imenu-settings
   `(("Namespace" "list_lit" clojure-ts--ns-node-p)
     ("Function" "list_lit" clojure-ts--function-node-p
@@ -722,7 +752,11 @@ Includes a dispatch value when applicable (defmethods)."
     ("Macro" "list_lit" clojure-ts--defmacro-node-p)
     ("Variable" "list_lit" clojure-ts--variable-definition-node-p)
     ("Interface" "list_lit" clojure-ts--interface-node-p)
-    ("Class" "list_lit" clojure-ts--class-node-p))
+    ("Class" "list_lit" clojure-ts--class-node-p)
+    ("Keyword"
+     "list_lit"
+     clojure-ts--kwd-definition-node-match-p
+     clojure-ts--kwd-definition-node-name))
   "The value for `treesit-simple-imenu-settings'.
 By default `treesit-defun-name-function' is used to extract definition names.
 See `clojure-ts--standard-definition-node-name' for the implementation used.")

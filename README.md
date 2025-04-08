@@ -275,6 +275,19 @@ Every new line in the docstrings is indented by
 `clojure-ts-docstring-fill-prefix-width` number of spaces (set to 2 by default
 which matches the `clojure-mode` settings).
 
+#### imenu
+
+`clojure-ts-mode` supports various types of definition that can be navigated
+using `imenu`, such as:
+
+- namespace
+- function
+- macro
+- var
+- interface (forms such as `defprotocol`, `definterface` and `defmulti`)
+- class (forms such as `deftype`, `defrecord` and `defstruct`)
+- keyword (for example, spec definitions)
+
 ## Migrating to clojure-ts-mode
 
 If you are migrating to `clojure-ts-mode` note that `clojure-mode` is still required for cider and clj-refactor packages to work properly.
