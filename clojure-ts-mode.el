@@ -125,26 +125,6 @@ double quotes on the third column."
   :type 'boolean
   :package-version '(clojure-ts-mode . "0.3"))
 
-(defcustom clojure-ts-semantic-indent-rules nil
-  "Custom rules to extend default indentation rules for `semantic' style.
-
-Each rule is an alist entry which looks like `(\"symbol-name\"
-. (rule-type rule-value))', where rule-type is one either `:block' or
-`:inner' and rule-value is an integer.  The semantic is similar to
-cljfmt indentation rules.
-
-Default set of rules is defined in
-`clojure-ts--semantic-indent-rules-defaults'."
-  :safe #'listp
-  :type '(alist :key-type string
-                :value-type (repeat (choice (list (choice (const :tag "Block indentation rule" :block)
-                                                          (const :tag "Inner indentation rule" :inner))
-                                                  integer)
-                                            (list (const :tag "Inner indentation rule" :inner)
-                                                  integer
-                                                  integer))))
-  :package-version '(clojure-ts-mode . "0.3"))
-
 (defvar clojure-ts-mode-remappings
   '((clojure-mode . clojure-ts-mode)
     (clojurescript-mode . clojure-ts-clojurescript-mode)
@@ -864,6 +844,61 @@ The format reflects cljfmt indentation rules.  All the default rules are
 aligned with
 https://github.com/weavejester/cljfmt/blob/0.13.0/cljfmt/resources/cljfmt/indents/clojure.clj")
 
+(defvar-local clojure-ts--semantic-indent-rules-cache nil)
+
+(defun clojure-ts--compute-semantic-indentation-rules-cache (rules)
+  "Compute the combined semantic indentation rules cache.
+
+If RULES are not provided, this function computes the union of
+`clojure-ts-semantic-indent-rules' and
+`clojure-ts--semantic-indent-rules-defaults', prioritizing user-defined
+rules.  If RULES are provided, this function uses them instead of
+`clojure-ts-semantic-indent-rules'.
+
+This function is called when the `clojure-ts-semantic-indent-rules'
+variable is customized using setopt or the Emacs customization
+interface.  It is also called when file-local variables are updated.
+This ensures that updated indentation rules are always precalculated."
+  (seq-union rules
+             clojure-ts--semantic-indent-rules-defaults
+             (lambda (e1 e2) (equal (car e1) (car e2)))))
+
+(defun clojure-ts--set-semantic-indent-rules (symbol value)
+  "Setter function for `clojure-ts-semantic-indent-rules' variable.
+
+Sets SYMBOL's top-level default value to VALUE and updates the
+`clojure-ts--semantic-indent-rules-cache' in all `clojure-ts-mode'
+buffers, if any exist.
+
+NOTE: This function is not meant to be called directly."
+  (set-default-toplevel-value symbol value)
+  ;; Update cache in every `clojure-ts-mode' buffer.
+  (let ((new-cache (clojure-ts--compute-semantic-indentation-rules-cache value)))
+    (dolist (buf (buffer-list))
+      (when (buffer-local-boundp 'clojure-ts--semantic-indent-rules-cache buf)
+        (setq clojure-ts--semantic-indent-rules-cache new-cache)))))
+
+(defcustom clojure-ts-semantic-indent-rules nil
+  "Custom rules to extend default indentation rules for `semantic' style.
+
+Each rule is an alist entry which looks like `(\"symbol-name\"
+. (rule-type rule-value))', where rule-type is one either `:block' or
+`:inner' and rule-value is an integer.  The semantic is similar to
+cljfmt indentation rules.
+
+Default set of rules is defined in
+`clojure-ts--semantic-indent-rules-defaults'."
+  :safe #'listp
+  :type '(alist :key-type string
+                :value-type (repeat (choice (list (choice (const :tag "Block indentation rule" :block)
+                                                          (const :tag "Inner indentation rule" :inner))
+                                                  integer)
+                                            (list (const :tag "Inner indentation rule" :inner)
+                                                  integer
+                                                  integer))))
+  :package-version '(clojure-ts-mode . "0.3")
+  :set #'clojure-ts--set-semantic-indent-rules)
+
 (defun clojure-ts--match-block-0-body (bol first-child)
   "Match if expression body is not at the same line as FIRST-CHILD.
 
@@ -929,7 +964,7 @@ For example, (1 ((:defn)) nil) is converted to ((:block 1) (:inner 2)).
 
 If NS is defined, then the fully qualified symbol is passed to
 `clojure-ts-get-indent-function'."
-  (when (functionp clojure-ts-get-indent-function)
+  (when (and sym (functionp clojure-ts-get-indent-function))
     (let* ((full-symbol (if ns
                             (concat ns "/" sym)
                           sym))
@@ -964,9 +999,7 @@ only if the CURRENT-DEPTH matches the rule's required depth."
          (idx (- (treesit-node-index node) 2)))
     (if-let* ((rule-set (or (clojure-ts--dynamic-indent-for-symbol symbol-name symbol-namespace)
                             (alist-get symbol-name
-                                       (seq-union clojure-ts-semantic-indent-rules
-                                                  clojure-ts--semantic-indent-rules-defaults
-                                                  (lambda (e1 e2) (equal (car e1) (car e2))))
+                                       clojure-ts--semantic-indent-rules-cache
                                        nil
                                        nil
                                        #'equal))))
@@ -1310,6 +1343,19 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
         (treesit-inspect-mode))
 
       (treesit-major-mode-setup)
+
+      ;; Initial indentation rules cache calculation.
+      (setq clojure-ts--semantic-indent-rules-cache
+            (clojure-ts--compute-semantic-indentation-rules-cache clojure-ts-semantic-indent-rules))
+
+      ;; If indentation rules are set in `.dir-locals.el', it is advisable to
+      ;; recalculate the buffer-local value whenever the value changes.
+      (add-hook 'hack-local-variables-hook
+                (lambda ()
+                  (setq clojure-ts--semantic-indent-rules-cache
+                        (clojure-ts--compute-semantic-indentation-rules-cache clojure-ts-semantic-indent-rules)))
+                0
+                t)
 
       ;; Workaround for treesit-transpose-sexps not correctly working with
       ;; treesit-thing-settings on Emacs 30.
