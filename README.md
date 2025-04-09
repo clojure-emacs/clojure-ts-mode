@@ -210,6 +210,24 @@ For example:
 - `defn` and `fn` have a rule `((:inner 0))`.
 - `letfn` has a rule `((:block 1) (:inner 2 0))`.
 
+Note that `clojure-ts-semantic-indent-rules` should be set using the
+customization interface or `setopt`; otherwise, it will not be applied
+correctly.
+
+#### Project local indentation
+
+Custom indentation rules can be set for individual projects. To achieve this,
+you need to create a `.dir-locals.el` file in the project root. The content
+should look like:
+
+```emacs-lisp
+((clojure-ts-mode . ((clojure-ts-semantic-indent-rules . (("with-transaction" . ((:block 1)))
+                                                          ("with-retry" . ((:block 1))))))))
+```
+
+In order to apply directory-local variables to existing buffers, they must be
+reverted.
+
 ### Font Locking
 
 To highlight entire rich `comment` expression with the comment font face, set
