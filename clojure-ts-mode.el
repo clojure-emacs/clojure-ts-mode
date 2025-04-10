@@ -343,14 +343,14 @@ if a third argument (the value) is provided.
 
 (defvar clojure-ts--treesit-range-settings
   (treesit-range-rules
-   :embed 'markdown_inline
+   :embed 'markdown-inline
    :host 'clojure
    (clojure-ts--docstring-query '@capture)))
 
 (defun clojure-ts--font-lock-settings (markdown-available)
   "Return font lock settings suitable for use in `treesit-font-lock-settings'.
 When MARKDOWN-AVAILABLE is non-nil, includes rules for highlighting docstrings
-with the markdown_inline grammar."
+with the markdown-inline grammar."
   (append
    (treesit-font-lock-rules
     :feature 'string
@@ -512,11 +512,9 @@ with the markdown_inline grammar."
    (when markdown-available
      (treesit-font-lock-rules
       :feature 'doc
-      :language 'markdown_inline
+      :language 'markdown-inline
       :override t
-      `((inline
-          (code_span (code_span_delimiter) :* @font-lock-delimiter-face)
-          @font-lock-constant-face))))
+      `((code_span) @font-lock-constant-face)))
 
    (treesit-font-lock-rules
     :feature 'quote
@@ -985,7 +983,7 @@ and (:defn) is converted to (:inner 1)."
      (t nil))))
 
 (defun clojure-ts--dynamic-indent-for-symbol (sym &optional ns)
-  "Returns the dynamic indentation specification for SYM, if found.
+  "Return the dynamic indentation specification for SYM, if found.
 
 If the function `clojure-ts-get-indent-function' is defined, call it and
 produce a valid indentation specification from its return value.
@@ -1019,7 +1017,7 @@ If NS is defined, then the fully qualified symbol is passed to
                                    (equal (car spec1) :block)))))))))
 
 (defun clojure-ts--find-semantic-rule (node parent current-depth)
-  "Returns a suitable indentation rule for NODE, considering the CURRENT-DEPTH.
+  "Return a suitable indentation rule for NODE, considering the CURRENT-DEPTH.
 
 Attempts to find an indentation rule by examining the symbol name of the
 PARENT's first child.  If a rule is not found, it navigates up the
@@ -1153,13 +1151,13 @@ according to the rule.  If NODE is nil, use next node after BOL."
          (clojure-ts--metadata-node-p prev-sibling))))
 
 (defun clojure-ts--anchor-parent-skip-metadata (_node parent _bol)
-  "Anchor function that returns position of PARENT start for NODE.
+  "Return position of PARENT start for NODE.
 
 If PARENT has optional metadata we skip it and return starting position
 of the first child's opening paren.
 
-NOTE: This anchor is used to fix indentation issue for forms with type
-hints."
+NOTE: This serves as an anchor function to resolve an indentation issue
+for forms with type hints."
   (let ((first-child (treesit-node-child parent 0 t)))
     (if (clojure-ts--metadata-node-p first-child)
         ;; We don't need named node here
@@ -1167,7 +1165,7 @@ hints."
       (treesit-node-start parent))))
 
 (defun clojure-ts--match-collection-item-with-metadata (node-type)
-  "Returns a matcher for a collection item with metadata by NODE-TYPE.
+  "Return a matcher for a collection item with metadata by NODE-TYPE.
 
 The returned matcher accepts NODE, PARENT and BOL and returns true only
 if NODE has metadata and its parent has type NODE-TYPE."
@@ -1296,9 +1294,9 @@ If JUSTIFY is non-nil, justify as well as fill the paragraph."
 
 (defconst clojure-ts-grammar-recipes
   '((clojure "https://github.com/sogaiu/tree-sitter-clojure.git"
-             "v0.0.12")
-    (markdown_inline "https://github.com/MDeiml/tree-sitter-markdown"
-                     "v0.1.6"
+             "v0.0.13")
+    (markdown-inline "https://github.com/MDeiml/tree-sitter-markdown"
+                     "v0.4.1"
                      "tree-sitter-markdown-inline/src"))
   "Intended to be used as the value for `treesit-language-source-alist'.")
 
@@ -1315,6 +1313,18 @@ If JUSTIFY is non-nil, justify as well as fill the paragraph."
           ;; without modifying what the user has configured themselves.
           (let ((treesit-language-source-alist clojure-ts-grammar-recipes))
             (treesit-install-language-grammar grammar)))))))
+
+(defun clojure-ts-reinstall-grammars ()
+  "Install the required versions of language grammars.
+
+If the grammars are already installed, they will be reinstalled.  This
+function can also be used to upgrade the grammars if they are outdated."
+  (interactive)
+  (dolist (recipe clojure-ts-grammar-recipes)
+    (let ((grammar (car recipe)))
+      (message "Installing %s tree-sitter grammar" grammar)
+      (let ((treesit-language-source-alist clojure-ts-grammar-recipes))
+        (treesit-install-language-grammar grammar)))))
 
 (defun clojure-ts-mode-variables (&optional markdown-available)
   "Initialize buffer-local variables for `clojure-ts-mode'.
@@ -1361,9 +1371,9 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
   :syntax-table clojure-ts-mode-syntax-table
   (clojure-ts--ensure-grammars)
   (let ((use-markdown-inline (and clojure-ts-use-markdown-inline
-                                  (treesit-ready-p 'markdown_inline t))))
+                                  (treesit-ready-p 'markdown-inline t))))
     (when use-markdown-inline
-      (treesit-parser-create 'markdown_inline)
+      (treesit-parser-create 'markdown-inline)
       (setq-local treesit-range-settings clojure-ts--treesit-range-settings))
 
     (when (treesit-ready-p 'clojure)
