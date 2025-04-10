@@ -124,7 +124,7 @@ Once installed, evaluate clojure-ts-mode.el and you should be ready to go.
 `clojure-ts-mode` makes use of two TreeSitter grammars to work properly:
 
 - The Clojure grammar, mentioned earlier
-- [markdown_inline](https://github.com/MDeiml/tree-sitter-markdown), which
+- [markdown-inline](https://github.com/MDeiml/tree-sitter-markdown), which
 will be used for docstrings if available and if `clojure-ts-use-markdown-inline` is enabled.
 
 If you have `git` and a C compiler (`cc`) available on your system's `PATH`,
@@ -136,6 +136,17 @@ If `clojure-ts-mode` fails to automatically install the grammar, you have the
 option to install it manually, Please, refer to the installation instructions of
 each required grammar and make sure you're install the versions expected. (see
 `clojure-ts-grammar-recipes` for details)
+
+### Upgrading tree-sitter grammars
+
+To reinstall or upgrade TreeSitter grammars, you can execute:
+
+```emacs-lisp
+M-x clojure-ts-reinstall-grammars
+```
+
+This will install the latest compatible grammars, even if they are already
+installed.
 
 ## Configuration
 
