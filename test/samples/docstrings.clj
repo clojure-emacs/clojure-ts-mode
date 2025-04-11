@@ -42,7 +42,16 @@ Don't format code this way."
     "fizz"))
 
 (defmacro fix-bug
-  "Fixes most known bugs."
+  "Fixes most known bugs.
+
+  Check markdown:
+  - [[some-function]]
+  - _emphasize_
+  - [link](https://github.com)
+  - __strong__
+  - *emphasize*
+
+  Looks good."
   [& body]
   `(try
      ~@body

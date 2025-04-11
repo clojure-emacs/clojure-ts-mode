@@ -17,7 +17,7 @@
 (setq checkdoc-permit-comma-termination-flag t)
 (setq checkdoc--interactive-docstring-flag nil)
 
-(setf eldev-lint-default '(elisp))
+(setq eldev-lint-default-excluded '(package))
 
 (with-eval-after-load 'elisp-lint
   ;; We will byte-compile with Eldev.
