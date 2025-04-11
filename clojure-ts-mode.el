@@ -514,7 +514,14 @@ with the markdown-inline grammar."
       :feature 'doc
       :language 'markdown-inline
       :override t
-      `((code_span) @font-lock-constant-face)))
+      `([((image_description) @link)
+         ((link_destination) @font-lock-constant-face)
+         ((code_span) @font-lock-constant-face)
+         ((emphasis) @underline)
+         ((strong_emphasis) @bold)
+         (inline_link (link_text) @link)
+         (inline_link (link_destination) @font-lock-constant-face)
+         (shortcut_link (link_text) @link)])))
 
    (treesit-font-lock-rules
     :feature 'quote

@@ -21,6 +21,7 @@
 - [#76](https://github.com/clojure-emacs/clojure-ts-mode/pull/76): Improve performance of semantic indentation by caching rules.
 - [#74](https://github.com/clojure-emacs/clojure-ts-mode/issues/74): Add imenu support for keywords definitions.
 - [#77](https://github.com/clojure-emacs/clojure-ts-mode/issues/77): Update grammars to the latest versions.
+- [#79](https://github.com/clojure-emacs/clojure-ts-mode/pull/79): Improve markdown highlighting in the docstrings.
 
 ## 0.2.3 (2025-03-04)
 
