@@ -22,6 +22,7 @@
 - [#74](https://github.com/clojure-emacs/clojure-ts-mode/issues/74): Add imenu support for keywords definitions.
 - [#77](https://github.com/clojure-emacs/clojure-ts-mode/issues/77): Update grammars to the latest versions.
 - [#79](https://github.com/clojure-emacs/clojure-ts-mode/pull/79): Improve markdown highlighting in the docstrings.
+- [#60](https://github.com/clojure-emacs/clojure-ts-mode/issues/60): Fix issue with incorrect fontification, when `markdown-inline` is enabled.
 
 ## 0.2.3 (2025-03-04)
 
