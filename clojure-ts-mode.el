@@ -345,6 +345,7 @@ if a third argument (the value) is provided.
   (treesit-range-rules
    :embed 'markdown-inline
    :host 'clojure
+   :local t
    (clojure-ts--docstring-query '@capture)))
 
 (defun clojure-ts--font-lock-settings (markdown-available)
@@ -1230,7 +1231,7 @@ It is simply `clojure-ts-docstring-fill-prefix-width' number of spaces."
 (defun clojure-ts--fill-paragraph (&optional justify)
   "Like `fill-paragraph', but can handler Clojure docstrings.
 If JUSTIFY is non-nil, justify as well as fill the paragraph."
-  (let ((current-node (treesit-node-at (point))))
+  (let ((current-node (treesit-node-at (point) 'clojure)))
     (if (clojure-ts--match-docstring nil current-node nil)
         (let ((fill-column (or clojure-ts-docstring-fill-column fill-column))
               (fill-prefix (clojure-ts--docstring-fill-prefix))
@@ -1260,11 +1261,20 @@ If JUSTIFY is non-nil, justify as well as fill the paragraph."
     "map_lit" "ns_map_lit" "vec_lit" "set_lit")
   "A regular expression that matches nodes that can be treated as lists.")
 
+(defconst clojure-ts--markdown-inline-sexp-nodes
+  '("inline_link" "full_reference_link" "collapsed_reference_link"
+    "uri_autolink" "email_autolink" "shortcut_link" "image"
+    "code_span")
+  "Nodes representing s-expressions in the `markdown-inline' parser.")
+
 (defconst clojure-ts--thing-settings
   `((clojure
      (sexp ,(regexp-opt clojure-ts--sexp-nodes))
      (list ,(regexp-opt clojure-ts--list-nodes))
-     (text ,(regexp-opt '("comment"))))))
+     (text ,(regexp-opt '("comment"))))
+    (when clojure-ts-use-markdown-inline
+      (markdown-inline
+       (sexp ,(regexp-opt clojure-ts--markdown-inline-sexp-nodes))))))
 
 (defvar clojure-ts-mode-map
   (let ((map (make-sparse-keymap)))
@@ -1380,7 +1390,6 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
   (let ((use-markdown-inline (and clojure-ts-use-markdown-inline
                                   (treesit-ready-p 'markdown-inline t))))
     (when use-markdown-inline
-      (treesit-parser-create 'markdown-inline)
       (setq-local treesit-range-settings clojure-ts--treesit-range-settings))
 
     (when (treesit-ready-p 'clojure)
