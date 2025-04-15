@@ -350,9 +350,9 @@ refactoring commands in `clojure-mode`.
 ### Does `clojure-ts-mode` work with CIDER?
 
 Yes! Preliminary support for `clojure-ts-mode` was released in [CIDER
-1.14](https://github.com/clojure-emacs/cider/releases/tag/v1.14.0). Make sure to
-grab the latest CIDER from MELPA/GitHub. Note that `clojure-mode` is still
-needed for some APIs that haven't yet been ported to `clojure-ts-mode`.
+1.14](https://github.com/clojure-emacs/cider/releases/tag/v1.14.0). Note that
+`clojure-mode` is still needed for some APIs that haven't yet been ported to
+`clojure-ts-mode`.
 
 For now, when you take care of the keybindings for the CIDER commands you use
 and ensure `cider-mode` is enabled for `clojure-ts-mode` buffers in your config,
@@ -363,6 +363,11 @@ most functionality should already work:
 ```
 
 Check out [this article](https://metaredux.com/posts/2024/02/19/cider-preliminary-support-for-clojure-ts-mode.html) for more details.
+
+> [!NOTE]
+>
+> The dynamic indentation feature in CIDER requires clojure-ts-mode 0.3+.
+> Dynamic font-locking currently doesn't work with clojure-ts-mode.
 
 ### Does `clojure-ts-mode` work with `inf-clojure`?
 
