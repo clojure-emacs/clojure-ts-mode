@@ -56,7 +56,7 @@ Those will be addressed over the time, as more and more people use `clojure-ts-m
 ### Requirements
 
 For `clojure-ts-mode` to work, you need Emacs 30+ built with TreeSitter support.
-To check if your Emacs supports tree sitter run the following (e.g. by using `M-:`):
+To check if your Emacs supports TreeSitter run the following (e.g. by using `M-:`):
 
 ``` emacs-lisp
 (treesit-available-p)
@@ -84,7 +84,7 @@ grammars
 
 clojure-ts-mode is available on [MElPA](https://melpa.org/#/clojure-ts-mode) and
 [NonGNU ELPA](https://elpa.nongnu.org/nongnu/clojure-ts-mode.html).
-It can be installed with
+It can be installed with:
 
 ``` emacs-lisp
 (package-install 'clojure-ts-mode)
@@ -92,7 +92,7 @@ It can be installed with
 
 #### package-vc
 
-Emacs 29 also includes `package-vc-install`, so you can run
+Emacs also includes `package-vc-install`, so you can run:
 
 ``` emacs-lisp
 (package-vc-install "https://github.com/clojure-emacs/clojure-ts-mode")
@@ -112,7 +112,7 @@ git clone https://github.com/clojure-emacs/clojure-ts-mode.git
 (add-to-list 'load-path "~/path/to/clojure-ts-mode/")
 ```
 
-Once installed, evaluate clojure-ts-mode.el and you should be ready to go.
+Once installed, evaluate `clojure-ts-mode.el` and you should be ready to go.
 
 ### Install tree-sitter grammars
 
