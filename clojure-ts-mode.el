@@ -1,9 +1,10 @@
 ;;; clojure-ts-mode.el --- Major mode for Clojure code -*- lexical-binding: t; -*-
 
-;; Copyright © 2022-2025 Danny Freeman
+;; Copyright © 2022-2025 Danny Freeman, Bozhidar Batsov and contributors
 ;;
 ;; Authors: Danny Freeman <danny@dfreeman.email>
-;; Maintainer: Danny Freeman <danny@dfreeman.email>
+;;          Bozhidar Batsov <bozhidar@batsov.dev>
+;; Maintainer: Bozhidar Batsov <bozhidar@batsov.dev>
 ;; URL: http://github.com/clojure-emacs/clojure-ts-mode
 ;; Keywords: languages clojure clojurescript lisp
 ;; Version: 0.3.0-snapshot

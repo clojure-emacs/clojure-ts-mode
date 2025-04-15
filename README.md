@@ -375,7 +375,7 @@ Currently, there is an [open PR](https://github.com/clojure-emacs/inf-clojure/pu
 
 ## License
 
-Copyright © 2022-2025 Danny Freeman and [contributors][].
+Copyright © 2022-2025 Danny Freeman, Bozhidar Batsov and [contributors][].
 
 Distributed under the GNU General Public License; type <kbd>C-h C-c</kbd> to view it.
 
