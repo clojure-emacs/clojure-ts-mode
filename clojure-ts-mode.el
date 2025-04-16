@@ -121,6 +121,12 @@ double quotes on the third column."
   :safe #'booleanp
   :package-version '(clojure-ts-mode . "0.2.3"))
 
+(defcustom clojure-ts-use-regex-parser t
+  "When non-nil, use separate grammar to highlight regex syntax."
+  :type 'boolean
+  :safe #'booleanp
+  :package-version '(clojure-ts-mode . "0.4"))
+
 (defcustom clojure-ts-auto-remap t
   "When non-nil, redirect all `clojure-mode' buffers to `clojure-ts-mode'."
   :safe #'booleanp
@@ -407,17 +413,37 @@ if a third argument (the value) is provided.
                :*)
      (:match ,clojure-ts--interface-def-symbol-regexp @_def_symbol))))
 
-(defvar clojure-ts--treesit-range-settings
-  (treesit-range-rules
-   :embed 'markdown-inline
-   :host 'clojure
-   :local t
-   (clojure-ts--docstring-query '@capture)))
+(defun clojure-ts--treesit-range-settings (use-markdown-inline use-regex)
+  "Return value for `treesit-range-settings' for `clojure-ts-mode'.
 
-(defun clojure-ts--font-lock-settings (markdown-available)
+When USE-MARKDOWN-INLINE is non-nil, include range settings for
+markdown-inline parser.
+
+When USE-REGEX is non-nil, include range settings for regex parser."
+  (append
+   (when use-markdown-inline
+     (treesit-range-rules
+      :embed 'markdown-inline
+      :host 'clojure
+      :offset '(1 . -1)
+      :local t
+      (clojure-ts--docstring-query '@capture)))
+   (when use-regex
+     (treesit-range-rules
+      :embed 'regex
+      :host 'clojure
+      :offset '(2 . -1)
+      :local t
+      '((regex_lit) @capture)))))
+
+(defun clojure-ts--font-lock-settings (markdown-available regex-available)
   "Return font lock settings suitable for use in `treesit-font-lock-settings'.
+
 When MARKDOWN-AVAILABLE is non-nil, includes rules for highlighting docstrings
-with the markdown-inline grammar."
+with the markdown-inline grammar.
+
+When REGEX-AVAILABLE is non-nil, includes rules for highlighting regex
+literals with regex grammar."
   (append
    (treesit-font-lock-rules
     :feature 'string
@@ -589,6 +615,44 @@ with the markdown-inline grammar."
          (inline_link (link_text) @link)
          (inline_link (link_destination) @font-lock-constant-face)
          (shortcut_link (link_text) @link)])))
+
+   (when regex-available
+     ;; Queries are adapted from
+     ;; https://github.com/tree-sitter/tree-sitter-regex/blob/v0.24.3/queries/highlights.scm.
+     (treesit-font-lock-rules
+      :feature 'regex
+      :language 'regex
+      :override t
+      '((["("
+           ")"
+           "(?"
+           "(?:"
+           "(?<"
+           "(?P<"
+           "(?P="
+           ">"
+           "["
+           "]"
+           "{"
+           "}"
+           "[:"
+           ":]"] @font-lock-regexp-grouping-construct)
+         (["*"
+           "+"
+           "?"
+           "|"
+           "="
+           "!"] @font-lock-property-name-face)
+         ((group_name) @font-lock-variable-name-face)
+         ((count_quantifier
+           [(decimal_digits) @font-lock-number-face
+            "," @font-lock-delimiter-face]))
+         ((flags) @font-lock-constant-face)
+         ((character_class
+           ["^" @font-lock-escape-face
+            (class_range "-" @font-lock-escape-face)]))
+         ((identity_escape) @font-lock-builtin-face)
+         ([(start_assertion) (end_assertion)] @font-lock-constant-face))))
 
    (treesit-font-lock-rules
     :feature 'quote
@@ -1555,7 +1619,9 @@ between BEG and END."
              "v0.0.13")
     (markdown-inline "https://github.com/MDeiml/tree-sitter-markdown"
                      "v0.4.1"
-                     "tree-sitter-markdown-inline/src"))
+                     "tree-sitter-markdown-inline/src")
+    (regex "https://github.com/tree-sitter/tree-sitter-regex"
+           "v0.24.3"))
   "Intended to be used as the value for `treesit-language-source-alist'.")
 
 (defun clojure-ts--ensure-grammars ()
@@ -1584,20 +1650,22 @@ function can also be used to upgrade the grammars if they are outdated."
       (let ((treesit-language-source-alist clojure-ts-grammar-recipes))
         (treesit-install-language-grammar grammar)))))
 
-(defun clojure-ts-mode-variables (&optional markdown-available)
+(defun clojure-ts-mode-variables (&optional markdown-available regex-available)
   "Initialize buffer-local variables for `clojure-ts-mode'.
-See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
+
+See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE and
+REGEX-AVAILABLE."
   (setq-local indent-tabs-mode nil)
   (setq-local comment-add 1)
   (setq-local comment-start ";")
 
   (setq-local treesit-font-lock-settings
-              (clojure-ts--font-lock-settings markdown-available))
+              (clojure-ts--font-lock-settings markdown-available regex-available))
   (setq-local treesit-font-lock-feature-list
               '((comment definition variable)
                 (keyword string char symbol builtin type)
-                (constant number quote metadata doc)
-                (bracket deref function regex tagged-literals)))
+                (constant number quote metadata doc regex)
+                (bracket deref function tagged-literals)))
 
   (setq-local treesit-defun-prefer-top-level t)
   (setq-local treesit-defun-tactic 'top-level)
@@ -1630,13 +1698,16 @@ See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
   :syntax-table clojure-ts-mode-syntax-table
   (clojure-ts--ensure-grammars)
   (let ((use-markdown-inline (and clojure-ts-use-markdown-inline
-                                  (treesit-ready-p 'markdown-inline t))))
-    (when use-markdown-inline
-      (setq-local treesit-range-settings clojure-ts--treesit-range-settings))
+                                  (treesit-ready-p 'markdown-inline t)))
+        (use-regex (and clojure-ts-use-regex-parser
+                        (treesit-ready-p 'regex t))))
+    (setq-local treesit-range-settings
+                (clojure-ts--treesit-range-settings use-markdown-inline
+                                                    use-regex))
 
     (when (treesit-ready-p 'clojure)
       (treesit-parser-create 'clojure)
-      (clojure-ts-mode-variables use-markdown-inline)
+      (clojure-ts-mode-variables use-markdown-inline use-regex)
 
       (when clojure-ts--debug
         (setq-local treesit--indent-verbose t)
