@@ -261,10 +261,19 @@ highlighted like regular clojure code.
 ### Highlight markdown syntax in docstrings
 
 By default markdown syntax is highlighted in the docstrings using
-`markdown_inline` grammar. To disable this feature set
+`markdown-inline` grammar. To disable this feature set
 
 ``` emacs-lisp
 (setopt clojure-ts-use-markdown-inline nil)
+```
+
+### Highlight regex syntax
+
+By default syntax inside regex literals is highlighted using [regex](https://github.com/tree-sitter/tree-sitter-regex) grammar. To
+disable this feature set
+
+```emacs-lisp
+(setopt clojure-ts-use-regex-parser nil)
 ```
 
 ### Navigation and Evaluation
