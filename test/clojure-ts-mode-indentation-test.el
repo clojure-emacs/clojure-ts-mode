@@ -326,3 +326,71 @@ DESCRIPTION is a string with the description of the spec."
                       (* (twice y) 3))]
   (println \"Twice 15 =\" (twice 15))
   (println \"Six times 15 =\" (six-times 15)))"))))
+
+(describe "clojure-ts-align"
+  (it "should handle improperly indented content"
+    (with-clojure-ts-buffer-point "
+(let [a-long-name 10
+b |20])"
+        (call-interactively #'clojure-ts-align)
+      (expect (buffer-string) :to-equal "
+(let [a-long-name 10
+      b           20])"))
+
+    (with-clojure-ts-buffer-point "
+(let [^long my-map {:hello \"World\" ;Hello
+ :foo
+       ^String (str \"Foo\" \"Bar\")
+ :number ^long 132
+                    :zz \"hello\"}
+      another| {:this ^{:hello \"world\"} \"is\"
+                    :a    #long \"1234\"
+ :b {:this \"is\"
+ :nested \"map\"}}])"
+        (call-interactively #'clojure-ts-align)
+      (expect (buffer-string) :to-equal "
+(let [^long my-map {:hello  \"World\" ;Hello
+                    :foo
+                    ^String (str \"Foo\" \"Bar\")
+                    :number ^long 132
+                    :zz     \"hello\"}
+      another      {:this ^{:hello \"world\"} \"is\"
+                    :a    #long \"1234\"
+                    :b    {:this   \"is\"
+                           :nested \"map\"}}])"))
+
+    (with-clojure-ts-buffer-point "
+(condp = 2
+|123 \"Hello\"
+99999 \"World\"
+234 nil)"
+        (call-interactively #'clojure-ts-align)
+      (expect (buffer-string) :to-equal "
+(condp = 2
+  123   \"Hello\"
+  99999 \"World\"
+  234   nil)")))
+
+  (it "should not align reader conditionals by defaul"
+    (with-clojure-ts-buffer-point "
+#?(:clj 2
+   |:cljs 2)"
+        (call-interactively #'clojure-ts-align)
+      (expect (buffer-string) :to-equal "
+#?(:clj 2
+   :cljs 2)")))
+
+  (it "should align reader conditionals when clojure-ts-align-reader-conditionals is true"
+    (with-clojure-ts-buffer-point "
+#?(:clj 2
+   |:cljs 2)"
+        (setq-local clojure-ts-align-reader-conditionals t)
+      (call-interactively #'clojure-ts-align)
+      (expect (buffer-string) :to-equal "
+#?(:clj  2
+   :cljs 2)")))
+
+  (it "should remove extra commas"
+    (with-clojure-ts-buffer-point "{|:a 2, ,:c 4}"
+        (call-interactively #'clojure-ts-align)
+      (expect (buffer-string) :to-equal "{:a 2, :c 4}"))))
