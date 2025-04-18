@@ -2,6 +2,8 @@
 
 ## main (unreleased)
 
+- [#16](https://github.com/clojure-emacs/clojure-ts-mode/issues/16): Introduce `clojure-ts-align`.
+
 ## 0.3.0 (2025-04-15)
 
 - [#62](https://github.com/clojure-emacs/clojure-ts-mode/issues/62): Define `list` "thing" to improve navigation in Emacs 31.
