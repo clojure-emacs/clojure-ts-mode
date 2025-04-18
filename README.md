@@ -239,6 +239,38 @@ should look like:
 In order to apply directory-local variables to existing buffers, they must be
 reverted.
 
+### Vertical alignment
+
+You can vertically align sexps with `C-c SPC`. For instance, typing this combo
+on the following form:
+
+```clojure
+(def my-map
+  {:a-key 1
+   :other-key 2})
+```
+
+Leads to the following:
+
+```clojure
+(def my-map
+  {:a-key     1
+   :other-key 2})
+```
+
+Forms that can be aligned vertically are configured via the following variables:
+
+- `clojure-ts-align-reader-conditionals` - align reader conditionals as if they
+  were maps.
+- `clojure-ts-align-binding-forms` - a customizable list of forms with let-like
+  bindings that can be aligned vertically.
+- `clojure-ts-align-cond-forms` - a customizable list of forms whose body
+  elements can be aligned vertically. These forms respect the block semantic
+  indentation rule (if configured) and align only the body forms, skipping N
+  special arguments.
+- `clojure-ts-align-separator` - determines whether blank lines prevent vertical
+  alignment.
+
 ### Font Locking
 
 To highlight entire rich `comment` expression with the comment font face, set

@@ -56,6 +56,7 @@
 ;;; Code:
 
 (require 'treesit)
+(require 'align)
 
 (declare-function treesit-parser-create "treesit.c")
 (declare-function treesit-node-eq "treesit.c")
@@ -125,6 +126,70 @@ double quotes on the third column."
   :safe #'booleanp
   :type 'boolean
   :package-version '(clojure-ts-mode . "0.3"))
+
+(defcustom clojure-ts-align-reader-conditionals nil
+  "Whether to align reader conditionals, as if they were maps."
+  :package-version '(clojure-ts-mode . "0.4")
+  :safe #'booleanp
+  :type 'boolean)
+
+(defcustom clojure-ts-align-binding-forms
+  '("let"
+    "when-let"
+    "when-some"
+    "if-let"
+    "if-some"
+    "binding"
+    "loop"
+    "doseq"
+    "for"
+    "with-open"
+    "with-local-vars"
+    "with-redefs"
+    "clojure.core/let"
+    "clojure.core/when-let"
+    "clojure.core/when-some"
+    "clojure.core/if-let"
+    "clojure.core/if-some"
+    "clojure.core/binding"
+    "clojure.core/loop"
+    "clojure.core/doseq"
+    "clojure.core/for"
+    "clojure.core/with-open"
+    "clojure.core/with-local-vars"
+    "clojure.core/with-redefs")
+  "List of strings matching forms that have binding forms."
+  :package-version '(clojure-ts-mode . "0.4")
+  :safe #'listp
+  :type '(repeat string))
+
+(defconst clojure-ts--align-separator-newline-regexp "^ *$")
+
+(defcustom clojure-ts-align-separator clojure-ts--align-separator-newline-regexp
+  "Separator passed to `align-region' when performing vertical alignment."
+  :package-version '(clojure-ts-mode . "0.4")
+  :type `(choice (const :tag "Make blank lines prevent vertical alignment from happening."
+                        ,clojure-ts--align-separator-newline-regexp)
+                 (other :tag "Allow blank lines to happen within a vertically-aligned expression."
+                        entire)))
+
+(defcustom clojure-ts-align-cond-forms
+  '("condp"
+    "cond"
+    "cond->"
+    "cond->>"
+    "case"
+    "are"
+    "clojure.core/condp"
+    "clojure.core/cond"
+    "clojure.core/cond->"
+    "clojure.core/cond->>"
+    "clojure.core/case"
+    "clojure.core/are")
+  "List of strings identifying cond-like forms."
+  :package-version '(clojure-ts-mode . "0.4")
+  :safe #'listp
+  :type '(repeat string))
 
 (defvar clojure-ts-mode-remappings
   '((clojure-mode . clojure-ts-mode)
@@ -1025,6 +1090,18 @@ If NS is defined, then the fully qualified symbol is passed to
                        (seq-sort (lambda (spec1 _spec2)
                                    (equal (car spec1) :block)))))))))
 
+(defun clojure-ts--find-semantic-rules-for-node (node)
+  "Return a list of semantic rules for NODE."
+  (let* ((first-child (clojure-ts--node-child-skip-metadata node 0))
+         (symbol-name (clojure-ts--named-node-text first-child))
+         (symbol-namespace (clojure-ts--node-namespace-text first-child)))
+    (or (clojure-ts--dynamic-indent-for-symbol symbol-name symbol-namespace)
+        (alist-get symbol-name
+                   clojure-ts--semantic-indent-rules-cache
+                   nil
+                   nil
+                   #'equal))))
+
 (defun clojure-ts--find-semantic-rule (node parent current-depth)
   "Return a suitable indentation rule for NODE, considering the CURRENT-DEPTH.
 
@@ -1034,16 +1111,8 @@ syntax tree and recursively attempts to find a rule, incrementally
 increasing the CURRENT-DEPTH.  If a rule is not found upon reaching the
 root of the syntax tree, it returns nil.  A rule is considered a match
 only if the CURRENT-DEPTH matches the rule's required depth."
-  (let* ((first-child (clojure-ts--node-child-skip-metadata parent 0))
-         (symbol-name (clojure-ts--named-node-text first-child))
-         (symbol-namespace (clojure-ts--node-namespace-text first-child))
-         (idx (- (treesit-node-index node) 2)))
-    (if-let* ((rule-set (or (clojure-ts--dynamic-indent-for-symbol symbol-name symbol-namespace)
-                            (alist-get symbol-name
-                                       clojure-ts--semantic-indent-rules-cache
-                                       nil
-                                       nil
-                                       #'equal))))
+  (let* ((idx (- (treesit-node-index node) 2)))
+    (if-let* ((rule-set (clojure-ts--find-semantic-rules-for-node parent)))
         (if (zerop current-depth)
             (let ((rule (car rule-set)))
               (if (equal (car rule) :block)
@@ -1061,7 +1130,9 @@ only if the CURRENT-DEPTH matches the rule's required depth."
                                             (or (null rule-idx)
                                                 (equal rule-idx idx))))))
                        (seq-first)))
-      (when-let* ((new-parent (treesit-node-parent parent)))
+      ;; Let's go no more than 3 levels up to avoid performance degradation.
+      (when-let* (((< current-depth 3))
+                  (new-parent (treesit-node-parent parent)))
         (clojure-ts--find-semantic-rule parent
                                         new-parent
                                         (1+ current-depth))))))
@@ -1188,12 +1259,6 @@ if NODE has metadata and its parent has type NODE-TYPE."
   `((clojure
      ((parent-is "source") parent-bol 0)
      (clojure-ts--match-docstring parent 0)
-     ;; https://guide.clojure.style/#body-indentation
-     (clojure-ts--match-form-body clojure-ts--anchor-parent-skip-metadata 2)
-     ;; https://guide.clojure.style/#threading-macros-alignment
-     (clojure-ts--match-threading-macro-arg prev-sibling 0)
-     ;; https://guide.clojure.style/#vertically-align-fn-args
-     (clojure-ts--match-function-call-arg (nth-sibling 2 nil) 0)
      ;; Collections items with metadata.
      ;;
      ;; This should be before `clojure-ts--match-with-metadata', otherwise they
@@ -1208,10 +1273,17 @@ if NODE has metadata and its parent has type NODE-TYPE."
      ;; All other forms with metadata.
      (clojure-ts--match-with-metadata parent 0)
      ;; Literal Sequences
-     ((parent-is "list_lit") parent 1) ;; https://guide.clojure.style/#one-space-indent
      ((parent-is "vec_lit") parent 1) ;; https://guide.clojure.style/#bindings-alignment
      ((parent-is "map_lit") parent 1) ;; https://guide.clojure.style/#map-keys-alignment
-     ((parent-is "set_lit") parent 2))))
+     ((parent-is "set_lit") parent 2)
+     ;; https://guide.clojure.style/#body-indentation
+     (clojure-ts--match-form-body clojure-ts--anchor-parent-skip-metadata 2)
+     ;; https://guide.clojure.style/#threading-macros-alignment
+     (clojure-ts--match-threading-macro-arg prev-sibling 0)
+     ;; https://guide.clojure.style/#vertically-align-fn-args
+     (clojure-ts--match-function-call-arg (nth-sibling 2 nil) 0)
+     ;; https://guide.clojure.style/#one-space-indent
+     ((parent-is "list_lit") parent 1))))
 
 (defun clojure-ts--configured-indent-rules ()
   "Gets the configured choice of indent rules."
@@ -1277,9 +1349,177 @@ If JUSTIFY is non-nil, justify as well as fill the paragraph."
       (markdown-inline
        (sexp ,(regexp-opt clojure-ts--markdown-inline-sexp-nodes))))))
 
+;;; Vertical alignment
+
+(defun clojure-ts--beginning-of-defun-pos ()
+  "Return the point that represents the beginning of the current defun."
+  (treesit-node-start (treesit-defun-at-point)))
+
+(defun clojure-ts--end-of-defun-pos ()
+  "Return the point that represends the end of the current defun."
+  (treesit-node-end (treesit-defun-at-point)))
+
+(defun clojure-ts--search-whitespace-after-next-sexp (root-node bound)
+  "Move the point after all whitespace following the next s-expression.
+
+Set match data group 1 to this region of whitespace and return the
+point.
+
+To move over the next s-expression, fetch the next node after the
+current cursor position that is a direct child of ROOT-NODE and navigate
+to its end.  The most complex aspect here is handling nodes with
+metadata.  Some forms are represented in the syntax tree as a single
+s-expression (for example, ^long my-var or ^String (str \"Hello\"
+\"world\")), while other forms are two separate s-expressions (for
+example, ^long 123 or ^String \"Hello\").  Expressions with two nodes
+share some common features:
+
+- The top-level node type is usually sym_lit
+
+- They do not have value children, or they have an empty name.
+
+Regular expression and syntax analysis code is borrowed from
+`clojure-mode.'
+
+BOUND bounds the whitespace search."
+  (unwind-protect
+      (when-let* ((cur-sexp (treesit-node-first-child-for-pos root-node (point) t)))
+        (goto-char (treesit-node-start cur-sexp))
+        (if (and (string= "sym_lit" (treesit-node-type cur-sexp))
+                 (clojure-ts--metadata-node-p (treesit-node-child cur-sexp 0 t))
+                 (and (not (treesit-node-child-by-field-name cur-sexp "value"))
+                      (string-empty-p (clojure-ts--named-node-text cur-sexp))))
+            (treesit-end-of-thing 'sexp 2 'restricted)
+          (treesit-end-of-thing 'sexp 1 'restrict))
+        (when (looking-at ",")
+          (forward-char))
+        ;; Move past any whitespace or comment.
+        (search-forward-regexp "\\([,\s\t]*\\)\\(;+.*\\)?" bound)
+        (pcase (syntax-after (point))
+          ;; End-of-line, try again on next line.
+          (`(12) (clojure-ts--search-whitespace-after-next-sexp root-node bound))
+          ;; Closing paren, stop here.
+          (`(5 . ,_) nil)
+          ;; Anything else is something to align.
+          (_ (point))))
+    (when (and bound (> (point) bound))
+      (goto-char bound))))
+
+(defun clojure-ts--get-nodes-to-align (region-node beg end)
+  "Return a plist of nodes data for alignment.
+
+The search is limited by BEG, END and REGION-NODE.
+
+Possible node types are: map, bindings-vec, cond or read-cond.
+
+The returned value is a list of property lists.  Each property list
+includes `:sexp-type', `:node', `:beg-marker', and `:end-marker'.
+Markers are necessary to fetch the same nodes after their boundaries
+have changed."
+  (let* ((query (treesit-query-compile 'clojure
+                                       (append
+                                        `(((map_lit) @map)
+                                          ((list_lit
+                                            ((sym_lit) @sym
+                                             (:match ,(clojure-ts-symbol-regexp clojure-ts-align-binding-forms) @sym))
+                                            (vec_lit) @bindings-vec))
+                                          ((list_lit
+                                            ((sym_lit) @sym
+                                             (:match ,(clojure-ts-symbol-regexp clojure-ts-align-cond-forms) @sym)))
+                                           @cond))
+                                        (when clojure-ts-align-reader-conditionals
+                                          '(((read_cond_lit) @read-cond)))))))
+    (thread-last (treesit-query-capture region-node query beg end)
+                 (seq-remove (lambda (elt) (eq (car elt) 'sym)))
+                 ;; When first node is reindented, all other nodes become
+                 ;; outdated.  Executing the entire query everytime is very
+                 ;; expensive, instead we use markers for every captured node to
+                 ;; retrieve only a single node later.
+                 (seq-map (lambda (elt)
+                            (let* ((sexp-type (car elt))
+                                   (node (cdr elt))
+                                   (beg-marker (copy-marker (treesit-node-start node) t))
+                                   (end-marker (copy-marker (treesit-node-end node))))
+                              (list :sexp-type sexp-type
+                                    :node node
+                                    :beg-marker beg-marker
+                                    :end-marker end-marker)))))))
+
+(defun clojure-ts--point-to-align-position (sexp-type node)
+  "Move point to the appropriate position to align NODE.
+
+For NODE with SEXP-TYPE map or bindings-vec, the appropriate
+position is after the first opening brace.
+
+For NODE with SEXP-TYPE cond, we need to skip the first symbol and the
+subsequent special arguments based on block indentation rules."
+  (goto-char (treesit-node-start node))
+  (when-let* ((cur-sexp (treesit-node-first-child-for-pos node (point) t)))
+    (goto-char (treesit-node-start cur-sexp))
+    ;; For cond forms we need to skip first n + 1 nodes according to block
+    ;; indentation rules.  First node to skip is the symbol itself.
+    (when (equal sexp-type 'cond)
+      (if-let* ((rule-set (clojure-ts--find-semantic-rules-for-node node))
+                (rule (car rule-set))
+                ((equal (car rule) :block)))
+          (treesit-beginning-of-thing 'sexp (1- (- (cadr rule))) 'restrict)
+        (treesit-beginning-of-thing 'sexp -1)))))
+
+(defun clojure-ts-align (beg end)
+  "Vertically align the contents of the sexp around point.
+
+If region is active, align it.  Otherwise, align everything in the
+current \"top-level\" sexp.  When called from lisp code align everything
+between BEG and END."
+  (interactive (if (use-region-p)
+                   (list (region-beginning) (region-end))
+                 (save-excursion
+                   (let ((start (clojure-ts--beginning-of-defun-pos))
+                         (end (clojure-ts--end-of-defun-pos)))
+                     (list start end)))))
+  (setq end (copy-marker end))
+  (let* ((root-node (treesit-buffer-root-node 'clojure))
+         ;; By default `treesit-query-capture' captures all nodes that cross the
+         ;; range.  We need to restrict it to only nodes inside of the range.
+         (region-node (treesit-node-descendant-for-range root-node beg (marker-position end) t))
+         (sexps-to-align (clojure-ts--get-nodes-to-align region-node beg (marker-position end))))
+    (save-excursion
+      (indent-region beg (marker-position end))
+      (dolist (sexp sexps-to-align)
+        ;; After reindenting a node, all other nodes in the `sexps-to-align'
+        ;; list become outdated, so we need to fetch updated nodes for every
+        ;; iteration.
+        (let* ((new-root-node (treesit-buffer-root-node 'clojure))
+               (new-region-node (treesit-node-descendant-for-range new-root-node
+                                                                   beg
+                                                                   (marker-position end)
+                                                                   t))
+               (sexp-beg (marker-position (plist-get sexp :beg-marker)))
+               (sexp-end (marker-position (plist-get sexp :end-marker)))
+               (node (treesit-node-descendant-for-range new-region-node
+                                                        sexp-beg
+                                                        sexp-end
+                                                        t))
+               (sexp-type (plist-get sexp :sexp-type))
+               (node-end (treesit-node-end node)))
+          (clojure-ts--point-to-align-position sexp-type node)
+          (align-region (point) node-end nil
+                        `((clojure-align (regexp . ,(lambda (&optional bound _noerror)
+                                                      (clojure-ts--search-whitespace-after-next-sexp node bound)))
+                                         (group . 1)
+                                         (separate . ,clojure-ts-align-separator)
+                                         (repeat . t)))
+                        nil)
+          ;; After every iteration we have to re-indent the s-expression,
+          ;; otherwise some can be indented inconsistently.
+          (indent-region (marker-position (plist-get sexp :beg-marker))
+                         (marker-position (plist-get sexp :end-marker))))))))
+
+
 (defvar clojure-ts-mode-map
   (let ((map (make-sparse-keymap)))
     ;;(set-keymap-parent map clojure-mode-map)
+    (keymap-set map "C-c SPC" #'clojure-ts-align)
     map))
 
 (defvar clojure-ts-clojurescript-mode-map
@@ -1347,6 +1587,7 @@ function can also be used to upgrade the grammars if they are outdated."
 (defun clojure-ts-mode-variables (&optional markdown-available)
   "Initialize buffer-local variables for `clojure-ts-mode'.
 See `clojure-ts--font-lock-settings' for usage of MARKDOWN-AVAILABLE."
+  (setq-local indent-tabs-mode nil)
   (setq-local comment-add 1)
   (setq-local comment-start ";")
 
