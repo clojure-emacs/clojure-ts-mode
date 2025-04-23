@@ -75,6 +75,38 @@ DESCRIPTION is a string with the description of the spec."
                  forms))))
 
 
+(defmacro when-aligning-it (description &rest forms)
+  "Return a buttercup spec.
+
+Check that all FORMS correspond to properly indented sexps.
+
+DESCRIPTION is a string with the description of the spec."
+  (declare (indent defun))
+  `(it ,description
+     (let ((clojure-ts-align-forms-automatically t)
+           (clojure-ts-align-reader-conditionals t))
+       ,@(mapcar (lambda (form)
+                   `(with-temp-buffer
+                      (clojure-ts-mode)
+                      (insert "\n" ,(replace-regexp-in-string " +" " " form))
+                      (indent-region (point-min) (point-max))
+                      (should (equal (buffer-substring-no-properties (point-min) (point-max))
+                                     ,(concat "\n" form)))))
+                 forms))
+     (let ((clojure-ts-align-forms-automatically nil))
+       ,@(mapcar (lambda (form)
+                   `(with-temp-buffer
+                      (clojure-ts-mode)
+                      (insert "\n" ,(replace-regexp-in-string " +" " " form))
+                      ;; This is to check that we did NOT align anything. Run
+                      ;; `indent-region' and then check that no extra spaces
+                      ;; where inserted besides the start of the line.
+                      (indent-region (point-min) (point-max))
+                      (goto-char (point-min))
+                      (should-not (search-forward-regexp "\\([^\s\n]\\)  +" nil 'noerror))))
+                 forms))))
+
+
 ;; Provide font locking for easier test editing.
 
 (font-lock-add-keywords
@@ -393,4 +425,158 @@ b |20])"
   (it "should remove extra commas"
     (with-clojure-ts-buffer-point "{|:a 2, ,:c 4}"
         (call-interactively #'clojure-ts-align)
-      (expect (buffer-string) :to-equal "{:a 2, :c 4}"))))
+        (expect (buffer-string) :to-equal "{:a 2, :c 4}"))))
+
+(describe "clojure-ts-align-forms-automatically"
+  ;; Copied from `clojure-mode'
+  (when-aligning-it "should basic forms"
+    "
+{:this-is-a-form b
+ c               d}"
+
+    "
+{:this-is b
+ c        d}"
+
+    "
+{:this b
+ c     d}"
+
+    "
+{:a b
+ c  d}"
+
+    "
+(let [this-is-a-form b
+      c              d])"
+
+    "
+(let [this-is b
+      c       d])"
+
+    "
+(let [this b
+      c    d])"
+
+    "
+(let [a b
+      c d])")
+
+  (when-aligning-it "should handle a blank line"
+    "
+(let [this-is-a-form b
+      c              d
+
+      another form
+      k       g])"
+
+    "
+{:this-is-a-form b
+ c               d
+
+ :another form
+ k        g}")
+
+  (when-aligning-it "should handle basic forms (reversed)"
+    "
+{c               d
+ :this-is-a-form b}"
+  "
+{c        d
+ :this-is b}"
+  "
+{c     d
+ :this b}"
+  "
+{c  d
+ :a b}"
+
+  "
+(let [c              d
+      this-is-a-form b])"
+
+  "
+(let [c       d
+      this-is b])"
+
+  "
+(let [c    d
+      this b])"
+
+  "
+(let [c d
+      a b])")
+
+  (when-aligning-it "should handle multiple words"
+    "
+(cond this     is    just
+      a        test  of
+      how      well
+      multiple words will work)")
+
+  (when-aligning-it "should handle nested maps"
+    "
+{:a    {:a    :a
+        :bbbb :b}
+ :bbbb :b}")
+
+  (when-aligning-it "should regard end as a marker"
+    "
+{:a {:a                                :a
+     :aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa :a}
+ :b {:a  :a
+     :aa :a}}")
+
+  (when-aligning-it "should handle trailing commas"
+    "
+{:a {:a  :a,
+     :aa :a},
+ :b {:a  :a,
+     :aa :a}}")
+
+  (when-aligning-it "should handle standard reader conditionals"
+    "
+#?(:clj  2
+   :cljs 2)")
+
+  (when-aligning-it "should handle splicing reader conditional"
+    "
+#?@(:clj  [2]
+    :cljs [2])")
+
+  (when-aligning-it "should handle sexps broken up by line comments"
+    "
+(let [x  1
+      ;; comment
+      xx 1]
+  xx)"
+
+    "
+{:x   1
+ ;; comment
+ :xxx 2}"
+
+    "
+(case x
+  :aa 1
+  ;; comment
+  :a  2)")
+
+  (when-aligning-it "should work correctly when margin comments appear after nested, multi-line, non-terminal sexps"
+    "
+(let [x  {:a 1
+          :b 2} ; comment
+      xx 3]
+  x)"
+
+    "
+{:aa {:b  1
+      :cc 2} ;; comment
+ :a  1}}"
+
+    "
+(case x
+  :a  (let [a  1
+            aa (+ a 1)]
+        aa); comment
+  :aa 2)"))
