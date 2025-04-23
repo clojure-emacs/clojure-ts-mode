@@ -416,7 +416,6 @@ Check out [this article](https://metaredux.com/posts/2024/02/19/cider-preliminar
 > [!NOTE]
 >
 > The dynamic indentation feature in CIDER requires clojure-ts-mode 0.3+.
-> Dynamic font-locking currently doesn't work with clojure-ts-mode.
 
 ### Does `clojure-ts-mode` work with `inf-clojure`?
 
