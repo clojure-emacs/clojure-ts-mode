@@ -281,7 +281,7 @@ To highlight entire rich `comment` expression with the comment font face, set
 ```
 
 By default this is `nil`, so that anything within a `comment` expression is
-highlighted like regular clojure code.
+highlighted like regular Clojure code.
 
 > [!TIP]
 >
