@@ -216,6 +216,7 @@ within the expression's body, nested `n` levels deep, is indented by two
 spaces. These rule definitions fully reflect the [cljfmt rules](https://github.com/weavejester/cljfmt/blob/0.13.0/docs/INDENTS.md).
 
 For example:
+
 - `do` has a rule `((:block 0))`.
 - `when` has a rule `((:block 1))`.
 - `defn` and `fn` have a rule `((:inner 0))`.
