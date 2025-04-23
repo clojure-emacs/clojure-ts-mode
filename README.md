@@ -19,13 +19,13 @@ for a very long time, but it suffers from a few [long-standing
 problems](https://github.com/clojure-emacs/clojure-mode#caveats), related to
 Emacs limitations baked into its design. The introduction of built-in support
 for Tree-sitter in Emacs 29 presents a natural opportunity to address many of
-them. Enter `clojure-ts-mode`, which makes use of TreeSitter to provide:
+them. Enter `clojure-ts-mode`, which makes use of Tree-sitter to provide:
 
 - fast, accurate and more granular font-locking
 - fast indentation
 - common Emacs functionality like structured navigation, `imenu` (an outline of a source buffer), current form inference (used internally by various Emacs modes and utilities), etc
 
-Working with TreeSitter is significantly easier than the legacy Emacs APIs for font-locking and
+Working with Tree-sitter is significantly easier than the legacy Emacs APIs for font-locking and
 indentation, which makes it easier to contribute to `clojure-ts-mode`, and to improve it in general.
 
 Keep in mind that the transition to `clojure-ts-mode` won't happen overnight for several reasons:
@@ -55,8 +55,8 @@ Those will be addressed over the time, as more and more people use `clojure-ts-m
 
 ### Requirements
 
-For `clojure-ts-mode` to work, you need Emacs 30+ built with TreeSitter support.
-To check if your Emacs supports TreeSitter run the following (e.g. by using `M-:`):
+For `clojure-ts-mode` to work, you need Emacs 30+ built with Tree-sitter support.
+To check if your Emacs supports Tree-sitter run the following (e.g. by using `M-:`):
 
 ``` emacs-lisp
 (treesit-available-p)
@@ -64,11 +64,11 @@ To check if your Emacs supports TreeSitter run the following (e.g. by using `M-:
 
 Additionally, you'll need to have Git and some C compiler (`cc`) installed and available
 in your `$PATH` (or Emacs's `exec-path`), for `clojure-ts-mode` to be able to install the required
-TreeSitter grammars automatically.
+Tree-sitter grammars automatically.
 
 > [!TIP]
 >
-> As the TreeSitter support in Emacs is still fairly new and under active development itself, for optimal
+> As the Tree-sitter support in Emacs is still fairly new and under active development itself, for optimal
 > results you should use the latest stable Emacs release or even the development version of Emacs.
 > See the "Caveats" section for more on the subject.
 
@@ -121,7 +121,7 @@ Once installed, evaluate `clojure-ts-mode.el` and you should be ready to go.
 > `clojure-ts-mode` install the required grammars automatically, so for most
 > people no manual actions will be required.
 
-`clojure-ts-mode` makes use of two TreeSitter grammars to work properly:
+`clojure-ts-mode` makes use of two Tree-sitter grammars to work properly:
 
 - The Clojure grammar, mentioned earlier
 - [markdown-inline](https://github.com/MDeiml/tree-sitter-markdown), which
@@ -139,7 +139,7 @@ each required grammar and make sure you're install the versions expected. (see
 
 ### Upgrading tree-sitter grammars
 
-To reinstall or upgrade TreeSitter grammars, you can execute:
+To reinstall or upgrade Tree-sitter grammars, you can execute:
 
 ```emacs-lisp
 M-x clojure-ts-reinstall-grammars
@@ -374,14 +374,14 @@ After installing the package do the following.
 
 ## Caveats
 
-As the TreeSitter Emacs APIs are new and keep evolving there are some
+As the Tree-sitter Emacs APIs are new and keep evolving there are some
 differences in the behavior of `clojure-ts-mode` on different Emacs versions.
 Here are some notable examples:
 
 - On Emacs 29 the parent mode is `prog-mode`, but on Emacs 30+ it's both `prog-mode`
 and `clojure-mode` (this is very helpful when dealing with `derived-mode-p` checks)
 - Navigation by sexp/lists might work differently on Emacs versions lower
-  than 31. Starting with version 31, Emacs uses TreeSitter 'things' settings, if
+  than 31. Starting with version 31, Emacs uses Tree-sitter 'things' settings, if
   available, to rebind some commands.
 - The indentation of list elements with metadata is inconsistent with other
   collections. This inconsistency stems from the grammar's interpretation of
