@@ -259,6 +259,10 @@ Leads to the following:
    :other-key 2})
 ```
 
+This can also be done automatically (as part of indentation) by turning on
+`clojure-ts-align-forms-automatically`. This way it will happen whenever you
+select some code and hit `TAB`.
+
 Forms that can be aligned vertically are configured via the following variables:
 
 - `clojure-ts-align-reader-conditionals` - align reader conditionals as if they

@@ -197,6 +197,22 @@ double quotes on the third column."
   :safe #'listp
   :type '(repeat string))
 
+(defcustom clojure-ts-align-forms-automatically nil
+  "If non-nil, vertically align some forms automatically.
+
+Automatically means it is done as part of indenting code.  This applies
+to binding forms (`clojure-ts-align-binding-forms'), to cond
+forms (`clojure-ts-align-cond-forms') and to map literals.  For
+instance, selecting a map a hitting
+\\<clojure-ts-mode-map>`\\[indent-for-tab-command]' will align the
+values like this:
+
+{:some-key 10
+ :key2     20}"
+  :package-version '(clojure-ts-mode . "0.4")
+  :safe #'booleanp
+  :type 'boolean)
+
 (defvar clojure-ts-mode-remappings
   '((clojure-mode . clojure-ts-mode)
     (clojurescript-mode . clojure-ts-clojurescript-mode)
@@ -1340,6 +1356,9 @@ if NODE has metadata and its parent has type NODE-TYPE."
      ((parent-is "vec_lit") parent 1) ;; https://guide.clojure.style/#bindings-alignment
      ((parent-is "map_lit") parent 1) ;; https://guide.clojure.style/#map-keys-alignment
      ((parent-is "set_lit") parent 2)
+     ((parent-is "splicing_read_cond_lit") parent 4)
+     ((parent-is "read_cond_lit") parent 3)
+     ((parent-is "tagged_or_ctor_lit") parent 0)
      ;; https://guide.clojure.style/#body-indentation
      (clojure-ts--match-form-body clojure-ts--anchor-parent-skip-metadata 2)
      ;; https://guide.clojure.style/#threading-macros-alignment
@@ -1447,32 +1466,56 @@ Regular expression and syntax analysis code is borrowed from
 
 BOUND bounds the whitespace search."
   (unwind-protect
-      (when-let* ((cur-sexp (treesit-node-first-child-for-pos root-node (point) t)))
-        (goto-char (treesit-node-start cur-sexp))
-        (if (and (string= "sym_lit" (treesit-node-type cur-sexp))
-                 (clojure-ts--metadata-node-p (treesit-node-child cur-sexp 0 t))
-                 (and (not (treesit-node-child-by-field-name cur-sexp "value"))
-                      (string-empty-p (clojure-ts--named-node-text cur-sexp))))
-            (treesit-end-of-thing 'sexp 2 'restricted)
-          (treesit-end-of-thing 'sexp 1 'restrict))
-        (when (looking-at ",")
-          (forward-char))
-        ;; Move past any whitespace or comment.
-        (search-forward-regexp "\\([,\s\t]*\\)\\(;+.*\\)?" bound)
-        (pcase (syntax-after (point))
-          ;; End-of-line, try again on next line.
-          (`(12) (clojure-ts--search-whitespace-after-next-sexp root-node bound))
-          ;; Closing paren, stop here.
-          (`(5 . ,_) nil)
-          ;; Anything else is something to align.
-          (_ (point))))
+      (let ((regex "\\([,\s\t]*\\)\\(;+.*\\)?"))
+        ;; If we're on an empty line, we should return match, otherwise
+        ;; `clojure-ts-align-separator' setting won't work.
+        (if (and (bolp) (looking-at-p "[[:blank:]]*$"))
+            (progn
+              (search-forward-regexp regex bound)
+              (point))
+          (when-let* ((cur-sexp (treesit-node-first-child-for-pos root-node (point) t)))
+            (goto-char (treesit-node-start cur-sexp))
+            (if (and (string= "sym_lit" (treesit-node-type cur-sexp))
+                     (clojure-ts--metadata-node-p (treesit-node-child cur-sexp 0 t))
+                     (and (not (treesit-node-child-by-field-name cur-sexp "value"))
+                          (string-empty-p (clojure-ts--named-node-text cur-sexp))))
+                (treesit-end-of-thing 'sexp 2 'restricted)
+              (treesit-end-of-thing 'sexp 1 'restrict))
+            (when (looking-at ",")
+              (forward-char))
+            ;; Move past any whitespace or comment.
+            (search-forward-regexp regex bound)
+            (pcase (syntax-after (point))
+              ;; End-of-line, try again on next line.
+              (`(12) (progn
+                       (forward-char 1)
+                       (clojure-ts--search-whitespace-after-next-sexp root-node bound)))
+              ;; Closing paren, stop here.
+              (`(5 . ,_) nil)
+              ;; Anything else is something to align.
+              (_ (point))))))
     (when (and bound (> (point) bound))
       (goto-char bound))))
 
-(defun clojure-ts--get-nodes-to-align (region-node beg end)
+(defun clojure-ts--region-node (beg end)
+  "Return the smallest node that covers buffer positions BEG to END."
+  (let* ((root-node (treesit-buffer-root-node 'clojure)))
+    (treesit-node-descendant-for-range root-node beg end t)))
+
+(defun clojure-ts--node-from-sexp-data (beg end sexp)
+  "Return updated node using SEXP data in the region between BEG and END."
+  (let* ((new-region-node (clojure-ts--region-node beg end))
+         (sexp-beg (marker-position (plist-get sexp :beg-marker)))
+         (sexp-end (marker-position (plist-get sexp :end-marker))))
+    (treesit-node-descendant-for-range new-region-node
+                                       sexp-beg
+                                       sexp-end
+                                       t)))
+
+(defun clojure-ts--get-nodes-to-align (beg end)
   "Return a plist of nodes data for alignment.
 
-The search is limited by BEG, END and REGION-NODE.
+The search is limited by BEG, END.
 
 Possible node types are: map, bindings-vec, cond or read-cond.
 
@@ -1480,7 +1523,10 @@ The returned value is a list of property lists.  Each property list
 includes `:sexp-type', `:node', `:beg-marker', and `:end-marker'.
 Markers are necessary to fetch the same nodes after their boundaries
 have changed."
-  (let* ((query (treesit-query-compile 'clojure
+  ;; By default `treesit-query-capture' captures all nodes that cross the range.
+  ;; We need to restrict it to only nodes inside of the range.
+  (let* ((region-node (clojure-ts--region-node beg end))
+         (query (treesit-query-compile 'clojure
                                        (append
                                         `(((map_lit) @map)
                                           ((list_lit
@@ -1492,7 +1538,8 @@ have changed."
                                              (:match ,(clojure-ts-symbol-regexp clojure-ts-align-cond-forms) @sym)))
                                            @cond))
                                         (when clojure-ts-align-reader-conditionals
-                                          '(((read_cond_lit) @read-cond)))))))
+                                          '(((read_cond_lit) @read-cond)
+                                            ((splicing_read_cond_lit) @read-cond)))))))
     (thread-last (treesit-query-capture region-node query beg end)
                  (seq-remove (lambda (elt) (eq (car elt) 'sym)))
                  ;; When first node is reindented, all other nodes become
@@ -1538,38 +1585,29 @@ between BEG and END."
   (interactive (if (use-region-p)
                    (list (region-beginning) (region-end))
                  (save-excursion
-                   (let ((start (clojure-ts--beginning-of-defun-pos))
-                         (end (clojure-ts--end-of-defun-pos)))
-                     (list start end)))))
+                   (if (not (treesit-defun-at-point))
+                       (user-error "No defun at point")
+                     (let ((start (clojure-ts--beginning-of-defun-pos))
+                           (end (clojure-ts--end-of-defun-pos)))
+                       (list start end))))))
   (setq end (copy-marker end))
-  (let* ((root-node (treesit-buffer-root-node 'clojure))
-         ;; By default `treesit-query-capture' captures all nodes that cross the
-         ;; range.  We need to restrict it to only nodes inside of the range.
-         (region-node (treesit-node-descendant-for-range root-node beg (marker-position end) t))
-         (sexps-to-align (clojure-ts--get-nodes-to-align region-node beg (marker-position end))))
+  (let* ((sexps-to-align (clojure-ts--get-nodes-to-align beg (marker-position end)))
+         ;; We have to disable it here to avoid endless recursion.
+         (clojure-ts-align-forms-automatically nil))
     (save-excursion
-      (indent-region beg (marker-position end))
+      (indent-region beg end)
       (dolist (sexp sexps-to-align)
         ;; After reindenting a node, all other nodes in the `sexps-to-align'
         ;; list become outdated, so we need to fetch updated nodes for every
         ;; iteration.
-        (let* ((new-root-node (treesit-buffer-root-node 'clojure))
-               (new-region-node (treesit-node-descendant-for-range new-root-node
-                                                                   beg
-                                                                   (marker-position end)
-                                                                   t))
-               (sexp-beg (marker-position (plist-get sexp :beg-marker)))
-               (sexp-end (marker-position (plist-get sexp :end-marker)))
-               (node (treesit-node-descendant-for-range new-region-node
-                                                        sexp-beg
-                                                        sexp-end
-                                                        t))
+        (let* ((node (clojure-ts--node-from-sexp-data beg (marker-position end) sexp))
                (sexp-type (plist-get sexp :sexp-type))
                (node-end (treesit-node-end node)))
           (clojure-ts--point-to-align-position sexp-type node)
           (align-region (point) node-end nil
                         `((clojure-align (regexp . ,(lambda (&optional bound _noerror)
-                                                      (clojure-ts--search-whitespace-after-next-sexp node bound)))
+                                                      (let ((updated-node (clojure-ts--node-from-sexp-data beg (marker-position end) sexp)))
+                                                        (clojure-ts--search-whitespace-after-next-sexp updated-node bound))))
                                          (group . 1)
                                          (separate . ,clojure-ts-align-separator)
                                          (repeat . t)))
@@ -1577,8 +1615,20 @@ between BEG and END."
           ;; After every iteration we have to re-indent the s-expression,
           ;; otherwise some can be indented inconsistently.
           (indent-region (marker-position (plist-get sexp :beg-marker))
-                         (marker-position (plist-get sexp :end-marker))))))))
+                         (plist-get sexp :end-marker))))
+      ;; If `clojure-ts-align-separator' is used, `align-region' leaves trailing
+      ;; whitespaces on empty lines.
+      (delete-trailing-whitespace beg (marker-position end)))))
 
+(defun clojure-ts-indent-region (beg end)
+  "Like `indent-region', but also maybe align forms.
+
+Forms between BEG and END are aligned according to
+`clojure-ts-align-forms-automatically'."
+  (prog1 (let ((indent-region-function #'treesit-indent-region))
+           (indent-region beg end))
+    (when clojure-ts-align-forms-automatically
+      (clojure-ts-align beg end))))
 
 (defvar clojure-ts-mode-map
   (let ((map (make-sparse-keymap)))
@@ -1716,6 +1766,11 @@ REGEX-AVAILABLE."
         (treesit-inspect-mode))
 
       (treesit-major-mode-setup)
+
+      ;; We should assign this after calling `treesit-major-mode-setup',
+      ;; otherwise it will be owerwritten.
+      (when clojure-ts-align-forms-automatically
+        (setq-local indent-region-function #'clojure-ts-indent-region))
 
       ;; Initial indentation rules cache calculation.
       (setq clojure-ts--semantic-indent-rules-cache

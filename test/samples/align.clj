@@ -27,6 +27,31 @@
 (let [a-long-name 10
       b           20])
 
-
 #?(:clj  2
    :cljs 2)
+
+#?@(:clj  [2]
+    :cljs [4])
+
+(let [this-is-a-form b
+      c              d
+
+      another form
+      k       g])
+
+{:this-is-a-form b
+ c               d
+
+ :another form
+ k        g}
+
+(let [x  {:a 1
+          :b 2} ; comment
+      xx 3]
+  x)
+
+(case x
+  :a  (let [a  1
+            aa (+ a 1)]
+        aa); comment
+  :aa 2)
