@@ -169,6 +169,10 @@ DESCRIPTION is the description of the spec."
      (2 5 font-lock-type-face)
      (8 9 font-lock-keyword-face)))
 
+  (when-fontifying-it "function literals"
+    ("#(or one two)"
+     (3 4 font-lock-keyword-face)))
+
   (when-fontifying-it "should highlight function name in all known forms"
     ("(letfn [(add [x y]
           (+ x y))

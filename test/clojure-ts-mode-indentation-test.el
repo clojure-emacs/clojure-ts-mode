@@ -184,6 +184,12 @@ DESCRIPTION is a string with the description of the spec."
 (#'foo 5
        6)")
 
+(when-indenting-it "should support function literals"
+  "
+#(or true
+     false
+     %)")
+
 (when-indenting-it "should support block-0 expressions"
   "
 (do (aligned)
@@ -461,6 +467,17 @@ b |20])"
     "
 (let [a b
       c d])")
+
+  (when-aligning-it "should handle function literals"
+    "
+#(let [hello 1
+       foo   \"hone\"]
+   (pringln hello))"
+
+    "
+^{:some :metadata} #(let [foo     %
+                          bar-zzz %]
+                      foo)")
 
   (when-aligning-it "should handle a blank line"
     "

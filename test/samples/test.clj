@@ -41,6 +41,19 @@
 
        0 0i)
 
+;; Function literals
+
+^{:some "metadata"} #(let [foo     %
+                           bar-zzz %]
+                       foo)
+
+#(or one
+     two)
+
+#(let [hello 1
+       foo   "hone"]
+   (pringln hello))
+
 ;; examples of valid namespace definitions
 (comment
   (ns .validns)
