@@ -514,6 +514,13 @@ literals with regex grammar."
                                       (:equal "clojure.core" @ns))
                           name: (sym_name) @font-lock-keyword-face))
        (:match ,clojure-ts--builtin-symbol-regexp @font-lock-keyword-face))
+      ((anon_fn_lit meta: _ :* :anchor (sym_lit !namespace name: (sym_name) @font-lock-keyword-face))
+       (:match ,clojure-ts--builtin-symbol-regexp @font-lock-keyword-face))
+      ((anon_fn_lit meta: _ :* :anchor
+                    (sym_lit namespace: ((sym_ns) @ns
+                                         (:equal "clojure.core" @ns))
+                             name: (sym_name) @font-lock-keyword-face))
+       (:match ,clojure-ts--builtin-symbol-regexp @font-lock-keyword-face))
       ((sym_name) @font-lock-builtin-face
        (:match ,clojure-ts--builtin-dynamic-var-regexp @font-lock-builtin-face)))
 
@@ -725,6 +732,14 @@ literals with regex grammar."
 (defun clojure-ts--list-node-p (node)
   "Return non-nil if NODE is a Clojure list."
   (string-equal "list_lit" (treesit-node-type node)))
+
+(defun clojure-ts--anon-fn-node-p (node)
+  "Return non-nil if NODE is a Clojure function literal."
+  (string-equal "anon_fn_lit" (treesit-node-type node)))
+
+(defun clojure-ts--opening-paren-node-p (node)
+  "Return non-nil if NODE is an opening paren."
+  (string-equal "(" (treesit-node-text node)))
 
 (defun clojure-ts--symbol-node-p (node)
   "Return non-nil if NODE is a Clojure symbol."
@@ -1249,7 +1264,8 @@ PARENT not should be a list.  If first symbol in the expression has an
 indentation rule in `clojure-ts--semantic-indent-rules-defaults' or
 `clojure-ts-semantic-indent-rules' check if NODE should be indented
 according to the rule.  If NODE is nil, use next node after BOL."
-  (and (clojure-ts--list-node-p parent)
+  (and (or (clojure-ts--list-node-p parent)
+           (clojure-ts--anon-fn-node-p parent))
        (let* ((first-child (clojure-ts--node-child-skip-metadata parent 0)))
          (when-let* ((rule (clojure-ts--find-semantic-rule node parent 0)))
            (and (not (clojure-ts--match-with-metadata node))
@@ -1265,7 +1281,8 @@ according to the rule.  If NODE is nil, use next node after BOL."
 
 (defun clojure-ts--match-function-call-arg (node parent _bol)
   "Match NODE if PARENT is a list expressing a function or macro call."
-  (and (clojure-ts--list-node-p parent)
+  (and (or (clojure-ts--list-node-p parent)
+           (clojure-ts--anon-fn-node-p parent))
        ;; Can the following two clauses be replaced by checking indexes?
        ;; Does the second child exist, and is it not equal to the current node?
        (treesit-node-child parent 1 t)
@@ -1284,7 +1301,8 @@ according to the rule.  If NODE is nil, use next node after BOL."
   "Match NODE if it is an argument to a PARENT threading macro."
   ;; We want threading macros to indent 2 only if the ->> is on it's own line.
   ;; If not, then align function arg.
-  (and (clojure-ts--list-node-p parent)
+  (and (or (clojure-ts--list-node-p parent)
+           (clojure-ts--anon-fn-node-p parent))
        (let ((first-child (treesit-node-child parent 0 t)))
          (clojure-ts--symbol-matches-p
           clojure-ts--threading-macro
@@ -1335,7 +1353,7 @@ according to the rule.  If NODE is nil, use next node after BOL."
     (and prev-sibling
          (clojure-ts--metadata-node-p prev-sibling))))
 
-(defun clojure-ts--anchor-parent-skip-metadata (_node parent _bol)
+(defun clojure-ts--anchor-parent-opening-paren (_node parent _bol)
   "Return position of PARENT start for NODE.
 
 If PARENT has optional metadata we skip it and return starting position
@@ -1343,11 +1361,9 @@ of the first child's opening paren.
 
 NOTE: This serves as an anchor function to resolve an indentation issue
 for forms with type hints."
-  (let ((first-child (treesit-node-child parent 0 t)))
-    (if (clojure-ts--metadata-node-p first-child)
-        ;; We don't need named node here
-        (treesit-node-start (treesit-node-child parent 1))
-      (treesit-node-start parent))))
+  (thread-first parent
+                (treesit-search-subtree #'clojure-ts--opening-paren-node-p nil t 1)
+                (treesit-node-start)))
 
 (defun clojure-ts--match-collection-item-with-metadata (node-type)
   "Return a matcher for a collection item with metadata by NODE-TYPE.
@@ -1358,6 +1374,18 @@ if NODE has metadata and its parent has type NODE-TYPE."
     (string-equal node-type
                   (treesit-node-type
                    (clojure-ts--node-with-metadata-parent node)))))
+
+(defun clojure-ts--anchor-nth-sibling (n &optional named)
+  "Return the start of the Nth child of PARENT.
+
+NAMED non-nil means count only named nodes.
+
+NOTE: This is a replacement for built-in `nth-sibling' anchor preset,
+which doesn't work properly for named nodes (see the bug
+https://debbugs.gnu.org/cgi/bugreport.cgi?bug=78065)"
+  (lambda (_n parent &rest _)
+    (treesit-node-start
+     (treesit-node-child parent n named))))
 
 (defun clojure-ts--semantic-indent-rules ()
   "Return a list of indentation rules for `treesit-simple-indent-rules'."
@@ -1385,11 +1413,11 @@ if NODE has metadata and its parent has type NODE-TYPE."
      ((parent-is "read_cond_lit") parent 3)
      ((parent-is "tagged_or_ctor_lit") parent 0)
      ;; https://guide.clojure.style/#body-indentation
-     (clojure-ts--match-form-body clojure-ts--anchor-parent-skip-metadata 2)
+     (clojure-ts--match-form-body clojure-ts--anchor-parent-opening-paren 2)
      ;; https://guide.clojure.style/#threading-macros-alignment
      (clojure-ts--match-threading-macro-arg prev-sibling 0)
      ;; https://guide.clojure.style/#vertically-align-fn-args
-     (clojure-ts--match-function-call-arg (nth-sibling 2 nil) 0)
+     (clojure-ts--match-function-call-arg ,(clojure-ts--anchor-nth-sibling 1 t) 0)
      ;; https://guide.clojure.style/#one-space-indent
      ((parent-is "list_lit") parent 1))))
 
@@ -1559,6 +1587,14 @@ have changed."
                                              (:match ,(clojure-ts-symbol-regexp clojure-ts-align-binding-forms) @sym))
                                             (vec_lit) @bindings-vec))
                                           ((list_lit
+                                            ((sym_lit) @sym
+                                             (:match ,(clojure-ts-symbol-regexp clojure-ts-align-cond-forms) @sym)))
+                                           @cond)
+                                          ((anon_fn_lit
+                                            ((sym_lit) @sym
+                                             (:match ,(clojure-ts-symbol-regexp clojure-ts-align-binding-forms) @sym))
+                                            (vec_lit) @bindings-vec))
+                                          ((anon_fn_lit
                                             ((sym_lit) @sym
                                              (:match ,(clojure-ts-symbol-regexp clojure-ts-align-cond-forms) @sym)))
                                            @cond))

@@ -6,6 +6,10 @@
 - [#11](https://github.com/clojure-emacs/clojure-ts-mode/issues/11): Enable regex syntax highlighting.
 - [#16](https://github.com/clojure-emacs/clojure-ts-mode/issues/16): Add support for automatic aligning forms.
 - [#82](https://github.com/clojure-emacs/clojure-ts-mode/issues/82): Introduce `clojure-ts-outline-variant`.
+- [#86](https://github.com/clojure-emacs/clojure-ts-mode/pull/86): Better handling of function literals:
+  - Syntax highlighting of built-in keywords.
+  - Consistent indentation with regular forms.
+  - Support for automatic aligning forms.
 
 ## 0.3.0 (2025-04-15)
 
