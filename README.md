@@ -340,7 +340,7 @@ Every new line in the docstrings is indented by
 `clojure-ts-docstring-fill-prefix-width` number of spaces (set to 2 by default
 which matches the `clojure-mode` settings).
 
-#### imenu
+### imenu
 
 `clojure-ts-mode` supports various types of definition that can be navigated
 using `imenu`, such as:
@@ -352,6 +352,19 @@ using `imenu`, such as:
 - interface (forms such as `defprotocol`, `definterface` and `defmulti`)
 - class (forms such as `deftype`, `defrecord` and `defstruct`)
 - keyword (for example, spec definitions)
+
+### Integration with `outline-minor-mode`
+
+`clojure-ts-mode` supports two integration variants with
+`outline-minor-mode`. The default variant uses special top-level comments (level
+1 heading starts with three semicolons, level 2 heading starts with four,
+etc.). The other variant treats def-like forms (the same forms produced by the
+`imenu` command) as outline headings. To use the second option, use the
+following customization:
+
+```emacs-lisp
+(setopt clojure-ts-outline-variant 'imenu)
+```
 
 ## Migrating to clojure-ts-mode
 
