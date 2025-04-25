@@ -133,6 +133,17 @@ double quotes on the third column."
   :type 'boolean
   :package-version '(clojure-ts-mode . "0.3"))
 
+(defcustom clojure-ts-outline-variant 'comments
+  "Determines how `clojure-ts-mode' integrates with `outline-minor-mode'.
+
+If set to the symbol `comments', then top-level comments starting with
+three or more semicolons will be treated as outline headings.  If set to
+`imenu', then def-like forms are treated as outline headings."
+  :safe #'symbolp
+  :type '(choice (const :tag "Use special comments" comments)
+                 (const :tag "Use imenu" imenu))
+  :package-version '(clojure-ts-mode . "0.4"))
+
 (defcustom clojure-ts-align-reader-conditionals nil
   "Whether to align reader conditionals, as if they were maps."
   :package-version '(clojure-ts-mode . "0.4")
@@ -912,6 +923,20 @@ Includes a dispatch value when applicable (defmethods)."
   "The value for `treesit-simple-imenu-settings'.
 By default `treesit-defun-name-function' is used to extract definition names.
 See `clojure-ts--standard-definition-node-name' for the implementation used.")
+
+;;; Outline settings
+
+(defun clojure-ts--outline-predicate (node)
+  "Return TRUE if NODE is an outline heading comment."
+  (and (string= (treesit-node-type node) "comment")
+       (string-match-p "^\\(?:;;;;* \\).*" (treesit-node-text node))))
+
+(defun clojure-ts--outline-level ()
+  "Return the current level of the outline heading at point."
+  (let* ((node (treesit-outline--at-point))
+         (node-text (treesit-node-text node)))
+    (string-match ";;\\(;+\\) " node-text)
+    (- (match-end 1) (match-beginning 1))))
 
 (defcustom clojure-ts-indent-style 'semantic
   "Automatic indentation style to use when mode `clojure-ts-mode' is run.
@@ -1708,6 +1733,13 @@ REGEX-AVAILABLE."
   (setq-local indent-tabs-mode nil)
   (setq-local comment-add 1)
   (setq-local comment-start ";")
+  (when (equal clojure-ts-outline-variant 'comments)
+    ;; NOTE: If `imenu' option is selected for `clojure-ts-outline-variant', all
+    ;; necessary variables will be set automatically by
+    ;; `treesit-major-mode-setup'.
+    (setq-local treesit-outline-predicate #'clojure-ts--outline-predicate
+                outline-search-function #'treesit-outline-search
+                outline-level #'clojure-ts--outline-level))
 
   (setq-local treesit-font-lock-settings
               (clojure-ts--font-lock-settings markdown-available regex-available))
