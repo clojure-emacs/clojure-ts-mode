@@ -23,7 +23,9 @@ them. Enter `clojure-ts-mode`, which makes use of Tree-sitter to provide:
 
 - fast, accurate and more granular font-locking
 - fast indentation
-- common Emacs functionality like structured navigation, `imenu` (an outline of a source buffer), current form inference (used internally by various Emacs modes and utilities), etc
+- common Emacs functionality like structured navigation, `imenu` (an outline of
+  a source buffer), current form inference (used internally by various Emacs
+  modes and utilities), etc
 
 Working with Tree-sitter is significantly easier than the legacy Emacs APIs for font-locking and
 indentation, which makes it easier to contribute to `clojure-ts-mode`, and to improve it in general.
@@ -156,13 +158,16 @@ Most configuration changes will require reverting any active `clojure-ts-mode` b
 
 ### Remapping of `clojure-mode` buffers
 
-By default, `clojure-ts-mode` assumes command over all buffers and file extensions previously associated with `clojure-mode` (and derived major modes like `clojurescript-mode`). To disable this remapping, set
+By default, `clojure-ts-mode` assumes command over all buffers and file
+extensions previously associated with `clojure-mode` (and derived major modes
+like `clojurescript-mode`). To disable this remapping, set
 
 ``` emacs-lisp
 (setopt clojure-ts-auto-remap nil)
 ```
 
-You can also use the commands `clojure-ts-activate` / `clojure-ts-deactivate` to interactively change this behavior.
+You can also use the commands `clojure-ts-activate` / `clojure-ts-deactivate` to
+interactively change this behavior.
 
 ### Indentation
 
@@ -297,27 +302,28 @@ highlighted like regular Clojure code.
 
 ### Highlight markdown syntax in docstrings
 
-By default markdown syntax is highlighted in the docstrings using
-`markdown-inline` grammar. To disable this feature set
+By default Markdown syntax is highlighted in the docstrings using
+`markdown-inline` grammar. To disable this feature use:
 
 ``` emacs-lisp
 (setopt clojure-ts-use-markdown-inline nil)
 ```
 
-Example of syntax highlighting:
+Example of Markdown syntax highlighting:
 
 <img width="512" src="/screenshots/markdown-syntax-dark-theme.png">
 
-### Highlight regex syntax
+### Highlight regular expression syntax
 
-By default syntax inside regex literals is highlighted using [regex](https://github.com/tree-sitter/tree-sitter-regex) grammar. To
-disable this feature set
+By default syntax inside regex literals is highlighted using
+[regex](https://github.com/tree-sitter/tree-sitter-regex) grammar. To disable
+this feature use:
 
 ```emacs-lisp
 (setopt clojure-ts-use-regex-parser nil)
 ```
 
-Example of syntax highlighting:
+Example of regex syntax highlighting:
 
 <img width="512" src="/screenshots/regex-syntax-dark-theme.png">
 
@@ -368,9 +374,10 @@ following customization:
 
 ## Migrating to clojure-ts-mode
 
-If you are migrating to `clojure-ts-mode` note that `clojure-mode` is still required for cider and clj-refactor packages to work properly.
+If you are migrating to `clojure-ts-mode` note that `clojure-mode` is still
+required for cider and clj-refactor packages to work properly.
 
-After installing the package do the following.
+After installing the package do the following:
 
 - Check the value of `clojure-mode-hook` and copy all relevant hooks to `clojure-ts-mode-hook`.
 
@@ -381,7 +388,8 @@ After installing the package do the following.
 (add-hook 'clojure-ts-mode-hook #'clj-refactor-mode)
 ```
 
-- Update `.dir-locals.el` in all of your Clojure projects to activate directory local variables in `clojure-ts-mode`.
+- Update `.dir-locals.el` in all of your Clojure projects to activate directory
+  local variables in `clojure-ts-mode`.
 
 ``` emacs-lisp
 ((clojure-mode
@@ -411,7 +419,7 @@ and `clojure-mode` (this is very helpful when dealing with `derived-mode-p` chec
 
 ### What `clojure-mode` features are currently missing?
 
-As of version 0.2.x, the most obvious missing feature are the various
+As of version 0.4.x, the most obvious missing feature are the various
 refactoring commands in `clojure-mode`.
 
 ### Does `clojure-ts-mode` work with CIDER?
