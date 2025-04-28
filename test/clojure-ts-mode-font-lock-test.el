@@ -34,9 +34,9 @@
   (declare (debug t)
            (indent 1))
   `(with-clojure-ts-buffer ,content
-                           (font-lock-ensure)
-                           (goto-char (point-min))
-                           ,@body))
+     (font-lock-ensure)
+     (goto-char (point-min))
+     ,@body))
 
 (defun clojure-ts-get-face-at (start end content)
   "Get the face between START and END in CONTENT."

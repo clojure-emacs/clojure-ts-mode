@@ -42,10 +42,10 @@ and point left there."
   (declare (indent 2))
   `(progn
      (with-clojure-ts-buffer ,text
-                             (goto-char (point-min))
-                             (re-search-forward "|")
-                             (delete-char -1)
-                             ,@body)))
+       (goto-char (point-min))
+       (re-search-forward "|")
+       (delete-char -1)
+       ,@body)))
 
 (defun clojure-ts--s-index-of (needle s &optional ignore-case)
   "Returns first index of NEEDLE in S, or nil.
@@ -108,4 +108,5 @@ Removes the temp directory at the end of evaluation."
         ,@body)
       (delete-directory ,temp-dir t))))
 
+(provide 'test-helper)
 ;;; test-helper.el ends here

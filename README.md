@@ -372,6 +372,28 @@ following customization:
 (setopt clojure-ts-outline-variant 'imenu)
 ```
 
+## Refactoring support
+
+### Threading macros related features
+
+`clojure-unwind`: Unwind a threaded expression. Supports both `->>`/`some->>`
+and `->`/`some->`.
+
+`clojure-unwind-all`: Fully unwind a threaded expression removing the threading
+macro.
+
+### Default keybindings
+
+| Keybinding  | Command             |
+|:------------|:--------------------|
+| `C-c SPC`   | `clojure-ts-align`  |
+| `C-c C-r u` | `clojure-ts-unwind` |
+
+### Customize refactoring commands prefix
+
+By default prefix for all refactoring commands is `C-c C-r`. It can be changed
+by customizing `clojure-ts-refactor-map-prefix` variable.
+
 ## Migrating to clojure-ts-mode
 
 If you are migrating to `clojure-ts-mode` note that `clojure-mode` is still
