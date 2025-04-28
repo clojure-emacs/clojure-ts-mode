@@ -57,6 +57,7 @@
 
 (require 'treesit)
 (require 'align)
+(require 'subr-x)
 
 (declare-function treesit-parser-create "treesit.c")
 (declare-function treesit-node-eq "treesit.c")
@@ -142,6 +143,11 @@ three or more semicolons will be treated as outline headings.  If set to
   :safe #'symbolp
   :type '(choice (const :tag "Use special comments" comments)
                  (const :tag "Use imenu" imenu))
+  :package-version '(clojure-ts-mode . "0.4"))
+
+(defcustom clojure-ts-refactor-map-prefix "C-c C-r"
+  "Clojure refactor keymap prefix."
+  :type 'string
   :package-version '(clojure-ts-mode . "0.4"))
 
 (defcustom clojure-ts-align-reader-conditionals nil
@@ -1691,11 +1697,199 @@ Forms between BEG and END are aligned according to
     (when clojure-ts-align-forms-automatically
       (clojure-ts-align beg end))))
 
+;;; Refactoring
+
+(defun clojure-ts--threading-sexp-node ()
+  "Return list node at point which is a threading expression."
+  (when-let* ((node-at-point (treesit-node-at (point) 'clojure t)))
+    ;; We don't want to match `cond->' and `cond->>', so we should define a very
+    ;; specific regexp.
+    (let ((sym-regex (rx bol (* "some") "->" (* ">") eol)))
+      (treesit-parent-until node-at-point
+                            (lambda (node)
+                              (and (or (clojure-ts--list-node-p node)
+                                       (clojure-ts--anon-fn-node-p node))
+                                   (let ((first-child (treesit-node-child node 0 t)))
+                                     (clojure-ts--symbol-matches-p sym-regex first-child))))
+                            t))))
+
+(defun clojure-ts--delete-and-extract-sexp ()
+  "Delete the surrounding sexp and return it."
+  (let* ((sexp-node (treesit-thing-at-point 'sexp 'nested))
+         (result (treesit-node-text sexp-node)))
+    (delete-region (treesit-node-start sexp-node)
+                   (treesit-node-end sexp-node))
+    result))
+
+(defun clojure-ts--ensure-parens-around-function-name ()
+  "Insert parens around function name if necessary."
+  (unless (string= (treesit-node-text (treesit-node-at (point))) "(")
+    (insert-parentheses 1)
+    (backward-up-list)))
+
+(defun clojure-ts--multiline-sexp-p ()
+  "Return TRUE if s-expression at point is multiline."
+  (let ((sexp (treesit-thing-at-point 'sexp 'nested)))
+    (not (= (line-number-at-pos (treesit-node-start sexp))
+            (line-number-at-pos (treesit-node-end sexp))))))
+
+(defun clojure-ts--unwind-thread-first ()
+  "Unwind a thread first macro once."
+  (let* ((threading-sexp (clojure-ts--threading-sexp-node))
+         (first-child-start (thread-first threading-sexp
+                                          (treesit-node-child 0 t)
+                                          (treesit-node-start)
+                                          (copy-marker))))
+    (save-excursion
+      (goto-char first-child-start)
+      (treesit-beginning-of-thing 'sexp -1)
+      (let ((contents (clojure-ts--delete-and-extract-sexp)))
+        (when (looking-at " *\n")
+          (join-line 'following))
+        (just-one-space)
+        (goto-char first-child-start)
+        (treesit-beginning-of-thing 'sexp -1)
+        (let ((multiline-p (clojure-ts--multiline-sexp-p)))
+          (clojure-ts--ensure-parens-around-function-name)
+          (down-list)
+          (forward-sexp)
+          (insert " " contents)
+          (when multiline-p
+            (insert "\n")))))))
+
+(defun clojure-ts--unwind-thread-last ()
+  "Unwind a thread last macro once."
+  (let* ((threading-sexp (clojure-ts--threading-sexp-node))
+         (first-child-start (thread-first threading-sexp
+                                          (treesit-node-child 0 t)
+                                          (treesit-node-start)
+                                          (copy-marker))))
+    (save-excursion
+      (goto-char first-child-start)
+      (treesit-beginning-of-thing 'sexp -1)
+      (let ((contents (clojure-ts--delete-and-extract-sexp)))
+        (when (looking-at " *\n")
+          (join-line 'following))
+        (just-one-space)
+        (goto-char first-child-start)
+        (treesit-beginning-of-thing 'sexp -1)
+        (let ((multiline-p (clojure-ts--multiline-sexp-p)))
+          (clojure-ts--ensure-parens-around-function-name)
+          (forward-list)
+          (down-list -1)
+          (when multiline-p
+            (insert "\n"))
+          (insert " " contents))))))
+
+(defun clojure-ts--node-threading-p (node)
+  "Return non-nil if NODE is a threading macro s-expression."
+  (and (or (clojure-ts--list-node-p node)
+           (clojure-ts--anon-fn-node-p node))
+       (let ((first-child (treesit-node-child node 0 t)))
+         (clojure-ts--symbol-matches-p clojure-ts--threading-macro first-child))))
+
+(defun clojure-ts--skip-first-child (parent)
+  "Move point to the beginning of the first child of the PARENT node."
+  (thread-first parent
+                (treesit-node-child 1 t)
+                (treesit-node-start)
+                (goto-char)))
+
+(defun clojure-ts--nothing-more-to-unwind ()
+  "Return TRUE if threading expression at point has only one argument."
+  (let ((threading-sexp (clojure-ts--threading-sexp-node)))
+    (save-excursion
+      (clojure-ts--skip-first-child threading-sexp)
+      (not (treesit-end-of-thing 'sexp 2 'restricted)))))
+
+(defun clojure-ts--pop-out-of-threading ()
+  "Raise a sexp up a level to unwind a threading form."
+  (let ((threading-sexp (clojure-ts--threading-sexp-node)))
+    (save-excursion
+      (clojure-ts--skip-first-child threading-sexp)
+      (raise-sexp))))
+
+(defun clojure-ts--fix-sexp-whitespace ()
+  "Fix whitespace after unwinding a threading form."
+  (save-excursion
+    (let ((beg (point)))
+      (treesit-end-of-thing 'sexp)
+      (indent-region beg (point))
+      (delete-trailing-whitespace beg (point)))))
+
+(defun clojure-ts--unwind-sexps-counter ()
+  "Return total number of s-expressions of a threading form at point."
+  (if-let* ((threading-sexp (clojure-ts--threading-sexp-node)))
+      (save-excursion
+        (clojure-ts--skip-first-child threading-sexp)
+        (let ((n 0))
+          (while (treesit-end-of-thing 'sexp 1 'restricted)
+            (setq n (1+ n)))
+          n))
+    (user-error "No threading form to unwind at point")))
+
+(defun clojure-ts-unwind (&optional n)
+  "Unwind thread at point or above point by N levels.
+
+With universal argument \\[universal-argument], fully unwinds thread."
+  (interactive "P")
+  (setq n (cond
+           ((equal n '(4)) (clojure-ts--unwind-sexps-counter))
+           (n)
+           (1)))
+  (if-let* ((threading-sexp (clojure-ts--threading-sexp-node))
+            (sym (thread-first threading-sexp
+                               (treesit-node-child 0 t)
+                               (clojure-ts--named-node-text))))
+      (save-excursion
+        (let ((beg (thread-first threading-sexp
+                                 (treesit-node-start)
+                                 (copy-marker)))
+              (end (thread-first threading-sexp
+                                 (treesit-node-end)
+                                 (copy-marker))))
+          (while (> n 0)
+            (cond
+             ((string-match-p (rx bol (* "some") "->" eol) sym)
+              (clojure-ts--unwind-thread-first))
+             ((string-match-p (rx bol (* "some") "->>" eol) sym)
+              (clojure-ts--unwind-thread-last)))
+            (setq n (1- n))
+            ;; After unwinding we check if it is the last expression and maybe
+            ;; splice it.
+            (when (clojure-ts--nothing-more-to-unwind)
+              (clojure-ts--pop-out-of-threading)
+              (clojure-ts--fix-sexp-whitespace)
+              (setq n 0)))
+          (indent-region beg end)
+          (delete-trailing-whitespace beg end)))
+    (user-error "No threading form to unwind at point")))
+
+(defun clojure-ts-unwind-all ()
+  "Fully unwind thread at point or above point."
+  (interactive)
+  (clojure-ts-unwind '(4)))
+
+(defvar clojure-ts-refactor-map
+  (let ((map (make-sparse-keymap)))
+    (keymap-set map "C-u" #'clojure-ts-unwind)
+    (keymap-set map "u" #'clojure-ts-unwind)
+    map)
+  "Keymap for `clojure-ts-mode' refactoring commands.")
+
 (defvar clojure-ts-mode-map
   (let ((map (make-sparse-keymap)))
     ;;(set-keymap-parent map clojure-mode-map)
     (keymap-set map "C-c SPC" #'clojure-ts-align)
-    map))
+    (keymap-set map clojure-ts-refactor-map-prefix clojure-ts-refactor-map)
+    (easy-menu-define clojure-ts-mode-menu map "Clojure[TS] Mode Menu"
+      '("Clojure"
+        ["Align expression" clojure-ts-align]
+        ("Refactor -> and ->>"
+         ["Unwind once" clojure-ts-unwind]
+         ["Fully unwind a threading macro" clojure-ts-unwind-all])))
+    map)
+  "Keymap for `clojure-ts-mode'.")
 
 (defvar clojure-ts-clojurescript-mode-map
   (let ((map (make-sparse-keymap)))

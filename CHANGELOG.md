@@ -10,6 +10,7 @@
   - Syntax highlighting of built-in keywords.
   - Consistent indentation with regular forms.
   - Support for automatic aligning forms.
+- [#88](https://github.com/clojure-emacs/clojure-ts-mode/pull/88): Introduce `clojure-ts-unwind` and `clojure-ts-unwind-all`.
 
 ## 0.3.0 (2025-04-15)
 
