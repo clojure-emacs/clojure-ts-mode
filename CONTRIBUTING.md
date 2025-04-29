@@ -35,21 +35,9 @@ clojure-ts-mode (version 2.1.1)
 * Open a [pull request][4] that relates to *only* one subject with a clear title
 and description in grammatically correct, complete sentences.
 
-## I don't have a github account
-
-or maybe you would rather use email. That is okay.
-
-If you prefer you can also send a message to the [mailing list][7].
-This mailing list is not the [primary issue tracker][1].
-All the same etiquette rules above apply to the mailing list as well.
-Submitted patches will be turned into pull requests.
-Any issues reported on the mailing list will be copied to the issue tracker
-where the primary work will take place.
-
 [1]: https://github.com/clojure-emacs/clojure-ts-mode/issues
 [2]: http://gun.io/blog/how-to-github-fork-branch-and-pull-request
 [3]: http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
 [4]: https://help.github.com/articles/using-pull-requests
 [5]: http://gitready.com/advanced/2009/02/10/squashing-commits-with-rebase.html
 [6]: https://github.com/clojure-emacs/clojure-ts-mode/blob/master/CHANGELOG.md
-[7]: https://lists.sr.ht/~dannyfreeman/clojure-ts-mode
