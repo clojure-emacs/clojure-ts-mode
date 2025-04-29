@@ -17,7 +17,7 @@
 ;; Provides font-lock, indentation, and navigation for the
 ;; Clojure programming language (http://clojure.org).
 
-;; For the tree-sitter grammar this mode is based on,
+;; For the Tree-sitter grammar this mode is based on,
 ;; see https://github.com/sogaiu/tree-sitter-clojure.
 
 ;; Using clojure-ts-mode with paredit or smartparens is highly recommended.
@@ -66,7 +66,7 @@
 (declare-function treesit-node-child-by-field-name "treesit.c")
 
 (defgroup clojure-ts nil
-  "Major mode for editing Clojure code with tree-sitter."
+  "Major mode for editing Clojure code with Tree-sitter."
   :prefix "clojure-ts-"
   :group 'languages
   :link '(url-link :tag "GitHub" "https://github.com/clojure-emacs/clojure-ts-mode")
@@ -89,7 +89,7 @@ itself."
   :package-version '(clojure-ts-mode . "0.1.3"))
 
 (defcustom clojure-ts-ensure-grammars t
-  "When non-nil, ensure required tree-sitter grammars are installed."
+  "When non-nil, ensure required Tree-sitter grammars are installed."
   :safe #'booleanp
   :type 'boolean
   :package-version '(clojure-ts-mode . "0.2.0"))
@@ -1741,7 +1741,7 @@ Forms between BEG and END are aligned according to
     (dolist (recipe clojure-ts-grammar-recipes)
       (let ((grammar (car recipe)))
         (unless (treesit-language-available-p grammar nil)
-          (message "Installing %s tree-sitter grammar" grammar)
+          (message "Installing %s Tree-sitter grammar" grammar)
           ;; `treesit-language-source-alist' is dynamically scoped.
           ;; Binding it in this let expression allows
           ;; `treesit-install-language-gramamr' to pick up the grammar recipes
@@ -1757,7 +1757,7 @@ function can also be used to upgrade the grammars if they are outdated."
   (interactive)
   (dolist (recipe clojure-ts-grammar-recipes)
     (let ((grammar (car recipe)))
-      (message "Installing %s tree-sitter grammar" grammar)
+      (message "Installing %s Tree-sitter grammar" grammar)
       (let ((treesit-language-source-alist clojure-ts-grammar-recipes))
         (treesit-install-language-grammar grammar)))))
 
@@ -1932,7 +1932,7 @@ Useful if you want to switch to the `clojure-mode's mode mappings."
         ;; nbb scripts are ClojureScript source files
         (add-to-list 'interpreter-mode-alist '("nbb" . clojure-ts-clojurescript-mode))
         (clojure-ts--register-novel-modes)))
-  (message "Clojure TS Mode will not be activated as tree-sitter support is missing."))
+  (message "Clojure TS Mode will not be activated as Tree-sitter support is missing."))
 
 (defvar clojure-ts--find-ns-query
   (treesit-query-compile

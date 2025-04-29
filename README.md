@@ -4,13 +4,13 @@
 [![License GPL 3][badge-license]][copying]
 [![Lint Status](https://github.com/clojure-emacs/clojure-ts-mode/actions/workflows/lint-emacs.yml/badge.svg)](https://github.com/clojure-emacs/clojure-ts-mode/actions/workflows/lint-emacs.yml)
 
-# Clojure Tree-Sitter Mode
+# Clojure Tree-sitter Mode
 
 `clojure-ts-mode` is an Emacs major mode that provides font-lock (syntax
 highlighting), indentation, and navigation support for the
 [Clojure(Script) programming language](http://clojure.org), powered by the
 [tree-sitter-clojure](https://github.com/sogaiu/tree-sitter-clojure)
-[tree-sitter](https://tree-sitter.github.io/tree-sitter/) grammar.
+[Tree-sitter](https://tree-sitter.github.io/tree-sitter/) grammar.
 
 ## Rationale
 
@@ -116,7 +116,7 @@ git clone https://github.com/clojure-emacs/clojure-ts-mode.git
 
 Once installed, evaluate `clojure-ts-mode.el` and you should be ready to go.
 
-### Install tree-sitter grammars
+### Install Tree-sitter grammars
 
 > [!NOTE]
 >
@@ -139,7 +139,7 @@ option to install it manually, Please, refer to the installation instructions of
 each required grammar and make sure you're install the versions expected. (see
 `clojure-ts-grammar-recipes` for details)
 
-### Upgrading tree-sitter grammars
+### Upgrading Tree-sitter grammars
 
 To reinstall or upgrade Tree-sitter grammars, you can execute:
 
