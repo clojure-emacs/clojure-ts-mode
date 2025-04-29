@@ -2,6 +2,8 @@
 
 ;;; Threading
 
+;;;; Unwind
+
 (-> ;; This is comment
     (foo)
     ;; Another comment
@@ -35,3 +37,36 @@
 
 (some->> (val (find {:a 1} :b))
          (+ 5))
+
+;;;; Thread
+
+(-> (foo (bar (baz)) "arg on a separate line"))
+
+(foo (bar (baz)))
+
+(-> (foo (bar))
+    (baz))
+
+(->> (filter :active? (map :status items)))
+
+(-> (dissoc (assoc {} :key "value") :lock))
+
+
+(-> inc
+    (map [1 2]))
+
+(map
+ inc
+ [1 2])
+
+#(-> (.-value (.-target %)))
+
+(->> (range)
+     (map inc))
+
+(->> (map square (filter even? [1 2 3 4 5])))
+
+(deftask dev []
+         (comp (serve)
+               (cljs (lala)
+                     10)))

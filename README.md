@@ -376,23 +376,65 @@ following customization:
 
 ### Threading macros related features
 
+`clojure-thread`: Thread another form into the surrounding thread. Both
+`->>`/`some->>` and `->`/`some->` variants are supported.
+
 `clojure-unwind`: Unwind a threaded expression. Supports both `->>`/`some->>`
 and `->`/`some->`.
+
+`clojure-thread-first-all`: Introduce the thread first macro (`->`) and rewrite
+the entire form. With a prefix argument do not thread the last form.
+
+`clojure-thread-last-all`: Introduce the thread last macro and rewrite the
+entire form. With a prefix argument do not thread the last form.
 
 `clojure-unwind-all`: Fully unwind a threaded expression removing the threading
 macro.
 
 ### Default keybindings
 
-| Keybinding  | Command             |
-|:------------|:--------------------|
-| `C-c SPC`   | `clojure-ts-align`  |
-| `C-c C-r u` | `clojure-ts-unwind` |
+| Keybinding                  | Command                       |
+|:----------------------------|:------------------------------|
+| `C-c SPC`                   | `clojure-ts-align`            |
+| `C-c C-r t` / `C-c C-r C-t` | `clojure-ts-thread`           |
+| `C-c C-r u` / `C-c C-r C-u` | `clojure-ts-unwind`           |
+| `C-c C-r f` / `C-c C-r C-f` | `clojure-ts-thread-first-all` |
+| `C-c C-r l` / `C-c C-r C-l` | `clojure-ts-thread-last-all`  |
 
 ### Customize refactoring commands prefix
 
 By default prefix for all refactoring commands is `C-c C-r`. It can be changed
 by customizing `clojure-ts-refactor-map-prefix` variable.
+
+### Customize threading refactoring behavior
+
+By default `clojure-ts-thread-first-all` and `clojure-ts-thread-last-all` will
+thread all nested expressions. For example this expression:
+
+```clojure
+(->map (assoc {} :key "value") :lock)
+```
+
+After executing `clojure-ts-thread-last-all` will be converted to:
+
+```clojure
+(-> {}
+    (assoc :key "value")
+    (->map :lock))
+```
+
+This behavior can be changed by setting:
+
+```emacs-lisp
+(setopt clojure-ts-thread-all-but-last t)
+```
+
+Then the last expression will not be threaded and the result will be:
+
+```clojure
+(-> (assoc {} :key "value")
+    (->map :lock))
+```
 
 ## Migrating to clojure-ts-mode
 

@@ -150,6 +150,16 @@ three or more semicolons will be treated as outline headings.  If set to
   :type 'string
   :package-version '(clojure-ts-mode . "0.4"))
 
+(defcustom clojure-ts-thread-all-but-last nil
+  "Non-nil means do not thread the last expression.
+
+This means that `clojure-ts-thread-first-all' and
+`clojure-ts-thread-last-all' not thread the deepest sexp inside the
+current sexp."
+  :package-version '(clojure-ts-mode . "0.4.0")
+  :safe #'booleanp
+  :type 'boolean)
+
 (defcustom clojure-ts-align-reader-conditionals nil
   "Whether to align reader conditionals, as if they were maps."
   :package-version '(clojure-ts-mode . "0.4")
@@ -1291,9 +1301,9 @@ according to the rule.  If NODE is nil, use next node after BOL."
            (clojure-ts--anon-fn-node-p parent))
        ;; Can the following two clauses be replaced by checking indexes?
        ;; Does the second child exist, and is it not equal to the current node?
-       (treesit-node-child parent 1 t)
-       (not (treesit-node-eq (treesit-node-child parent 1 t) node))
-       (let ((first-child (treesit-node-child parent 0 t)))
+       (clojure-ts--node-child-skip-metadata parent 1)
+       (not (treesit-node-eq (clojure-ts--node-child-skip-metadata parent 1) node))
+       (let ((first-child (clojure-ts--node-child-skip-metadata parent 0)))
          (or (clojure-ts--symbol-node-p first-child)
              (clojure-ts--keyword-node-p first-child)
              (clojure-ts--var-node-p first-child)))))
@@ -1381,17 +1391,11 @@ if NODE has metadata and its parent has type NODE-TYPE."
                   (treesit-node-type
                    (clojure-ts--node-with-metadata-parent node)))))
 
-(defun clojure-ts--anchor-nth-sibling (n &optional named)
-  "Return the start of the Nth child of PARENT.
-
-NAMED non-nil means count only named nodes.
-
-NOTE: This is a replacement for built-in `nth-sibling' anchor preset,
-which doesn't work properly for named nodes (see the bug
-https://debbugs.gnu.org/cgi/bugreport.cgi?bug=78065)"
+(defun clojure-ts--anchor-nth-sibling (n)
+  "Return the start of the Nth child of PARENT skipping metadata."
   (lambda (_n parent &rest _)
     (treesit-node-start
-     (treesit-node-child parent n named))))
+     (clojure-ts--node-child-skip-metadata parent n))))
 
 (defun clojure-ts--semantic-indent-rules ()
   "Return a list of indentation rules for `treesit-simple-indent-rules'."
@@ -1423,7 +1427,7 @@ https://debbugs.gnu.org/cgi/bugreport.cgi?bug=78065)"
      ;; https://guide.clojure.style/#threading-macros-alignment
      (clojure-ts--match-threading-macro-arg prev-sibling 0)
      ;; https://guide.clojure.style/#vertically-align-fn-args
-     (clojure-ts--match-function-call-arg ,(clojure-ts--anchor-nth-sibling 1 t) 0)
+     (clojure-ts--match-function-call-arg ,(clojure-ts--anchor-nth-sibling 1) 0)
      ;; https://guide.clojure.style/#one-space-indent
      ((parent-is "list_lit") parent 1))))
 
@@ -1539,8 +1543,8 @@ BOUND bounds the whitespace search."
                      (and (not (treesit-node-child-by-field-name cur-sexp "value"))
                           (string-empty-p (clojure-ts--named-node-text cur-sexp))))
                 (treesit-end-of-thing 'sexp 2 'restricted)
-              (treesit-end-of-thing 'sexp 1 'restrict))
-            (when (looking-at ",")
+              (treesit-end-of-thing 'sexp 1 'restricted))
+            (when (looking-at-p ",")
               (forward-char))
             ;; Move past any whitespace or comment.
             (search-forward-regexp regex bound)
@@ -1744,7 +1748,7 @@ Forms between BEG and END are aligned according to
       (goto-char first-child-start)
       (treesit-beginning-of-thing 'sexp -1)
       (let ((contents (clojure-ts--delete-and-extract-sexp)))
-        (when (looking-at " *\n")
+        (when (looking-at-p " *\n")
           (join-line 'following))
         (just-one-space)
         (goto-char first-child-start)
@@ -1753,9 +1757,11 @@ Forms between BEG and END are aligned according to
           (clojure-ts--ensure-parens-around-function-name)
           (down-list)
           (forward-sexp)
-          (insert " " contents)
-          (when multiline-p
-            (insert "\n")))))))
+          (cond
+           ((and multiline-p (looking-at-p " *\n"))
+            (insert "\n" contents))
+           (multiline-p (insert " " contents "\n"))
+           (t (insert " " contents))))))))
 
 (defun clojure-ts--unwind-thread-last ()
   "Unwind a thread last macro once."
@@ -1768,7 +1774,7 @@ Forms between BEG and END are aligned according to
       (goto-char first-child-start)
       (treesit-beginning-of-thing 'sexp -1)
       (let ((contents (clojure-ts--delete-and-extract-sexp)))
-        (when (looking-at " *\n")
+        (when (looking-at-p " *\n")
           (join-line 'following))
         (just-one-space)
         (goto-char first-child-start)
@@ -1804,10 +1810,16 @@ Forms between BEG and END are aligned according to
 
 (defun clojure-ts--pop-out-of-threading ()
   "Raise a sexp up a level to unwind a threading form."
-  (let ((threading-sexp (clojure-ts--threading-sexp-node)))
+  (let* ((threading-sexp (clojure-ts--threading-sexp-node))
+         (beg (thread-first threading-sexp
+                            (treesit-node-child 0 t)
+                            (treesit-node-start))))
     (save-excursion
       (clojure-ts--skip-first-child threading-sexp)
-      (raise-sexp))))
+      (delete-region beg (point))
+      ;; `raise-sexp' doesn't work properly for function literals (it loses one
+      ;; of the parenthesis).  Seems like an Emacs' bug.
+      (delete-pair))))
 
 (defun clojure-ts--fix-sexp-whitespace ()
   "Fix whitespace after unwinding a threading form."
@@ -1870,10 +1882,125 @@ With universal argument \\[universal-argument], fully unwinds thread."
   (interactive)
   (clojure-ts-unwind '(4)))
 
+(defun clojure-ts--remove-superfluous-parens ()
+  "Remove extra parens from a form."
+  (when-let* ((node (treesit-thing-at-point 'sexp 'nested))
+              ((clojure-ts--list-node-p node))
+              ((= 1 (treesit-node-child-count node t))))
+    (let ((delete-pair-blink-delay 0))
+      (delete-pair))))
+
+(defun clojure-ts--thread-first ()
+  "Thread a sexp using ->."
+  (save-excursion
+    (clojure-ts--skip-first-child (clojure-ts--threading-sexp-node))
+    (down-list)
+    (treesit-beginning-of-thing 'sexp -1)
+    (let ((contents (clojure-ts--delete-and-extract-sexp)))
+      (delete-char -1)
+      (when (looking-at-p " *\n")
+        (join-line 'following))
+      (backward-up-list)
+      (insert contents "\n")
+      (clojure-ts--remove-superfluous-parens))))
+
+(defun clojure-ts--thread-last ()
+  "Thread a sexp using ->>."
+  (save-excursion
+    (clojure-ts--skip-first-child (clojure-ts--threading-sexp-node))
+    (treesit-end-of-thing 'sexp)
+    (down-list -1)
+    (treesit-beginning-of-thing 'sexp)
+    (let ((contents (clojure-ts--delete-and-extract-sexp)))
+      (delete-char -1)
+      (treesit-end-of-thing 'sexp -1 'restricted)
+      (when (looking-at-p " *\n")
+        (join-line 'following))
+      (backward-up-list)
+      (insert contents "\n")
+      (clojure-ts--remove-superfluous-parens))))
+
+(defun clojure-ts--threadable-p (node)
+  "Return non-nil if expression NODE can be threaded.
+
+First argument after threading symbol itself should be a list and it
+should have more than one named child."
+  (let ((second-child (treesit-node-child node 1 t)))
+    (and (clojure-ts--list-node-p second-child)
+         (> (treesit-node-child-count second-child t) 1))))
+
+(defun clojure-ts-thread (&optional called-by-user-p)
+  "Thread by one more level an existing threading macro.
+
+If CALLED-BY-USER-P is non-nil (which is always TRUE when called
+interactively), the function signals a `user-error' if threading form
+cannot be found."
+  (interactive "p")
+  (if-let* ((threading-sexp (clojure-ts--threading-sexp-node))
+            ((clojure-ts--threadable-p threading-sexp))
+            (sym (thread-first threading-sexp
+                               (treesit-node-child 0 t)
+                               (clojure-ts--named-node-text))))
+      (let ((beg (thread-first threading-sexp
+                               (treesit-node-start)
+                               (copy-marker)))
+            (end (thread-first threading-sexp
+                               (treesit-node-end)
+                               (copy-marker))))
+        (cond
+         ((string-match-p (rx bol (* "some") "->" eol) sym)
+          (clojure-ts--thread-first))
+         ((string-match-p (rx bol (* "some") "->>" eol) sym)
+          (clojure-ts--thread-last)))
+        (indent-region beg end)
+        (delete-trailing-whitespace beg end)
+        t)
+    (when called-by-user-p
+      (user-error "No threading form at point"))))
+
+(defun clojure-ts--thread-all (first-or-last-thread but-last)
+  "Fully thread the form at point.
+
+FIRST-OR-LAST-THREAD is either \"->\" or \"->>\".
+
+When BUT-LAST is non-nil, the last expression is not threaded. Default
+value is `clojure-ts-thread-all-but-last.'"
+  (if-let* ((list-at-point (treesit-thing-at-point 'list 'nested)))
+      (save-excursion
+        (goto-char (treesit-node-start list-at-point))
+        (insert-parentheses 1)
+        (insert first-or-last-thread)
+        (while (clojure-ts-thread))
+        (when (or but-last clojure-ts-thread-all-but-last)
+          (clojure-ts-unwind)))
+    (user-error "No list to thread at point")))
+
+(defun clojure-ts-thread-first-all (but-last)
+  "Fully thread the form at point using ->.
+
+When BUT-LAST is non-nil, the last expression is not threaded.  Default
+value is `clojure-ts-thread-all-but-last'."
+  (interactive "P")
+  (clojure-ts--thread-all "-> " but-last))
+
+(defun clojure-ts-thread-last-all (but-last)
+  "Fully thread the form at point using ->>.
+
+When BUT-LAST is non-nil, the last expression is not threaded.  Default
+value is `clojure-ts-thread-all-but-last'."
+  (interactive "P")
+  (clojure-ts--thread-all "->> " but-last))
+
 (defvar clojure-ts-refactor-map
   (let ((map (make-sparse-keymap)))
+    (keymap-set map "C-t" #'clojure-ts-thread)
+    (keymap-set map "t" #'clojure-ts-thread)
     (keymap-set map "C-u" #'clojure-ts-unwind)
     (keymap-set map "u" #'clojure-ts-unwind)
+    (keymap-set map "C-f" #'clojure-ts-thread-first-all)
+    (keymap-set map "f" #'clojure-ts-thread-first-all)
+    (keymap-set map "C-l" #'clojure-ts-thread-last-all)
+    (keymap-set map "l" #'clojure-ts-thread-last-all)
     map)
   "Keymap for `clojure-ts-mode' refactoring commands.")
 
@@ -1886,6 +2013,10 @@ With universal argument \\[universal-argument], fully unwinds thread."
       '("Clojure"
         ["Align expression" clojure-ts-align]
         ("Refactor -> and ->>"
+         ["Thread once more" clojure-ts-thread]
+         ["Fully thread a form with ->" clojure-ts-thread-first-all]
+         ["Fully thread a form with ->>" clojure-ts-thread-last-all]
+         "--"
          ["Unwind once" clojure-ts-unwind]
          ["Fully unwind a threading macro" clojure-ts-unwind-all])))
     map)
