@@ -281,3 +281,13 @@
         user "John Doe"]
     (dotimes [_ (add x y)]
       (hello user))))
+
+(with-open [input-stream
+            ^java.io.BufferedInputStream
+            (foo bar
+                 baz
+                 true)
+
+            reader
+            (io/reader input-stream)]
+  (read-report (into [] (csv/read-csv reader))))

@@ -28,7 +28,142 @@
 (require 'buttercup)
 (require 'test-helper "test/test-helper")
 
-(describe "clojure-unwind"
+(describe "clojure-ts-thread"
+
+  (when-refactoring-it "should work with -> when performed once"
+    "(-> (dissoc (assoc {} :key \"value\") :lock))"
+
+    "(-> (assoc {} :key \"value\")
+    (dissoc :lock))"
+
+    (clojure-ts-thread))
+
+  (when-refactoring-it "should work with -> when performed twice"
+    "(-> (dissoc (assoc {} :key \"value\") :lock))"
+
+    "(-> {}
+    (assoc :key \"value\")
+    (dissoc :lock))"
+
+    (clojure-ts-thread)
+    (clojure-ts-thread))
+
+  (when-refactoring-it "should not thread maps"
+    "(-> (dissoc (assoc {} :key \"value\") :lock))"
+
+    "(-> {}
+    (assoc :key \"value\")
+    (dissoc :lock))"
+
+    (clojure-ts-thread)
+    (clojure-ts-thread)
+    (clojure-ts-thread))
+
+  (when-refactoring-it "should not thread last sexp"
+    "(-> (dissoc (assoc (get-a-map) :key \"value\") :lock))"
+
+    "(-> (get-a-map)
+    (assoc :key \"value\")
+    (dissoc :lock))"
+
+    (clojure-ts-thread)
+    (clojure-ts-thread)
+    (clojure-ts-thread))
+
+  (when-refactoring-it "should thread-first-easy-on-whitespace"
+    "(->
+ (dissoc (assoc {} :key \"value\") :lock))"
+
+    "(->
+ (assoc {} :key \"value\")
+ (dissoc :lock))"
+
+    (clojure-ts-thread))
+
+  (when-refactoring-it "should remove superfluous parens"
+    "(-> (square (sum [1 2 3 4 5])))"
+
+    "(-> [1 2 3 4 5]
+    sum
+    square)"
+
+    (clojure-ts-thread)
+    (clojure-ts-thread))
+
+  (when-refactoring-it "should work with cursor before ->"
+    "(-> (not (s-acc/mobile? session)))"
+
+    "(-> (s-acc/mobile? session)
+    not)"
+
+    (beginning-of-buffer)
+    (clojure-ts-thread))
+
+  (when-refactoring-it "should work with one step with ->>"
+    "(->> (map square (filter even? [1 2 3 4 5])))"
+
+    "(->> (filter even? [1 2 3 4 5])
+     (map square))"
+
+    (clojure-ts-thread))
+
+  (when-refactoring-it "should work with two steps with ->>"
+    "(->> (map square (filter even? [1 2 3 4 5])))"
+
+    "(->> [1 2 3 4 5]
+     (filter even?)
+     (map square))"
+
+    (clojure-ts-thread)
+    (clojure-ts-thread))
+
+  (when-refactoring-it "should not thread vectors with ->>"
+    "(->> (map square (filter even? [1 2 3 4 5])))"
+
+    "(->> [1 2 3 4 5]
+     (filter even?)
+     (map square))"
+
+    (clojure-ts-thread)
+    (clojure-ts-thread)
+    (clojure-ts-thread))
+
+  (when-refactoring-it "should not thread last sexp with ->>"
+    "(->> (map square (filter even? (get-a-list))))"
+
+    "(->> (get-a-list)
+     (filter even?)
+     (map square))"
+
+    (clojure-ts-thread)
+    (clojure-ts-thread)
+    (clojure-ts-thread))
+
+  (when-refactoring-it "should work with some->"
+    "(some-> (+ (val (find {:a 1} :b)) 5))"
+
+    "(some-> {:a 1}
+        (find :b)
+        val
+        (+ 5))"
+
+    (clojure-ts-thread)
+    (clojure-ts-thread)
+    (clojure-ts-thread))
+
+  (when-refactoring-it "should work with some->>"
+    "(some->> (+ 5 (val (find {:a 1} :b))))"
+
+    "(some->> :b
+         (find {:a 1})
+         val
+         (+ 5))"
+
+    (clojure-ts-thread)
+    (clojure-ts-thread)
+    (clojure-ts-thread)))
+
+(describe "clojure-ts-unwind"
 
   (when-refactoring-it "should unwind -> one step"
     "(-> {}
@@ -161,6 +296,148 @@
 
     (clojure-ts-unwind)
     (clojure-ts-unwind)))
+
+(describe "clojure-ts-thread-first-all"
+
+  (when-refactoring-it "should thread first all sexps"
+    "(->map (assoc {} :key \"value\") :lock)"
+
+    "(-> {}
+    (assoc :key \"value\")
+    (->map :lock))"
+
+    (beginning-of-buffer)
+    (clojure-ts-thread-first-all nil))
+
+  (when-refactoring-it "should thread a form except the last expression"
+    "(->map (assoc {} :key \"value\") :lock)"
+
+    "(-> (assoc {} :key \"value\")
+    (->map :lock))"
+
+    (beginning-of-buffer)
+    (clojure-ts-thread-first-all t))
+
+  (when-refactoring-it "should thread with an empty first line"
+    "(map
+   inc
+   [1 2])"
+
+    "(-> inc
+    (map
+     [1 2]))"
+
+    (goto-char (point-min))
+    (clojure-ts-thread-first-all nil))
+
+  (when-refactoring-it "should thread-first-maybe-unjoin-lines"
+    "(map
+ inc
+ [1 2])"
+
+    "(map
+ inc
+ [1 2])"
+
+    (goto-char (point-min))
+    (clojure-ts-thread-first-all nil)
+    (clojure-ts-unwind-all)))
+
+(describe "clojure-ts-thread-last-all"
+
+  (when-refactoring-it "should fully thread a form"
+    "(map square (filter even? (make-things)))"
+
+    "(->> (make-things)
+     (filter even?)
+     (map square))"
+
+    (beginning-of-buffer)
+    (clojure-ts-thread-last-all nil))
+
+  (when-refactoring-it "should thread a form except the last expression"
+    "(map square (filter even? (make-things)))"
+
+    "(->> (filter even? (make-things))
+     (map square))"
+
+    (beginning-of-buffer)
+    (clojure-ts-thread-last-all t))
+
+  (when-refactoring-it "should handle dangling parens 1"
+    "(map inc
+        (range))"
+
+    "(->> (range)
+     (map inc))"
+
+    (beginning-of-buffer)
+    (clojure-ts-thread-last-all nil))
+
+  (when-refactoring-it "should handle dangling parens 2"
+    "(deftask dev []
+  (comp (serve)
+   (cljs)))"
+
+    "(->> (cljs)
+     (comp (serve))
+     (deftask dev []))"
+
+    (beginning-of-buffer)
+    (clojure-ts-thread-last-all nil)))
+
+(describe "clojure-ts-unwind-all"
+
+  (when-refactoring-it "should unwind all in ->"
+    "(-> {}
+     (assoc :key \"value\")
+           (dissoc :lock))"
+
+    "(dissoc (assoc {} :key \"value\") :lock)"
+
+    (beginning-of-buffer)
+    (clojure-ts-unwind-all))
+
+  (when-refactoring-it "should unwind all in ->>"
+    "(->> (make-things)
+           (filter even?)
+           (map square))"
+
+    "(map square (filter even? (make-things)))"
+
+    (beginning-of-buffer)
+    (clojure-ts-unwind-all))
+
+  (when-refactoring-it "should leave multiline sexp alone"
+    "(->> [a b]
+     (some (fn [x]
+             (when x
+               10))))"
+
+    "(some (fn [x]
+        (when x
+          10))
+      [a b])"
+
+    (clojure-ts-unwind-all))
+
+  ;; NOTE: This feature is implemented in `clojure-mode' via text properties and
+  ;; doesn't work for the same expression after restarting Emacs.  For now it's
+  ;; not implemented in `clojure-ts-mode', although we respect multiline
+  ;; expressions in some cases.
+  ;;
+  ;; (when-refactoring-it "should thread-last-maybe-unjoin-lines" "(deftask dev
+  ;; [] (comp (serve) (cljs (lala) 10)))"
+
+  ;;   "(deftask dev []
+  ;; (comp (serve)
+  ;;       (cljs (lala)
+  ;;             10)))"
+
+  ;;   (goto-char (point-min))
+  ;;   (clojure-ts-thread-last-all nil)
+  ;;   (clojure-ts-unwind-all))
+  )
 
 (provide 'clojure-ts-mode-refactor-threading-test)
 ;;; clojure-ts-mode-refactor-threading-test.el ends here
