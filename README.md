@@ -393,20 +393,24 @@ threading macro.
 
 ### Cycling things
 
+`clojure-ts-cycle-keyword-string`: Convert the string at point to a keyword and
+vice versa.
+
 `clojure-ts-cycle-privacy`: Cycle privacy of `def`s or `defn`s. Use metadata
 explicitly with setting `clojure-ts-use-metadata-for-defn-privacy` to `t` for
 `defn`s too.
 
 ### Default keybindings
 
-| Keybinding                  | Command                       |
-|:----------------------------|:------------------------------|
-| `C-c SPC`                   | `clojure-ts-align`            |
-| `C-c C-r t` / `C-c C-r C-t` | `clojure-ts-thread`           |
-| `C-c C-r u` / `C-c C-r C-u` | `clojure-ts-unwind`           |
-| `C-c C-r f` / `C-c C-r C-f` | `clojure-ts-thread-first-all` |
-| `C-c C-r l` / `C-c C-r C-l` | `clojure-ts-thread-last-all`  |
-| `C-c C-r p` / `C-c C-r C-p` | `clojure-ts-cycle-privacy`    |
+| Keybinding                  | Command                           |
+|:----------------------------|:----------------------------------|
+| `C-:`                       | `clojure-ts-cycle-keyword-string` |
+| `C-c SPC`                   | `clojure-ts-align`                |
+| `C-c C-r t` / `C-c C-r C-t` | `clojure-ts-thread`               |
+| `C-c C-r u` / `C-c C-r C-u` | `clojure-ts-unwind`               |
+| `C-c C-r f` / `C-c C-r C-f` | `clojure-ts-thread-first-all`     |
+| `C-c C-r l` / `C-c C-r C-l` | `clojure-ts-thread-last-all`      |
+| `C-c C-r p` / `C-c C-r C-p` | `clojure-ts-cycle-privacy`        |
 
 ### Customize refactoring commands prefix
 
