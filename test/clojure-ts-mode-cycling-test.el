@@ -27,6 +27,37 @@
 (require 'buttercup)
 (require 'test-helper "test/test-helper")
 
+(describe "clojure-ts-cycle-keyword-string"
+  (when-refactoring-with-point-it "should convert string to keyword"
+    "\"hel|lo\""
+
+    ":hel|lo"
+
+    (clojure-ts-cycle-keyword-string))
+
+  (when-refactoring-with-point-it "should convert keyword to string"
+    ":|hello"
+
+    "\"|hello\""
+
+    (clojure-ts-cycle-keyword-string))
+
+  (it "should signal a user error when there is nothing to convert at point"
+    (with-clojure-ts-buffer "[true false]"
+      (goto-char 2)
+      (expect (clojure-ts-cycle-keyword-string)
+              :to-throw
+              'user-error
+              '("No string or keyword at point"))))
+
+  (it "should signal a user error when string at point contains spaces"
+    (with-clojure-ts-buffer "\"Hello world\""
+      (goto-char 2)
+      (expect (clojure-ts-cycle-keyword-string)
+              :to-throw
+              'user-error
+              '("Cannot convert a string containing spaces to keyword")))))
+
 (describe "clojure-ts-cycle-privacy"
 
   (when-refactoring-it "should turn a public defn into a private defn"

@@ -14,6 +14,7 @@
 - [#89](https://github.com/clojure-emacs/clojure-ts-mode/pull/89): Introduce `clojure-ts-thread`, `clojure-ts-thread-first-all` and
   `clojure-ts-thread-last-all`.
 - [#90](https://github.com/clojure-emacs/clojure-ts-mode/pull/90): Introduce `clojure-ts-cycle-privacy`.
+- [#91](https://github.com/clojure-emacs/clojure-ts-mode/pull/91): Introduce `clojure-ts-cycle-keyword-string`.
 
 ## 0.3.0 (2025-04-15)
 

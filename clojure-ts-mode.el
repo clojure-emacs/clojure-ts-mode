@@ -2032,6 +2032,22 @@ value is `clojure-ts-thread-all-but-last'."
                     "-"))))
     (user-error "No defun at point")))
 
+(defun clojure-ts-cycle-keyword-string ()
+  "Convert the string at point to a keyword, or vice versa."
+  (interactive)
+  (let ((node (treesit-thing-at-point 'sexp 'nested))
+        (pos (point)))
+    (cond
+     ((clojure-ts--string-node-p node)
+      (if (string-match-p " " (treesit-node-text node t))
+          (user-error "Cannot convert a string containing spaces to keyword")
+        (insert ?: (substring (clojure-ts--delete-and-extract-sexp) 1 -1))))
+     ((clojure-ts--keyword-node-p node)
+      (insert ?\" (substring (clojure-ts--delete-and-extract-sexp) 1) ?\"))
+     (t
+      (user-error "No string or keyword at point")))
+    (goto-char pos)))
+
 (defvar clojure-ts-refactor-map
   (let ((map (make-sparse-keymap)))
     (keymap-set map "C-t" #'clojure-ts-thread)
@@ -2050,10 +2066,12 @@ value is `clojure-ts-thread-all-but-last'."
 (defvar clojure-ts-mode-map
   (let ((map (make-sparse-keymap)))
     ;;(set-keymap-parent map clojure-mode-map)
+    (keymap-set map "C-:" #'clojure-ts-cycle-keyword-string)
     (keymap-set map "C-c SPC" #'clojure-ts-align)
     (keymap-set map clojure-ts-refactor-map-prefix clojure-ts-refactor-map)
     (easy-menu-define clojure-ts-mode-menu map "Clojure[TS] Mode Menu"
       '("Clojure"
+        ["Toggle between string & keyword" clojure-ts-cycle-keyword-string]
         ["Align expression" clojure-ts-align]
         ["Cycle privacy" clojure-ts-cycle-privacy]
         ("Refactor -> and ->>"
