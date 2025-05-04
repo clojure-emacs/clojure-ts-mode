@@ -376,20 +376,26 @@ following customization:
 
 ### Threading macros related features
 
-`clojure-thread`: Thread another form into the surrounding thread. Both
+`clojure-ts-thread`: Thread another form into the surrounding thread. Both
 `->>`/`some->>` and `->`/`some->` variants are supported.
 
-`clojure-unwind`: Unwind a threaded expression. Supports both `->>`/`some->>`
+`clojure-ts-unwind`: Unwind a threaded expression. Supports both `->>`/`some->>`
 and `->`/`some->`.
 
-`clojure-thread-first-all`: Introduce the thread first macro (`->`) and rewrite
-the entire form. With a prefix argument do not thread the last form.
+`clojure-ts-thread-first-all`: Introduce the thread first macro (`->`) and
+rewrite the entire form. With a prefix argument do not thread the last form.
 
-`clojure-thread-last-all`: Introduce the thread last macro and rewrite the
+`clojure-ts-thread-last-all`: Introduce the thread last macro and rewrite the
 entire form. With a prefix argument do not thread the last form.
 
-`clojure-unwind-all`: Fully unwind a threaded expression removing the threading
-macro.
+`clojure-ts-unwind-all`: Fully unwind a threaded expression removing the
+threading macro.
+
+### Cycling things
+
+`clojure-ts-cycle-privacy`: Cycle privacy of `def`s or `defn`s. Use metadata
+explicitly with setting `clojure-ts-use-metadata-for-defn-privacy` to `t` for
+`defn`s too.
 
 ### Default keybindings
 
@@ -400,6 +406,7 @@ macro.
 | `C-c C-r u` / `C-c C-r C-u` | `clojure-ts-unwind`           |
 | `C-c C-r f` / `C-c C-r C-f` | `clojure-ts-thread-first-all` |
 | `C-c C-r l` / `C-c C-r C-l` | `clojure-ts-thread-last-all`  |
+| `C-c C-r p` / `C-c C-r C-p` | `clojure-ts-cycle-privacy`    |
 
 ### Customize refactoring commands prefix
 

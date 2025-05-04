@@ -66,7 +66,19 @@
 
 (->> (map square (filter even? [1 2 3 4 5])))
 
+(-> (dissoc (assoc {} :key "value") :lock))
+
 (deftask dev []
          (comp (serve)
                (cljs (lala)
                      10)))
+
+(def my-name "Roma")
+
+(defn say-hello
+  []
+  (println "Hello" my-name))
+
+(definline bad-sqr [x] `(* ~x ~x))
+
+(defmulti service-charge (juxt account-level :tag))
