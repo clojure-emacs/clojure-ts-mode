@@ -13,6 +13,7 @@
 - [#88](https://github.com/clojure-emacs/clojure-ts-mode/pull/88): Introduce `clojure-ts-unwind` and `clojure-ts-unwind-all`.
 - [#89](https://github.com/clojure-emacs/clojure-ts-mode/pull/89): Introduce `clojure-ts-thread`, `clojure-ts-thread-first-all` and
   `clojure-ts-thread-last-all`.
+- [#90](https://github.com/clojure-emacs/clojure-ts-mode/pull/90): Introduce `clojure-ts-cycle-privacy`.
 
 ## 0.3.0 (2025-04-15)
 

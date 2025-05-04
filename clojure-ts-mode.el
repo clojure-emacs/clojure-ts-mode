@@ -160,6 +160,14 @@ current sexp."
   :safe #'booleanp
   :type 'boolean)
 
+(defcustom clojure-ts-use-metadata-for-defn-privacy nil
+  "If nil, `clojure-ts-cycle-privacy' will use (defn- f []).
+
+If t, it will use (defn ^:private f [])."
+  :package-version '(clojure-ts-mode . "0.4.0")
+  :safe #'booleanp
+  :type 'boolean)
+
 (defcustom clojure-ts-align-reader-conditionals nil
   "Whether to align reader conditionals, as if they were maps."
   :package-version '(clojure-ts-mode . "0.4")
@@ -1480,6 +1488,21 @@ If JUSTIFY is non-nil, justify as well as fill the paragraph."
     "map_lit" "ns_map_lit" "vec_lit" "set_lit")
   "A regular expression that matches nodes that can be treated as lists.")
 
+(defun clojure-ts--defun-node-p (node)
+  "Return TRUE if NODE is a function or a var definition."
+  (and (clojure-ts--list-node-p node)
+       (let ((sym (clojure-ts--node-child-skip-metadata node 0)))
+         (string-match-p (rx bol
+                             (or "def"
+                                 "defn"
+                                 "defn-"
+                                 "definline"
+                                 "defrecord"
+                                 "defmacro"
+                                 "defmulti")
+                             eol)
+                         (clojure-ts--named-node-text sym)))))
+
 (defconst clojure-ts--markdown-inline-sexp-nodes
   '("inline_link" "full_reference_link" "collapsed_reference_link"
     "uri_autolink" "email_autolink" "shortcut_link" "image"
@@ -1490,7 +1513,8 @@ If JUSTIFY is non-nil, justify as well as fill the paragraph."
   `((clojure
      (sexp ,(regexp-opt clojure-ts--sexp-nodes))
      (list ,(regexp-opt clojure-ts--list-nodes))
-     (text ,(regexp-opt '("comment"))))
+     (text ,(regexp-opt '("comment")))
+     (defun ,#'clojure-ts--defun-node-p))
     (when clojure-ts-use-markdown-inline
       (markdown-inline
        (sexp ,(regexp-opt clojure-ts--markdown-inline-sexp-nodes))))))
@@ -1991,6 +2015,23 @@ value is `clojure-ts-thread-all-but-last'."
   (interactive "P")
   (clojure-ts--thread-all "->> " but-last))
 
+(defun clojure-ts-cycle-privacy ()
+  "Make a definition at point public or private."
+  (interactive)
+  (if-let* ((node-at-point (treesit-node-at (point) 'clojure t))
+            (defun-node (treesit-parent-until node-at-point 'defun t)))
+      (save-excursion
+        (goto-char (treesit-node-start defun-node))
+        (search-forward-regexp (rx "def" (* letter) (? (group (or "-" " ^:private")))))
+        (if (match-string 1)
+            (replace-match "" nil nil nil 1)
+          (goto-char (match-end 0))
+          (insert (if (or clojure-ts-use-metadata-for-defn-privacy
+                          (not (string= (match-string 0) "defn")))
+                      " ^:private"
+                    "-"))))
+    (user-error "No defun at point")))
+
 (defvar clojure-ts-refactor-map
   (let ((map (make-sparse-keymap)))
     (keymap-set map "C-t" #'clojure-ts-thread)
@@ -2001,6 +2042,8 @@ value is `clojure-ts-thread-all-but-last'."
     (keymap-set map "f" #'clojure-ts-thread-first-all)
     (keymap-set map "C-l" #'clojure-ts-thread-last-all)
     (keymap-set map "l" #'clojure-ts-thread-last-all)
+    (keymap-set map "C-p" #'clojure-ts-cycle-privacy)
+    (keymap-set map "p" #'clojure-ts-cycle-privacy)
     map)
   "Keymap for `clojure-ts-mode' refactoring commands.")
 
@@ -2012,6 +2055,7 @@ value is `clojure-ts-thread-all-but-last'."
     (easy-menu-define clojure-ts-mode-menu map "Clojure[TS] Mode Menu"
       '("Clojure"
         ["Align expression" clojure-ts-align]
+        ["Cycle privacy" clojure-ts-cycle-privacy]
         ("Refactor -> and ->>"
          ["Thread once more" clojure-ts-thread]
          ["Fully thread a form with ->" clojure-ts-thread-first-all]
