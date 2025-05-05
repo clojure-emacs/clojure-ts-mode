@@ -2048,6 +2048,77 @@ value is `clojure-ts-thread-all-but-last'."
       (user-error "No string or keyword at point")))
     (goto-char pos)))
 
+(defun clojure-ts--collection-node-at-point ()
+  "Return node at point that represent a collection."
+  (when-let* ((node (thread-first (point)
+                                  (treesit-node-at 'clojure)
+                                  (treesit-parent-until (rx bol
+                                                            (or "map_lit"
+                                                                "vec_lit"
+                                                                "set_lit"
+                                                                "list_lit"
+                                                                "quoting_lit")
+                                                            eol)))))
+    (cond
+     ;; If node is a list, check if it's quoted.
+     ((string= (treesit-node-type node) "list_lit")
+      (if-let* ((parent (treesit-node-parent node))
+                ((string= (treesit-node-type parent) "quoting_lit")))
+          parent
+        node))
+     ;; If the point is at the quote character, check if the child node is a
+     ;; list.
+     ((string= (treesit-node-type node) "quoting_lit")
+      (when-let* ((first-child (clojure-ts--node-child-skip-metadata node 0))
+                  ((string= (treesit-node-type first-child) "list_lit")))
+        node))
+     (t node))))
+
+(defun clojure-ts--convert-collection (delim-open &optional prefix)
+  "Convert collection at point to another collection type.
+
+The original collection is being unwrapped and wrapped between
+DELIM-OPEN and its matching paren.  If PREFIX is non-nil it's inserted
+before DELIM-OPEN."
+  (if-let* ((coll-node (clojure-ts--collection-node-at-point)))
+      (save-excursion
+        (goto-char (treesit-node-start coll-node))
+        (when (string-match-p (rx (or "set_lit" "quoting_lit"))
+                              (treesit-node-type coll-node))
+          (delete-char 1))
+        (let ((parens-require-spaces nil)
+              (delete-pair-blink-delay 0))
+          (when prefix
+            (insert-char prefix))
+          (insert-pair 1 delim-open (matching-paren delim-open))
+          (delete-pair 1)))
+    (user-error "No collection at point to convert")))
+
+(defun clojure-ts-convert-collection-to-list ()
+  "Convert collection at point to list."
+  (interactive)
+  (clojure-ts--convert-collection ?\())
+
+(defun clojure-ts-convert-collection-to-quoted-list ()
+  "Convert collection at point to quoted list."
+  (interactive)
+  (clojure-ts--convert-collection ?\( ?'))
+
+(defun clojure-ts-convert-collection-to-map ()
+  "Convert collection at point to map."
+  (interactive)
+  (clojure-ts--convert-collection ?{))
+
+(defun clojure-ts-convert-collection-to-vector ()
+  "Convert collection at point to vector."
+  (interactive)
+  (clojure-ts--convert-collection ?\[))
+
+(defun clojure-ts-convert-collection-to-set ()
+  "Convert collection at point to set."
+  (interactive)
+  (clojure-ts--convert-collection ?{ ?#))
+
 (defvar clojure-ts-refactor-map
   (let ((map (make-sparse-keymap)))
     (keymap-set map "C-t" #'clojure-ts-thread)
@@ -2060,6 +2131,16 @@ value is `clojure-ts-thread-all-but-last'."
     (keymap-set map "l" #'clojure-ts-thread-last-all)
     (keymap-set map "C-p" #'clojure-ts-cycle-privacy)
     (keymap-set map "p" #'clojure-ts-cycle-privacy)
+    (keymap-set map "C-(" #'clojure-ts-convert-collection-to-list)
+    (keymap-set map "(" #'clojure-ts-convert-collection-to-list)
+    (keymap-set map "C-'" #'clojure-ts-convert-collection-to-quoted-list)
+    (keymap-set map "'" #'clojure-ts-convert-collection-to-quoted-list)
+    (keymap-set map "C-{" #'clojure-ts-convert-collection-to-map)
+    (keymap-set map "{" #'clojure-ts-convert-collection-to-map)
+    (keymap-set map "C-[" #'clojure-ts-convert-collection-to-vector)
+    (keymap-set map "[" #'clojure-ts-convert-collection-to-vector)
+    (keymap-set map "C-#" #'clojure-ts-convert-collection-to-set)
+    (keymap-set map "#" #'clojure-ts-convert-collection-to-set)
     map)
   "Keymap for `clojure-ts-mode' refactoring commands.")
 
@@ -2074,6 +2155,12 @@ value is `clojure-ts-thread-all-but-last'."
         ["Toggle between string & keyword" clojure-ts-cycle-keyword-string]
         ["Align expression" clojure-ts-align]
         ["Cycle privacy" clojure-ts-cycle-privacy]
+        ("Convert collection"
+         ["Convert to list" clojure-ts-convert-collection-to-list]
+         ["Convert to quoted list" clojure-ts-convert-collection-to-quoted-list]
+         ["Convert to map" clojure-ts-convert-collection-to-map]
+         ["Convert to vector" clojure-ts-convert-collection-to-vector]
+         ["Convert to set" clojure-ts-convert-collection-to-set])
         ("Refactor -> and ->>"
          ["Thread once more" clojure-ts-thread]
          ["Fully thread a form with ->" clojure-ts-thread-first-all]

@@ -82,3 +82,13 @@
 (definline bad-sqr [x] `(* ~x ~x))
 
 (defmulti service-charge (juxt account-level :tag))
+
+;; Convert collections.
+
+#{1 2 3}
+
+[1 2 3]
+
+;; TODO: Define indentation rule for `ns_map_lit`
+#:hello{:name "Roma"
+ :world true}

@@ -400,17 +400,33 @@ vice versa.
 explicitly with setting `clojure-ts-use-metadata-for-defn-privacy` to `t` for
 `defn`s too.
 
+### Convert collection
+
+Convert any given collection at point to list, quoted list, map, vector or
+set. The following commands are available:
+
+- `clojure-ts-convert-collection-to-list`
+- `clojure-ts-convert-collection-to-quoted-list`
+- `clojure-ts-convert-collection-to-map`
+- `clojure-ts-convert-collection-to-vector`
+- `clojure-ts-convert-collection-to-set`
+
 ### Default keybindings
 
-| Keybinding                  | Command                           |
-|:----------------------------|:----------------------------------|
-| `C-:`                       | `clojure-ts-cycle-keyword-string` |
-| `C-c SPC`                   | `clojure-ts-align`                |
-| `C-c C-r t` / `C-c C-r C-t` | `clojure-ts-thread`               |
-| `C-c C-r u` / `C-c C-r C-u` | `clojure-ts-unwind`               |
-| `C-c C-r f` / `C-c C-r C-f` | `clojure-ts-thread-first-all`     |
-| `C-c C-r l` / `C-c C-r C-l` | `clojure-ts-thread-last-all`      |
-| `C-c C-r p` / `C-c C-r C-p` | `clojure-ts-cycle-privacy`        |
+| Keybinding                  | Command                                        |
+|:----------------------------|:-----------------------------------------------|
+| `C-:`                       | `clojure-ts-cycle-keyword-string`              |
+| `C-c SPC`                   | `clojure-ts-align`                             |
+| `C-c C-r t` / `C-c C-r C-t` | `clojure-ts-thread`                            |
+| `C-c C-r u` / `C-c C-r C-u` | `clojure-ts-unwind`                            |
+| `C-c C-r f` / `C-c C-r C-f` | `clojure-ts-thread-first-all`                  |
+| `C-c C-r l` / `C-c C-r C-l` | `clojure-ts-thread-last-all`                   |
+| `C-c C-r p` / `C-c C-r C-p` | `clojure-ts-cycle-privacy`                     |
+| `C-c C-r (` / `C-c C-r C-(` | `clojure-ts-convert-collection-to-list`        |
+| `C-c C-r '` / `C-c C-r C-'` | `clojure-ts-convert-collection-to-quoted-list` |
+| `C-c C-r {` / `C-c C-r C-{` | `clojure-ts-convert-collection-to-map`         |
+| `C-c C-r [` / `C-c C-r C-[` | `clojure-ts-convert-collection-to-vector`      |
+| `C-c C-r #` / `C-c C-r C-#` | `clojure-ts-convert-collection-to-set`         |
 
 ### Customize refactoring commands prefix
 
