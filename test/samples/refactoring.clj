@@ -92,3 +92,43 @@
 ;; TODO: Define indentation rule for `ns_map_lit`
 #:hello{:name "Roma"
  :world true}
+
+
+(reify
+  java.io.FileFilter
+  (accept [this f]
+    (.isDirectory f))
+
+  (hello [world]
+    false))
+
+(defmulti which-color-mm (fn [m & args] (:color m)))
+(defmethod which-color-mm :blue
+  ([m] (print m))
+  ([m f] (f m)))
+
+(letfn [(twice [x]
+          (* x 2))
+        (six-times [y]
+          (* (twice y) 3))]
+  (println "Twice 15 =" (twice 15))
+  (println "Six times 15 =" (six-times 15)))
+
+(let [p (proxy [java.io.InputStream] []
+          (read
+            ([] 1)
+            ([^bytes bytes] 2)
+            ([^bytes bytes off len] 3)))]
+  (println (.read p))
+  (println (.read p (byte-array 3)))
+  (println (.read p (byte-array 3) 0 3)))
+
+(defprotocol Fly
+  "A simple protocol for flying"
+  (fly [this]
+    "Method to fly"))
+
+(defn foo
+  ^{:bla "meta"}
+  [arg]
+  body)

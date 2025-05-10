@@ -757,6 +757,10 @@ literals with regex grammar."
   "Return non-nil if NODE is a Clojure list."
   (string-equal "list_lit" (treesit-node-type node)))
 
+(defun clojure-ts--vec-node-p (node)
+  "Return non-nil if NODE is a Clojure vector."
+  (string-equal "vec_lit" (treesit-node-type node)))
+
 (defun clojure-ts--anon-fn-node-p (node)
   "Return non-nil if NODE is a Clojure function literal."
   (string-equal "anon_fn_lit" (treesit-node-type node)))
@@ -1471,6 +1475,27 @@ If JUSTIFY is non-nil, justify as well as fill the paragraph."
           (fill-paragraph justify)))
     t))
 
+(defun clojure-ts--list-node-sym-text (node &optional include-anon-fn-lit)
+  "Return text of the first child of the NODE if NODE is a list.
+
+Return nil if the NODE is not a list or if the first child is not a
+symbol.  Optionally if INCLUDE-ANON-FN-LIT is non-nil, return the text
+of the first symbol of a functional literal NODE."
+  (when (or (clojure-ts--list-node-p node)
+            (and include-anon-fn-lit
+                 (clojure-ts--anon-fn-node-p node)))
+    (when-let* ((first-child (clojure-ts--node-child-skip-metadata node 0))
+                ((clojure-ts--symbol-node-p first-child)))
+      (clojure-ts--named-node-text first-child))))
+
+(defun clojure-ts--list-node-sym-match-p (node regex &optional include-anon-fn-lit)
+  "Return TRUE if NODE is a list and its first symbol matches the REGEX.
+
+Optionally if INCLUDE-ANON-FN-LIT is TRUE, perform the same check for a
+function literal."
+  (when-let* ((sym-text (clojure-ts--list-node-sym-text node include-anon-fn-lit)))
+    (string-match-p regex sym-text)))
+
 (defconst clojure-ts--sexp-nodes
   '("#_" ;; transpose-sexp near a discard macro moves it around.
     "num_lit" "sym_lit" "kwd_lit" "nil_lit" "bool_lit"
@@ -1490,18 +1515,16 @@ If JUSTIFY is non-nil, justify as well as fill the paragraph."
 
 (defun clojure-ts--defun-node-p (node)
   "Return TRUE if NODE is a function or a var definition."
-  (and (clojure-ts--list-node-p node)
-       (let ((sym (clojure-ts--node-child-skip-metadata node 0)))
-         (string-match-p (rx bol
-                             (or "def"
-                                 "defn"
-                                 "defn-"
-                                 "definline"
-                                 "defrecord"
-                                 "defmacro"
-                                 "defmulti")
-                             eol)
-                         (clojure-ts--named-node-text sym)))))
+  (clojure-ts--list-node-sym-match-p node
+                                     (rx bol
+                                         (or "def"
+                                             "defn"
+                                             "defn-"
+                                             "definline"
+                                             "defrecord"
+                                             "defmacro"
+                                             "defmulti")
+                                         eol)))
 
 (defconst clojure-ts--markdown-inline-sexp-nodes
   '("inline_link" "full_reference_link" "collapsed_reference_link"
@@ -1727,19 +1750,23 @@ Forms between BEG and END are aligned according to
 
 ;;; Refactoring
 
+(defun clojure-ts--parent-until (pred)
+  "Return the closest parent of node at point that satisfies PRED."
+  (when-let* ((node-at-point (treesit-node-at (point) 'clojure t)))
+    (treesit-parent-until node-at-point pred t)))
+
+(defun clojure-ts--search-list-form-at-point (sym-regex &optional include-anon-fn-lit)
+  "Return the list node at point which first symbol matches SYM-REGEX.
+
+If INCLUDE-ANON-FN-LIT is non-nil, this function may also return a
+functional literal node."
+  (clojure-ts--parent-until
+   (lambda (node)
+     (clojure-ts--list-node-sym-match-p node sym-regex include-anon-fn-lit))))
+
 (defun clojure-ts--threading-sexp-node ()
   "Return list node at point which is a threading expression."
-  (when-let* ((node-at-point (treesit-node-at (point) 'clojure t)))
-    ;; We don't want to match `cond->' and `cond->>', so we should define a very
-    ;; specific regexp.
-    (let ((sym-regex (rx bol (* "some") "->" (* ">") eol)))
-      (treesit-parent-until node-at-point
-                            (lambda (node)
-                              (and (or (clojure-ts--list-node-p node)
-                                       (clojure-ts--anon-fn-node-p node))
-                                   (let ((first-child (treesit-node-child node 0 t)))
-                                     (clojure-ts--symbol-matches-p sym-regex first-child))))
-                            t))))
+  (clojure-ts--search-list-form-at-point (rx bol (* "some") "->" (* ">") eol) t))
 
 (defun clojure-ts--delete-and-extract-sexp ()
   "Delete the surrounding sexp and return it."
@@ -1874,9 +1901,7 @@ With universal argument \\[universal-argument], fully unwinds thread."
            (n)
            (1)))
   (if-let* ((threading-sexp (clojure-ts--threading-sexp-node))
-            (sym (thread-first threading-sexp
-                               (treesit-node-child 0 t)
-                               (clojure-ts--named-node-text))))
+            (sym (clojure-ts--list-node-sym-text threading-sexp t)))
       (save-excursion
         (let ((beg (thread-first threading-sexp
                                  (treesit-node-start)
@@ -1962,9 +1987,7 @@ cannot be found."
   (interactive "p")
   (if-let* ((threading-sexp (clojure-ts--threading-sexp-node))
             ((clojure-ts--threadable-p threading-sexp))
-            (sym (thread-first threading-sexp
-                               (treesit-node-child 0 t)
-                               (clojure-ts--named-node-text))))
+            (sym (clojure-ts--list-node-sym-text threading-sexp t)))
       (let ((beg (thread-first threading-sexp
                                (treesit-node-start)
                                (copy-marker)))
@@ -2031,6 +2054,135 @@ value is `clojure-ts-thread-all-but-last'."
                       " ^:private"
                     "-"))))
     (user-error "No defun at point")))
+
+(defun clojure-ts--node-child (node predicate)
+  "Return the first child of the NODE that matches the PREDICATE.
+
+PREDICATE can be a symbol representing a thing in
+`treesit-thing-settings', or a predicate, like regexp matching node
+type, etc.  See `treesit-thing-settings' for more details."
+  (thread-last (treesit-node-children node t)
+               (seq-find (lambda (child)
+                           (treesit-node-match-p child predicate t)))))
+
+(defun clojure-ts--node-start-skip-metadata (node)
+  "Return NODE start position optionally skipping metadata."
+  (if (clojure-ts--metadata-node-p (treesit-node-child node 0 t))
+      (treesit-node-start (treesit-node-child node 1))
+    (treesit-node-start node)))
+
+(defun clojure-ts--add-arity-internal (fn-node)
+  "Add an arity to a function defined by FN-NODE."
+  (let* ((first-coll (clojure-ts--node-child fn-node (rx bol (or "vec_lit" "list_lit") eol)))
+         (coll-start (clojure-ts--node-start-skip-metadata first-coll))
+         (line-parent (thread-first fn-node
+                                    (clojure-ts--node-child-skip-metadata 0)
+                                    (treesit-node-start)
+                                    (line-number-at-pos)))
+         (line-args (line-number-at-pos coll-start))
+         (same-line-p (= line-parent line-args))
+         (single-arity-p (clojure-ts--vec-node-p first-coll)))
+    (goto-char coll-start)
+    (when same-line-p
+      (newline-and-indent))
+    (when single-arity-p
+      (insert-pair 2 ?\( ?\))
+      (backward-up-list))
+    (insert "([])\n")
+    ;; Put the point between square brackets.
+    (down-list -2)))
+
+(defun clojure-ts--add-arity-defprotocol-internal (fn-node)
+  "Add an arity to a defprotocol function defined by FN-NODE."
+  (let* ((args-vec (clojure-ts--node-child fn-node (rx bol "vec_lit" eol)))
+         (args-vec-start (clojure-ts--node-start-skip-metadata args-vec))
+         (line-parent (thread-first fn-node
+                                    (clojure-ts--node-child-skip-metadata 0)
+                                    (treesit-node-start)
+                                    (line-number-at-pos)))
+         (line-args-vec (line-number-at-pos args-vec-start))
+         (same-line-p (= line-parent line-args-vec)))
+    (goto-char args-vec-start)
+    (insert "[]")
+    (if same-line-p
+        (insert " ")
+      ;; If args vector is not at the same line, respect this and place each new
+      ;; vector on a new line.
+      (newline-and-indent))
+    ;; Put the point between square brackets.
+    (down-list -1)))
+
+(defun clojure-ts--add-arity-reify-internal (fn-node)
+  "Add an arity to a reify function defined by FN-NODE."
+  (let* ((fn-name (clojure-ts--list-node-sym-text fn-node)))
+    (goto-char (clojure-ts--node-start-skip-metadata fn-node))
+    (insert "(" fn-name " [])")
+    (newline-and-indent)
+    ;; Put the point between sqare brackets.
+    (down-list -2)))
+
+(defun clojure-ts--letfn-defn-p (node)
+  "Return non-nil if NODE is a function definition in a letfn form."
+  (when-let* ((parent (treesit-node-parent node)))
+    (and (clojure-ts--list-node-p node)
+         (clojure-ts--vec-node-p parent)
+         (let ((grandparent (treesit-node-parent parent)))
+           (string= (clojure-ts--list-node-sym-text grandparent)
+                    "letfn")))))
+
+(defun clojure-ts--proxy-defn-p (node)
+  "Return non-nil if NODE is a function definition in a proxy form."
+  (when-let* ((parent (treesit-node-parent node)))
+    (and (clojure-ts--list-node-p node)
+         (string= (clojure-ts--list-node-sym-text parent) "proxy"))))
+
+(defun clojure-ts--defprotocol-defn-p (node)
+  "Return non-nil if NODE is a function definition in a defprotocol form."
+  (when-let* ((parent (treesit-node-parent node)))
+    (and (clojure-ts--list-node-p node)
+         (string= (clojure-ts--list-node-sym-text parent) "defprotocol"))))
+
+(defun clojure-ts--reify-defn-p (node)
+  "Return non-nil if NODE is a function definition in a reify form."
+  (when-let* ((parent (treesit-node-parent node)))
+    (and (clojure-ts--list-node-p node)
+         (string= (clojure-ts--list-node-sym-text parent) "reify"))))
+
+(defun clojure-ts-add-arity ()
+  "Add an arity to a function or macro."
+  (interactive)
+  (if-let* ((sym-regex (rx bol
+                           (or "defn"
+                               "letfn"
+                               "fn"
+                               "defmacro"
+                               "defmethod"
+                               "defprotocol"
+                               "reify"
+                               "proxy")
+                           eol))
+            (parent-def-node (clojure-ts--search-list-form-at-point sym-regex))
+            (parent-def-sym (clojure-ts--list-node-sym-text parent-def-node))
+            (fn-node (cond
+                      ((string= parent-def-sym "letfn")
+                       (clojure-ts--parent-until #'clojure-ts--letfn-defn-p))
+                      ((string= parent-def-sym "proxy")
+                       (clojure-ts--parent-until #'clojure-ts--proxy-defn-p))
+                      ((string= parent-def-sym "defprotocol")
+                       (clojure-ts--parent-until #'clojure-ts--defprotocol-defn-p))
+                      ((string= parent-def-sym "reify")
+                       (clojure-ts--parent-until #'clojure-ts--reify-defn-p))
+                      (t parent-def-node))))
+      (let ((beg-marker (copy-marker (treesit-node-start parent-def-node)))
+            (end-marker (copy-marker (treesit-node-end parent-def-node))))
+        (cond
+         ((string= parent-def-sym "defprotocol")
+          (clojure-ts--add-arity-defprotocol-internal fn-node))
+         ((string= parent-def-sym "reify")
+          (clojure-ts--add-arity-reify-internal fn-node))
+         (t (clojure-ts--add-arity-internal fn-node)))
+        (indent-region beg-marker end-marker))
+    (user-error "No suitable form to add an arity at point")))
 
 (defun clojure-ts-cycle-keyword-string ()
   "Convert the string at point to a keyword, or vice versa."
@@ -2141,6 +2293,8 @@ before DELIM-OPEN."
     (keymap-set map "[" #'clojure-ts-convert-collection-to-vector)
     (keymap-set map "C-#" #'clojure-ts-convert-collection-to-set)
     (keymap-set map "#" #'clojure-ts-convert-collection-to-set)
+    (keymap-set map "C-a" #'clojure-ts-add-arity)
+    (keymap-set map "a" #'clojure-ts-add-arity)
     map)
   "Keymap for `clojure-ts-mode' refactoring commands.")
 
@@ -2155,6 +2309,7 @@ before DELIM-OPEN."
         ["Toggle between string & keyword" clojure-ts-cycle-keyword-string]
         ["Align expression" clojure-ts-align]
         ["Cycle privacy" clojure-ts-cycle-privacy]
+        ["Add function/macro arity" clojure-ts-add-arity]
         ("Convert collection"
          ["Convert to list" clojure-ts-convert-collection-to-list]
          ["Convert to quoted list" clojure-ts-convert-collection-to-quoted-list]
