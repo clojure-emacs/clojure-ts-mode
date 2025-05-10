@@ -411,6 +411,11 @@ set. The following commands are available:
 - `clojure-ts-convert-collection-to-vector`
 - `clojure-ts-convert-collection-to-set`
 
+### Add arity to a function
+
+`clojure-ts-add-arity`: Add a new arity to an existing single-arity or
+multi-arity function.
+
 ### Default keybindings
 
 | Keybinding                  | Command                                        |
@@ -427,6 +432,7 @@ set. The following commands are available:
 | `C-c C-r {` / `C-c C-r C-{` | `clojure-ts-convert-collection-to-map`         |
 | `C-c C-r [` / `C-c C-r C-[` | `clojure-ts-convert-collection-to-vector`      |
 | `C-c C-r #` / `C-c C-r C-#` | `clojure-ts-convert-collection-to-set`         |
+| `C-c C-r a` / `C-c C-r C-a` | `clojure-ts-add-arity`                         |
 
 ### Customize refactoring commands prefix
 
