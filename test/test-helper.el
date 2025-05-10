@@ -39,7 +39,7 @@ And evaluate BODY."
 
 TEXT is a string with a | indicating where point is.  The | will be erased
 and point left there."
-  (declare (indent 2))
+  (declare (indent 1))
   `(progn
      (with-clojure-ts-buffer ,text
        (goto-char (point-min))

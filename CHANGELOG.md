@@ -16,6 +16,7 @@
 - [#90](https://github.com/clojure-emacs/clojure-ts-mode/pull/90): Introduce `clojure-ts-cycle-privacy`.
 - [#91](https://github.com/clojure-emacs/clojure-ts-mode/pull/91): Introduce `clojure-ts-cycle-keyword-string`.
 - [#92](https://github.com/clojure-emacs/clojure-ts-mode/pull/92): Add commands to convert between collections types.
+- [#93](https://github.com/clojure-emacs/clojure-ts-mode/pull/93): Introduce `clojure-ts-add-arity`.
 
 ## 0.3.0 (2025-04-15)
 
