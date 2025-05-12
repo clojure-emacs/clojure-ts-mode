@@ -1505,7 +1505,8 @@ function literal."
     "var_quoting_lit" "sym_val_lit" "evaling_lit"
     "tagged_or_ctor_lit" "splicing_read_cond_lit"
     "derefing_lit" "quoting_lit" "syn_quoting_lit"
-    "unquote_splicing_lit" "unquoting_lit")
+    "unquote_splicing_lit" "unquoting_lit"
+    "dis_expr")
   "A regular expression that matches nodes that can be treated as s-expressions.")
 
 (defconst clojure-ts--list-nodes

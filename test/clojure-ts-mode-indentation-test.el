@@ -596,4 +596,12 @@ b |20])"
   :a  (let [a  1
             aa (+ a 1)]
         aa); comment
-  :aa 2)"))
+  :aa 2)")
+
+  (when-aligning-it "should work correctly when there are ignored forms"
+    "{:map  \"with\"
+ :some #_\"ignored\" \"form\"}"
+
+    "{:map      \"with\"
+ :multiple \"ignored\"
+ #_#_:forms \"foo\"}"))
