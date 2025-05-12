@@ -55,3 +55,10 @@
             aa (+ a 1)]
         aa); comment
   :aa 2)
+
+{:map  "with"
+ :some #_"ignored" "form"}
+
+{:map      "with"
+ :multiple "ignored"
+ #_#_:forms "foo"}
