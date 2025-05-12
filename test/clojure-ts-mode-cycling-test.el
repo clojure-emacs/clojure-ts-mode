@@ -190,5 +190,83 @@
 
     (clojure-ts-cycle-privacy)))
 
+(describe "clojure-cycle-if"
+
+  (when-refactoring-with-point-it "should cycle inner if"
+    "(if this
+  (if |that
+    (then AAA)
+    (else BBB))
+  (otherwise CCC))"
+
+    "(if this
+  (if-not |that
+    (else BBB)
+    (then AAA))
+  (otherwise CCC))"
+
+    (clojure-ts-cycle-conditional))
+
+  (when-refactoring-with-point-it "should cycle outer if"
+    "(if-not |this
+  (if that
+    (then AAA)
+    (else BBB))
+  (otherwise CCC))"
+
+    "(if |this
+  (otherwise CCC)
+  (if that
+    (then AAA)
+    (else BBB)))"
+
+    (clojure-ts-cycle-conditional)))
+
+(describe "clojure-cycle-when"
+
+  (when-refactoring-with-point-it "should cycle inner when"
+    "(when this
+  (when |that
+    (aaa)
+    (bbb))
+  (ccc))"
+
+    "(when this
+  (when-not |that
+    (aaa)
+    (bbb))
+  (ccc))"
+
+    (clojure-ts-cycle-conditional))
+
+  (when-refactoring-with-point-it "should cycle outer when"
+    "(when-not |this
+  (when that
+    (aaa)
+    (bbb))
+  (ccc))"
+
+    "(when |this
+  (when that
+    (aaa)
+    (bbb))
+  (ccc))"
+
+    (clojure-ts-cycle-conditional)))
+
+(describe "clojure-cycle-not"
+
+  (when-refactoring-with-point-it "should add a not when missing"
+    "(ala bala| portokala)"
+    "(not (ala bala| portokala))"
+
+    (clojure-ts-cycle-not))
+
+  (when-refactoring-with-point-it "should remove a not when present"
+    "(not (ala bala| portokala))"
+    "(ala bala| portokala)"
+
+    (clojure-ts-cycle-not)))
+
 (provide 'clojure-ts-mode-cycling-test)
 ;;; clojure-ts-mode-cycling-test.el ends here

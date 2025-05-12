@@ -134,3 +134,10 @@
   ^{:bla "meta"}
   [arg]
   body)
+
+(if ^boolean (= 2 2)
+  true
+  false)
+
+(when-not true
+  (println "Hello world"))
