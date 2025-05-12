@@ -376,27 +376,54 @@ following customization:
 
 ### Threading macros related features
 
-`clojure-ts-thread`: Thread another form into the surrounding thread. Both
+There are a bunch of commands for threading and unwinding threaded Clojure forms:
+
+- `clojure-ts-thread`: Thread another form into the surrounding thread. Both
 `->>`/`some->>` and `->`/`some->` variants are supported.
-
-`clojure-ts-unwind`: Unwind a threaded expression. Supports both `->>`/`some->>`
+- `clojure-ts-unwind`: Unwind a threaded expression. Supports both `->>`/`some->>`
 and `->`/`some->`.
-
-`clojure-ts-thread-first-all`: Introduce the thread first macro (`->`) and
+- `clojure-ts-thread-first-all`: Introduce the thread first macro (`->`) and
 rewrite the entire form. With a prefix argument do not thread the last form.
-
-`clojure-ts-thread-last-all`: Introduce the thread last macro and rewrite the
+- `clojure-ts-thread-last-all`: Introduce the thread last macro and rewrite the
 entire form. With a prefix argument do not thread the last form.
-
-`clojure-ts-unwind-all`: Fully unwind a threaded expression removing the
+- `clojure-ts-unwind-all`: Fully unwind a threaded expression removing the
 threading macro.
+
+#### Customize threading refactoring behavior
+
+By default `clojure-ts-thread-first-all` and `clojure-ts-thread-last-all` will
+thread all nested expressions. For example this expression:
+
+```clojure
+(->map (assoc {} :key "value") :lock)
+```
+
+After executing `clojure-ts-thread-last-all` will be converted to:
+
+```clojure
+(-> {}
+    (assoc :key "value")
+    (->map :lock))
+```
+
+This behavior can be changed by setting:
+
+```emacs-lisp
+(setopt clojure-ts-thread-all-but-last t)
+```
+
+Then the last expression will not be threaded and the result will be:
+
+```clojure
+(-> (assoc {} :key "value")
+    (->map :lock))
+```
 
 ### Cycling things
 
-`clojure-ts-cycle-keyword-string`: Convert the string at point to a keyword and
+- `clojure-ts-cycle-keyword-string`: Convert the string at point to a keyword and
 vice versa.
-
-`clojure-ts-cycle-privacy`: Cycle privacy of `def`s or `defn`s. Use metadata
+- `clojure-ts-cycle-privacy`: Cycle privacy of `def`s or `defn`s. Use metadata
 explicitly with setting `clojure-ts-use-metadata-for-defn-privacy` to `t` for
 `defn`s too.
 
@@ -441,40 +468,10 @@ multi-arity function or macro. Function can be defined using `defn`, `fn` or
 By default prefix for all refactoring commands is `C-c C-r`. It can be changed
 by customizing `clojure-ts-refactor-map-prefix` variable.
 
-### Customize threading refactoring behavior
-
-By default `clojure-ts-thread-first-all` and `clojure-ts-thread-last-all` will
-thread all nested expressions. For example this expression:
-
-```clojure
-(->map (assoc {} :key "value") :lock)
-```
-
-After executing `clojure-ts-thread-last-all` will be converted to:
-
-```clojure
-(-> {}
-    (assoc :key "value")
-    (->map :lock))
-```
-
-This behavior can be changed by setting:
-
-```emacs-lisp
-(setopt clojure-ts-thread-all-but-last t)
-```
-
-Then the last expression will not be threaded and the result will be:
-
-```clojure
-(-> (assoc {} :key "value")
-    (->map :lock))
-```
-
 ## Migrating to clojure-ts-mode
 
 If you are migrating to `clojure-ts-mode` note that `clojure-mode` is still
-required for cider and clj-refactor packages to work properly.
+required for CIDER and `clj-refactor` packages to work properly.
 
 After installing the package do the following:
 
