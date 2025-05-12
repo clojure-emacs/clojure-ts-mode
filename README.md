@@ -426,6 +426,11 @@ vice versa.
 - `clojure-ts-cycle-privacy`: Cycle privacy of `def`s or `defn`s. Use metadata
 explicitly with setting `clojure-ts-use-metadata-for-defn-privacy` to `t` for
 `defn`s too.
+- `clojure-ts-cycle-conditional`: Change a surrounding conditional form to its
+  negated counterpart, or vice versa (supports `if`/`if-not` and
+  `when`/`when-not`). For `if`/`if-not` also transposes the else and then
+  branches, keeping the semantics the same as before.
+- `clojure-ts-cycle-not`: Add or remove a `not` form around the current form.
 
 ### Convert collection
 
@@ -461,6 +466,8 @@ multi-arity function or macro. Function can be defined using `defn`, `fn` or
 | `C-c C-r {` / `C-c C-r C-{` | `clojure-ts-convert-collection-to-map`         |
 | `C-c C-r [` / `C-c C-r C-[` | `clojure-ts-convert-collection-to-vector`      |
 | `C-c C-r #` / `C-c C-r C-#` | `clojure-ts-convert-collection-to-set`         |
+| `C-c C-r c` / `C-c C-r C-c` | `clojure-ts-cycle-conditional`                 |
+| `C-c C-r o` / `C-c C-r C-o` | `clojure-ts-cycle-not`                         |
 | `C-c C-r a` / `C-c C-r C-a` | `clojure-ts-add-arity`                         |
 
 ### Customize refactoring commands prefix

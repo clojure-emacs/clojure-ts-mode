@@ -1872,6 +1872,31 @@ functional literal node."
       (clojure-ts--skip-first-child threading-sexp)
       (not (treesit-end-of-thing 'sexp 2 'restricted)))))
 
+(defun clojure-ts--raise-sexp ()
+  "Raise current sexp one level higher up the tree.
+
+The built-in `raise-sexp' function doesn't work well with a few Clojure
+nodes (function literals, expressions with metadata etc.), it loses some
+parenthesis."
+  (when-let* ((sexp-node (treesit-thing-at (point) 'sexp))
+              (beg (thread-first sexp-node
+                                 (clojure-ts--node-start-skip-metadata)
+                                 (copy-marker)))
+              (end (thread-first sexp-node
+                                 (treesit-node-end)
+                                 (copy-marker))))
+    (when-let* ((parent (treesit-node-parent sexp-node))
+                ((not (string= (treesit-node-type parent) "source")))
+                (parent-beg (thread-first parent
+                                          (clojure-ts--node-start-skip-metadata)
+                                          (copy-marker)))
+                (parent-end (thread-first parent
+                                          (treesit-node-end)
+                                          (copy-marker))))
+      (save-excursion
+        (delete-region parent-beg beg)
+        (delete-region end parent-end)))))
+
 (defun clojure-ts--pop-out-of-threading ()
   "Raise a sexp up a level to unwind a threading form."
   (let* ((threading-sexp (clojure-ts--threading-sexp-node))
@@ -2284,6 +2309,66 @@ before DELIM-OPEN."
   (interactive)
   (clojure-ts--convert-collection ?{ ?#))
 
+(defun clojure-ts-cycle-conditional ()
+  "Change a surrounding conditional form to its negated counterpart, or vice versa."
+  (interactive)
+  (if-let* ((sym-regex (rx bol
+                           (or "if" "if-not" "when" "when-not")
+                           eol))
+            (cond-node (clojure-ts--search-list-form-at-point sym-regex t))
+            (cond-sym (clojure-ts--list-node-sym-text cond-node)))
+      (let ((beg (treesit-node-start cond-node))
+            (end-marker (copy-marker (treesit-node-end cond-node)))
+            (new-sym (pcase cond-sym
+                       ("if" "if-not")
+                       ("if-not" "if")
+                       ("when" "when-not")
+                       ("when-not" "when"))))
+        (save-excursion
+          (goto-char (clojure-ts--node-start-skip-metadata cond-node))
+          (down-list 1)
+          (delete-char (length cond-sym))
+          (insert new-sym)
+          (when (member cond-sym '("if" "if-not"))
+            (forward-sexp 2)
+            (transpose-sexps 1))
+          (indent-region beg end-marker)))
+    (user-error "No conditional expression found")))
+
+(defun clojure-ts--point-outside-node-p (node)
+  "Return non-nil if point is outside of the actual NODE start.
+
+Clojure grammar treats metadata as part of an expression, so for example
+^boolean (not (= 2 2)) is a single list node, including metadata.  This
+causes issues for functions that navigate by s-expressions and lists.
+This function returns non-nil if point is outside of the outermost
+parenthesis."
+  (let* ((actual-node-start (clojure-ts--node-start-skip-metadata node))
+         (node-end (treesit-node-end node))
+         (pos (point)))
+    (or (< pos actual-node-start)
+        (> pos node-end))))
+
+(defun clojure-ts-cycle-not ()
+  "Add or remove a not form around the current form."
+  (interactive)
+  (if-let* ((list-node (clojure-ts--parent-until (rx bol "list_lit" eol)))
+            ((not (clojure-ts--point-outside-node-p list-node))))
+      (let ((beg (treesit-node-start list-node))
+            (end-marker (copy-marker (treesit-node-end list-node)))
+            (pos (copy-marker (point) t)))
+        (goto-char (clojure-ts--node-start-skip-metadata list-node))
+        (if-let* ((list-parent (treesit-node-parent list-node))
+                  ((clojure-ts--list-node-sym-match-p list-parent (rx bol "not" eol))))
+            (clojure-ts--raise-sexp)
+          (insert-pair 1 ?\( ?\))
+          (insert "not "))
+        (indent-region beg end-marker)
+        ;; `save-excursion' doesn't work well when point is at the opening
+        ;; paren.
+        (goto-char pos))
+    (user-error "Must be invoked inside a list")))
+
 (defvar clojure-ts-refactor-map
   (let ((map (make-sparse-keymap)))
     (keymap-set map "C-t" #'clojure-ts-thread)
@@ -2306,6 +2391,10 @@ before DELIM-OPEN."
     (keymap-set map "[" #'clojure-ts-convert-collection-to-vector)
     (keymap-set map "C-#" #'clojure-ts-convert-collection-to-set)
     (keymap-set map "#" #'clojure-ts-convert-collection-to-set)
+    (keymap-set map "C-c" #'clojure-ts-cycle-conditional)
+    (keymap-set map "c" #'clojure-ts-cycle-conditional)
+    (keymap-set map "C-o" #'clojure-ts-cycle-not)
+    (keymap-set map "o" #'clojure-ts-cycle-not)
     (keymap-set map "C-a" #'clojure-ts-add-arity)
     (keymap-set map "a" #'clojure-ts-add-arity)
     map)
@@ -2322,6 +2411,8 @@ before DELIM-OPEN."
         ["Toggle between string & keyword" clojure-ts-cycle-keyword-string]
         ["Align expression" clojure-ts-align]
         ["Cycle privacy" clojure-ts-cycle-privacy]
+        ["Cycle conditional" clojure-ts-cycle-conditional]
+        ["Cycle not" clojure-ts-cycle-not]
         ["Add function/macro arity" clojure-ts-add-arity]
         ("Convert collection"
          ["Convert to list" clojure-ts-convert-collection-to-list]
