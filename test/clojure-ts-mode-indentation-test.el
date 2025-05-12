@@ -604,4 +604,9 @@ b |20])"
 
     "{:map      \"with\"
  :multiple \"ignored\"
- #_#_:forms \"foo\"}"))
+ #_#_:forms \"foo\"}")
+
+  (when-aligning-it "should support namespaced maps"
+    "#:hello {:world          true
+         :foo            \"bar\"
+         :some-very-long \"value\"}"))

@@ -1410,17 +1410,23 @@ if NODE has metadata and its parent has type NODE-TYPE."
      (clojure-ts--node-child-skip-metadata parent n))))
 
 (defun clojure-ts--semantic-indent-rules ()
-  "Return a list of indentation rules for `treesit-simple-indent-rules'."
+  "Return a list of indentation rules for `treesit-simple-indent-rules'.
+
+NOTE: All built-in matchers (such as `parent-is' etc) expect a node type
+regex.  Therefore, if the string map_lit is used, it will incorrectly
+match both map_lit and ns_map_lit.  To prevent this, more precise
+regexes with anchors matching the beginning and end of the line are
+used."
   `((clojure
-     ((parent-is "source") parent-bol 0)
+     ((parent-is "^source$") parent-bol 0)
      (clojure-ts--match-docstring parent 0)
      ;; Collections items with metadata.
      ;;
      ;; This should be before `clojure-ts--match-with-metadata', otherwise they
      ;; will never be matched.
-     (,(clojure-ts--match-collection-item-with-metadata "vec_lit") grand-parent 1)
-     (,(clojure-ts--match-collection-item-with-metadata "map_lit") grand-parent 1)
-     (,(clojure-ts--match-collection-item-with-metadata "set_lit") grand-parent 2)
+     (,(clojure-ts--match-collection-item-with-metadata "^vec_lit$") grand-parent 1)
+     (,(clojure-ts--match-collection-item-with-metadata "^map_lit$") grand-parent 1)
+     (,(clojure-ts--match-collection-item-with-metadata "^set_lit$") grand-parent 2)
      ;;
      ;; If we enable this rule for lists, it will break many things.
      ;; (,(clojure-ts--match-collection-item-with-metadata "list_lit") grand-parent 1)
@@ -1428,12 +1434,13 @@ if NODE has metadata and its parent has type NODE-TYPE."
      ;; All other forms with metadata.
      (clojure-ts--match-with-metadata parent 0)
      ;; Literal Sequences
-     ((parent-is "vec_lit") parent 1) ;; https://guide.clojure.style/#bindings-alignment
-     ((parent-is "map_lit") parent 1) ;; https://guide.clojure.style/#map-keys-alignment
-     ((parent-is "set_lit") parent 2)
-     ((parent-is "splicing_read_cond_lit") parent 4)
-     ((parent-is "read_cond_lit") parent 3)
-     ((parent-is "tagged_or_ctor_lit") parent 0)
+     ((parent-is "^vec_lit$") parent 1) ;; https://guide.clojure.style/#bindings-alignment
+     ((parent-is "^map_lit$") parent 1) ;; https://guide.clojure.style/#map-keys-alignment
+     ((parent-is "^set_lit$") parent 2)
+     ((parent-is "^splicing_read_cond_lit$") parent 4)
+     ((parent-is "^read_cond_lit$") parent 3)
+     ((parent-is "^tagged_or_ctor_lit$") parent 0)
+     ((parent-is "^ns_map_lit$") (nth-sibling 2) 1)
      ;; https://guide.clojure.style/#body-indentation
      (clojure-ts--match-form-body clojure-ts--anchor-parent-opening-paren 2)
      ;; https://guide.clojure.style/#threading-macros-alignment
@@ -1441,7 +1448,7 @@ if NODE has metadata and its parent has type NODE-TYPE."
      ;; https://guide.clojure.style/#vertically-align-fn-args
      (clojure-ts--match-function-call-arg ,(clojure-ts--anchor-nth-sibling 1) 0)
      ;; https://guide.clojure.style/#one-space-indent
-     ((parent-is "list_lit") parent 1))))
+     ((parent-is "^list_lit$") parent 1))))
 
 (defun clojure-ts--configured-indent-rules ()
   "Gets the configured choice of indent rules."
@@ -1640,6 +1647,7 @@ have changed."
          (query (treesit-query-compile 'clojure
                                        (append
                                         `(((map_lit) @map)
+                                          ((ns_map_lit) @ns-map)
                                           ((list_lit
                                             ((sym_lit) @sym
                                              (:match ,(clojure-ts-symbol-regexp clojure-ts-align-binding-forms) @sym))
@@ -1686,6 +1694,10 @@ subsequent special arguments based on block indentation rules."
   (goto-char (treesit-node-start node))
   (when-let* ((cur-sexp (treesit-node-first-child-for-pos node (point) t)))
     (goto-char (treesit-node-start cur-sexp))
+    ;; For namespaced maps we need to skip the namespace, which is the first
+    ;; nested sexp.
+    (when (equal sexp-type 'ns-map)
+      (treesit-beginning-of-thing 'sexp -1 'nested))
     ;; For cond forms we need to skip first n + 1 nodes according to block
     ;; indentation rules.  First node to skip is the symbol itself.
     (when (equal sexp-type 'cond)

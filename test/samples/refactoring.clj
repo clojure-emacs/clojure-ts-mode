@@ -89,10 +89,12 @@
 
 [1 2 3]
 
-;; TODO: Define indentation rule for `ns_map_lit`
-#:hello{:name "Roma"
- :world true}
+#:hello {:world          true
+         :foo            "bar"
+         :some-very-long "value"}
 
+{:name "Roma"
+ :foo true}
 
 (reify
   java.io.FileFilter
