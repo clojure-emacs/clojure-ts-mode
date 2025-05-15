@@ -20,7 +20,7 @@
 - [#92](https://github.com/clojure-emacs/clojure-ts-mode/pull/92): Add commands to convert between collections types.
 - [#93](https://github.com/clojure-emacs/clojure-ts-mode/pull/93): Introduce `clojure-ts-add-arity`.
 - [#94](https://github.com/clojure-emacs/clojure-ts-mode/pull/94): Add indentation rules and `clojure-ts-align` support for namespaced maps.
-- Introduce `clojure-ts-cycle-conditional` and `clojure-ts-cycle-not`.
+- [#95](https://github.com/clojure-emacs/clojure-ts-mode/pull/95): Introduce `clojure-ts-cycle-conditional` and `clojure-ts-cycle-not`.
 
 ## 0.3.0 (2025-04-15)
 
