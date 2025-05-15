@@ -2,6 +2,8 @@
 
 ## main (unreleased)
 
+## 0.4.0 (2025-05-15)
+
 - [#16](https://github.com/clojure-emacs/clojure-ts-mode/issues/16): Introduce `clojure-ts-align`.
 - [#11](https://github.com/clojure-emacs/clojure-ts-mode/issues/11): Enable regex syntax highlighting.
 - [#16](https://github.com/clojure-emacs/clojure-ts-mode/issues/16): Add support for automatic aligning forms.

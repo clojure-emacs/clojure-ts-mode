@@ -7,7 +7,7 @@
 ;; Maintainer: Bozhidar Batsov <bozhidar@batsov.dev>
 ;; URL: http://github.com/clojure-emacs/clojure-ts-mode
 ;; Keywords: languages clojure clojurescript lisp
-;; Version: 0.4.0-snapshot
+;; Version: 0.4.0
 ;; Package-Requires: ((emacs "30.1"))
 
 ;; This file is not part of GNU Emacs.
@@ -74,7 +74,7 @@
   :link '(emacs-commentary-link :tag "Commentary" "clojure-mode"))
 
 (defconst clojure-ts-mode-version
-  "0.4.0-snapshot"
+  "0.4.0"
   "The current version of `clojure-ts-mode'.")
 
 (defcustom clojure-ts-comment-macro-font-lock-body nil
@@ -156,7 +156,7 @@ three or more semicolons will be treated as outline headings.  If set to
 This means that `clojure-ts-thread-first-all' and
 `clojure-ts-thread-last-all' not thread the deepest sexp inside the
 current sexp."
-  :package-version '(clojure-ts-mode . "0.4.0")
+  :package-version '(clojure-ts-mode . "0.4")
   :safe #'booleanp
   :type 'boolean)
 
@@ -164,7 +164,7 @@ current sexp."
   "If nil, `clojure-ts-cycle-privacy' will use (defn- f []).
 
 If t, it will use (defn ^:private f [])."
-  :package-version '(clojure-ts-mode . "0.4.0")
+  :package-version '(clojure-ts-mode . "0.4")
   :safe #'booleanp
   :type 'boolean)
 
