@@ -522,8 +522,8 @@ and `clojure-mode` (this is very helpful when dealing with `derived-mode-p` chec
 
 ### What `clojure-mode` features are currently missing?
 
-As of version 0.4.x, the most obvious missing feature are the various
-refactoring commands in `clojure-mode`.
+As of version 0.4.x, `clojure-ts-mode` provides almost all `clojure-mode` features.
+Currently only a few refactoring commands are missing.
 
 ### Does `clojure-ts-mode` work with CIDER?
 
