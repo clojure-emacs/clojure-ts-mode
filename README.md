@@ -179,7 +179,7 @@ interactively change this behavior.
 Set the var `clojure-ts-indent-style` to change it.
 
 ``` emacs-lisp
-(setq clojure-ts-indent-style 'fixed)
+(setopt clojure-ts-indent-style 'fixed)
 ```
 
 > [!TIP]
@@ -286,7 +286,7 @@ Forms that can be aligned vertically are configured via the following variables:
 To highlight entire rich `comment` expression with the comment font face, set
 
 ``` emacs-lisp
-(setq clojure-ts-comment-macro-font-lock-body t)
+(setopt clojure-ts-comment-macro-font-lock-body t)
 ```
 
 By default this is `nil`, so that anything within a `comment` expression is
@@ -332,7 +332,7 @@ Example of regex syntax highlighting:
 To make forms inside of `(comment ...)` forms appear as top-level forms for evaluation and navigation, set
 
 ``` emacs-lisp
-(setq clojure-ts-toplevel-inside-comment-form t)
+(setopt clojure-ts-toplevel-inside-comment-form t)
 ```
 
 ### Fill paragraph
