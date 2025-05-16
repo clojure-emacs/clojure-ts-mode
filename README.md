@@ -550,6 +550,14 @@ Check out [this article](https://metaredux.com/posts/2024/02/19/cider-preliminar
 
 Currently, there is an [open PR](https://github.com/clojure-emacs/inf-clojure/pull/215) adding support for inf-clojure.
 
+### Why does `clojure-ts-mode` require Emacs 30?
+
+You might be wondering why does `clojure-ts-mode` require Emacs 30 instead of
+Emacs 29, which introduced the built-in Tree-sitter support. The answer is
+simple - the initial Tree-sitter support in Emacs 29 had quite a few issues and
+we felt it's better to nudge most people interested in using it to Emacs 30,
+which fixed a lot of the problems.
+
 ## License
 
 Copyright © 2022-2025 Danny Freeman, Bozhidar Batsov and [contributors][].
