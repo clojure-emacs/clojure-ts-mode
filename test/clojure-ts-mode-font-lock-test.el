@@ -223,4 +223,10 @@ DESCRIPTION is the description of the spec."
      (2 12 font-lock-keyword-face)
      (14 14 font-lock-type-face)
      (19 21 font-lock-function-name-face)
-     (34 39 font-lock-function-name-face))))
+     (34 39 font-lock-function-name-face))
+
+    ("(extend-protocol prepare/SettableParameter
+    clojure.lang.IPersistentMap
+    (set-parameter [m ^PreparedStatement s i]
+      (.setObject s i (->pgobject m))))"
+     (81 93 font-lock-function-name-face))))
