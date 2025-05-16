@@ -324,6 +324,20 @@
 
     (clojure-ts-add-arity))
 
+  (when-refactoring-with-point-it "should handle an extend-protocol"
+    "(extend-protocol prepare/SettableParameter
+  clojure.lang.IPersistentMap
+  (set-parameter [m ^PreparedStatement s i]
+    (.setObject| s i (->pgobject m))))"
+
+    "(extend-protocol prepare/SettableParameter
+  clojure.lang.IPersistentMap
+  (set-parameter [|])
+  (set-parameter [m ^PreparedStatement s i]
+    (.setObject s i (->pgobject m))))"
+
+    (clojure-ts-add-arity))
+
   (it "should signal a user error when point is not inside a function body"
     (with-clojure-ts-buffer-point "
 (letf|n [(foo

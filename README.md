@@ -448,7 +448,7 @@ set. The following commands are available:
 `clojure-ts-add-arity`: Add a new arity to an existing single-arity or
 multi-arity function or macro. Function can be defined using `defn`, `fn` or
 `defmethod` form. This command also supports functions defined inside forms like
-`letfn`, `defprotol`, `reify` or `proxy`.
+`letfn`, `defprotol`, `reify`, `extend-protocol` or `proxy`.
 
 ### Default keybindings
 

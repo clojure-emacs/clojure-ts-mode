@@ -2,6 +2,10 @@
 
 ## main (unreleased)
 
+- [#96](https://github.com/clojure-emacs/clojure-ts-mode/pull/96): Highlight function name properly in `extend-protocol` form.
+- [#96](https://github.com/clojure-emacs/clojure-ts-mode/pull/96): Add support for extend-protocol forms to `clojure-ts-add-arity` refactoring
+  command.
+
 ## 0.4.0 (2025-05-15)
 
 - [#16](https://github.com/clojure-emacs/clojure-ts-mode/issues/16): Introduce `clojure-ts-align`.

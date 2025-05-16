@@ -141,3 +141,9 @@
 
 (when-not true
   (println "Hello world"))
+
+(extend-protocol prepare/SettableParameter
+  clojure.lang.IPersistentMap
+  (set-parameter [])
+  (set-parameter [m ^PreparedStatement s i]
+    (.setObject| s i (->pgobject m))))

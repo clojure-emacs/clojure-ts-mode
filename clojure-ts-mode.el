@@ -602,7 +602,12 @@ literals with regex grammar."
          (sym_lit name: (sym_name) @font-lock-function-name-face))))
       ((list_lit
         ((sym_lit name: (sym_name) @def)
-         ((:equal "reify" @def)))
+         ((:match ,(rx-to-string
+                    `(seq bol
+                          (or "reify"
+                              "extend-protocol")
+                          eol))
+                  @def)))
         (list_lit
          (sym_lit name: (sym_name) @font-lock-function-name-face))))
       ;; letfn
@@ -2186,6 +2191,12 @@ type, etc.  See `treesit-thing-settings' for more details."
     (and (clojure-ts--list-node-p node)
          (string= (clojure-ts--list-node-sym-text parent) "reify"))))
 
+(defun clojure-ts--extend-protocol-defn-p (node)
+  "Return non-nil if NODE is a function definition in an extend-protocol form."
+  (when-let* ((parent (treesit-node-parent node)))
+    (and (clojure-ts--list-node-p node)
+         (string= (clojure-ts--list-node-sym-text parent) "extend-protocol"))))
+
 (defun clojure-ts-add-arity ()
   "Add an arity to a function or macro."
   (interactive)
@@ -2196,6 +2207,7 @@ type, etc.  See `treesit-thing-settings' for more details."
                                "defmacro"
                                "defmethod"
                                "defprotocol"
+                               "extend-protocol"
                                "reify"
                                "proxy")
                            eol))
@@ -2210,13 +2222,16 @@ type, etc.  See `treesit-thing-settings' for more details."
                        (clojure-ts--parent-until #'clojure-ts--defprotocol-defn-p))
                       ((string= parent-def-sym "reify")
                        (clojure-ts--parent-until #'clojure-ts--reify-defn-p))
+                      ((string= parent-def-sym "extend-protocol")
+                       (clojure-ts--parent-until #'clojure-ts--extend-protocol-defn-p))
                       (t parent-def-node))))
       (let ((beg-marker (copy-marker (treesit-node-start parent-def-node)))
             (end-marker (copy-marker (treesit-node-end parent-def-node))))
         (cond
          ((string= parent-def-sym "defprotocol")
           (clojure-ts--add-arity-defprotocol-internal fn-node))
-         ((string= parent-def-sym "reify")
+         ((or (string= parent-def-sym "reify")
+              (string= parent-def-sym "extend-protocol"))
           (clojure-ts--add-arity-reify-internal fn-node))
          (t (clojure-ts--add-arity-internal fn-node)))
         (indent-region beg-marker end-marker))
