@@ -788,7 +788,8 @@ literals with regex grammar."
 
 (defun clojure-ts--metadata-node-p (node)
   "Return non-nil if NODE is a Clojure metadata node."
-  (string-equal "meta_lit" (treesit-node-type node)))
+  (or (string-equal "meta_lit" (treesit-node-type node))
+      (string-equal "old_meta_lit" (treesit-node-type node))))
 
 (defun clojure-ts--var-node-p (node)
   "Return non-nil if NODE is a var (eg.  #\\'foo)."
@@ -1545,10 +1546,23 @@ function literal."
     "code_span")
   "Nodes representing s-expressions in the `markdown-inline' parser.")
 
+(defun clojure-ts--default-sexp-node-p (node)
+  "Return TRUE if point is NODE is either function literal or set or has metadata."
+  (or
+   ;; Opening paren of set or function literal.
+   (and (eq (char-before (point)) ?\#)
+           (string-match-p (rx bol (or "anon_fn_lit" "set_lit") eol)
+                           (treesit-node-type (treesit-node-parent node))))
+   ;; Node with metadata.
+   (clojure-ts--metadata-node-p (treesit-node-prev-sibling node))))
+
 (defconst clojure-ts--thing-settings
   `((clojure
      (sexp ,(regexp-opt clojure-ts--sexp-nodes))
      (list ,(regexp-opt clojure-ts--list-nodes))
+     (sexp-default
+      ;; For `C-M-f' in "#|(a)" or "#|{1 2 3}"
+      (,(rx (or "(" "{" "[")) . ,#'clojure-ts--default-sexp-node-p))
      (text ,(regexp-opt '("comment")))
      (defun ,#'clojure-ts--defun-node-p))
     (when clojure-ts-use-markdown-inline
@@ -2130,7 +2144,7 @@ type, etc.  See `treesit-thing-settings' for more details."
       (newline-and-indent))
     (when single-arity-p
       (insert-pair 2 ?\( ?\))
-      (backward-up-list))
+      (forward-char -1))
     (insert "([])\n")
     ;; Put the point between square brackets.
     (down-list -2)))
@@ -2600,6 +2614,13 @@ REGEX-AVAILABLE."
                         (clojure-ts--compute-semantic-indentation-rules-cache clojure-ts-semantic-indent-rules)))
                 0
                 t)
+
+      ;; Improve navigation by matching parenthesis for Emacs 31+
+      (when (>= emacs-major-version 31)
+        (setq-local up-list-function
+                    (lambda (&optional arg escape-strings no-syntax-crossing)
+                      (let ((treesit-sexp-type-regexp 'sexp))
+                        (treesit-up-list arg escape-strings no-syntax-crossing)))))
 
       ;; Workaround for treesit-transpose-sexps not correctly working with
       ;; treesit-thing-settings on Emacs 30.

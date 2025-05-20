@@ -5,6 +5,7 @@
 - [#96](https://github.com/clojure-emacs/clojure-ts-mode/pull/96): Highlight function name properly in `extend-protocol` form.
 - [#96](https://github.com/clojure-emacs/clojure-ts-mode/pull/96): Add support for extend-protocol forms to `clojure-ts-add-arity` refactoring
   command.
+- [#98](https://github.com/clojure-emacs/clojure-ts-mode/pull/98): Slightly improved navigation by s-expressions for Emacs 31.
 
 ## 0.4.0 (2025-05-15)
 
