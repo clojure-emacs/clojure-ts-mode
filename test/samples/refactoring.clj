@@ -76,8 +76,13 @@
 (def my-name "Roma")
 
 (defn say-hello
-  []
+  ^String []
   (println "Hello" my-name))
+
+(defn foo
+  ^{:bla "meta"}
+  [arg]
+  body)
 
 (definline bad-sqr [x] `(* ~x ~x))
 
