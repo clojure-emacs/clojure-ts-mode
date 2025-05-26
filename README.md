@@ -123,11 +123,15 @@ Once installed, evaluate `clojure-ts-mode.el` and you should be ready to go.
 > `clojure-ts-mode` install the required grammars automatically, so for most
 > people no manual actions will be required.
 
-`clojure-ts-mode` makes use of two Tree-sitter grammars to work properly:
+`clojure-ts-mode` makes use of the following Tree-sitter grammars:
 
-- The Clojure grammar, mentioned earlier
-- [markdown-inline](https://github.com/MDeiml/tree-sitter-markdown), which
-will be used for docstrings if available and if `clojure-ts-use-markdown-inline` is enabled.
+- The [experimental](https://github.com/sogaiu/tree-sitter-clojure/tree/unstable-20250526) version Clojure grammar. This version includes a few
+  improvements, which potentially will be promoted to a stable release (See [the
+  discussion](https://github.com/sogaiu/tree-sitter-clojure/issues/65)). This grammar is required for proper work of `clojure-ts-mode`.
+- [markdown-inline](https://github.com/MDeiml/tree-sitter-markdown), which will be used for docstrings if available and if
+  `clojure-ts-use-markdown-inline` is enabled.
+- [tree-sitter-regex](https://github.com/tree-sitter/tree-sitter-regex/releases/tag/v0.24.3), which will be used for regex literals if available and if
+  `clojure-ts-use-regex-parser` is not `nil`.
 
 If you have `git` and a C compiler (`cc`) available on your system's `PATH`,
 `clojure-ts-mode` will install the
@@ -136,8 +140,14 @@ set to `t` (the default).
 
 If `clojure-ts-mode` fails to automatically install the grammar, you have the
 option to install it manually, Please, refer to the installation instructions of
-each required grammar and make sure you're install the versions expected. (see
-`clojure-ts-grammar-recipes` for details)
+each required grammar and make sure you're install the versions expected (see
+`clojure-ts-grammar-recipes` for details).
+
+If `clojure-ts-ensure-grammars` is enabled, `clojure-ts-mode` will try to upgrade
+the Clojure grammar if it's outdated. This might happen, when you activate
+`clojure-ts-mode` for the first time after package update. If grammar was
+previously installed, you might need to restart Emacs, because it has to reload
+the grammar binary.
 
 ### Upgrading Tree-sitter grammars
 

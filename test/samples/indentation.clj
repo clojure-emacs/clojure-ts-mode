@@ -228,14 +228,24 @@
  :foo
  "bar"}
 
-;; NOTE: List elements with metadata are not indented correctly.
+;; NOTE: It works well now with the alternative grammar.
 '(one
   two ^:foo
-      three)
+  three)
 
 ^{:nextjournal.clerk/visibility {:code :hide}}
 (defn actual
   [args])
+
+(println "Hello"
+         "World")
+
+#(println
+  "hello"
+  %)
+
+#(println "hello"
+          %)
 
 (def ^:private hello
   "World")

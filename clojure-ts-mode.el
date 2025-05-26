@@ -341,7 +341,7 @@ Only intended for use at development time.")
                "defmulti" "defn" "defn-" "defonce" "defprotocol" "defrecord"
                "defstruct" "deftype"
                "delay" "doall" "dorun" "doseq" "dosync" "dotimes" "doto"
-               "extend-protocol" "extend-type"
+               "extend-protocol" "extend-type" "extend"
                "for" "future"
                "gen-class" "gen-interface"
                "if-let" "if-not" "if-some" "import" "in-ns""io!"
@@ -419,24 +419,25 @@ if a third argument (the value) is provided.
 (defun clojure-ts--docstring-query (capture-symbol)
   "Return a query that captures docstrings with CAPTURE-SYMBOL."
   `(;; Captures docstrings in def
-    ((list_lit :anchor (meta_lit) :?
+    ((list_lit :anchor [(comment) (meta_lit) (old_meta_lit)] :*
                :anchor (sym_lit) @_def_symbol
-               :anchor (comment) :?
-               :anchor (sym_lit) ; variable name
-               :anchor (comment) :?
-               :anchor (str_lit) ,capture-symbol
-               :anchor (_)) ; the variable's value
+               :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+               ;; Variable name
+               :anchor (sym_lit)
+               :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+               :anchor (str_lit (str_content) ,capture-symbol) @font-lock-doc-face
+               ;; The variable's value
+               :anchor (_))
      (:match ,(clojure-ts-symbol-regexp clojure-ts-definition-docstring-symbols)
              @_def_symbol))
     ;; Captures docstrings in metadata of definitions
-    ((list_lit :anchor (sym_lit) @_def_symbol
-               :anchor (comment) :?
-               :anchor (sym_lit
-                        (meta_lit
-                         value: (map_lit
-                                 (kwd_lit) @_doc-keyword
-                                 :anchor
-                                 (str_lit) ,capture-symbol))))
+    ((list_lit :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+               :anchor (sym_lit) @_def_symbol
+               :anchor (comment) :*
+               :anchor (meta_lit
+                        value: (map_lit
+                                (kwd_lit) @_doc-keyword
+                                :anchor (str_lit (str_content) ,capture-symbol) @font-lock-doc-face)))
      ;; We're only supporting this on a fixed set of defining symbols
      ;; Existing regexes don't encompass def and defn
      ;; Naming another regex is very cumbersome.
@@ -448,21 +449,26 @@ if a third argument (the value) is provided.
              @_def_symbol)
      (:equal @_doc-keyword ":doc"))
     ;; Captures docstrings defn, defmacro, ns, and things like that
-    ((list_lit :anchor (meta_lit) :?
+    ((list_lit :anchor [(comment) (meta_lit) (old_meta_lit)] :*
                :anchor (sym_lit) @_def_symbol
-               :anchor (comment) :?
-               :anchor (sym_lit) ; function_name
-               :anchor (comment) :?
-               :anchor (str_lit) ,capture-symbol)
+               :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+               ;; Function_name
+               :anchor (sym_lit)
+               :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+               :anchor (str_lit (str_content) ,capture-symbol) @font-lock-doc-face)
      (:match ,(clojure-ts-symbol-regexp clojure-ts-function-docstring-symbols)
              @_def_symbol))
     ;; Captures docstrings in defprotcol, definterface
-    ((list_lit :anchor (sym_lit) @_def_symbol
-               (list_lit
-                :anchor (sym_lit) (vec_lit) :*
-                (str_lit) ,capture-symbol :anchor)
+    ((list_lit :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+               :anchor (sym_lit) @_def_symbol
+               (list_lit :anchor (sym_lit) (vec_lit) :*
+                         (str_lit (str_content) ,capture-symbol) @font-lock-doc-face)
                :*)
      (:match ,clojure-ts--interface-def-symbol-regexp @_def_symbol))))
+
+(defconst clojure-ts--match-docstring-query-compiled
+  (treesit-query-compile 'clojure (clojure-ts--docstring-query '@font-lock-doc-face))
+  "Precompiled query that matches a Clojure docstring.")
 
 (defun clojure-ts--treesit-range-settings (use-markdown-inline use-regex)
   "Return value for `treesit-range-settings' for `clojure-ts-mode'.
@@ -476,16 +482,14 @@ When USE-REGEX is non-nil, include range settings for regex parser."
      (treesit-range-rules
       :embed 'markdown-inline
       :host 'clojure
-      :offset '(1 . -1)
       :local t
       (clojure-ts--docstring-query '@capture)))
    (when use-regex
      (treesit-range-rules
       :embed 'regex
       :host 'clojure
-      :offset '(2 . -1)
       :local t
-      '((regex_lit) @capture)))))
+      '((regex_content) @capture)))))
 
 (defun clojure-ts--font-lock-settings (markdown-available regex-available)
   "Return font lock settings suitable for use in `treesit-font-lock-settings'.
@@ -531,19 +535,21 @@ literals with regex grammar."
     ;; `clojure.core'.
     :feature 'builtin
     :language 'clojure
-    `(((list_lit meta: _ :* :anchor (sym_lit !namespace name: (sym_name) @font-lock-keyword-face))
+    `(((list_lit :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+                 :anchor (sym_lit !namespace name: (sym_name) @font-lock-keyword-face))
        (:match ,clojure-ts--builtin-symbol-regexp @font-lock-keyword-face))
-      ((list_lit meta: _ :* :anchor
-                 (sym_lit namespace: ((sym_ns) @ns
-                                      (:equal "clojure.core" @ns))
-                          name: (sym_name) @font-lock-keyword-face))
+      ((list_lit :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+                 :anchor (sym_lit namespace: ((sym_ns) @ns
+                                              (:equal "clojure.core" @ns))
+                                  name: (sym_name) @font-lock-keyword-face))
        (:match ,clojure-ts--builtin-symbol-regexp @font-lock-keyword-face))
-      ((anon_fn_lit meta: _ :* :anchor (sym_lit !namespace name: (sym_name) @font-lock-keyword-face))
+      ((anon_fn_lit :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+                    :anchor (sym_lit !namespace name: (sym_name) @font-lock-keyword-face))
        (:match ,clojure-ts--builtin-symbol-regexp @font-lock-keyword-face))
-      ((anon_fn_lit meta: _ :* :anchor
-                    (sym_lit namespace: ((sym_ns) @ns
-                                         (:equal "clojure.core" @ns))
-                             name: (sym_name) @font-lock-keyword-face))
+      ((anon_fn_lit :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+                    :anchor (sym_lit namespace: ((sym_ns) @ns
+                                                 (:equal "clojure.core" @ns))
+                                     name: (sym_name) @font-lock-keyword-face))
        (:match ,clojure-ts--builtin-symbol-regexp @font-lock-keyword-face))
       ((sym_name) @font-lock-builtin-face
        (:match ,clojure-ts--builtin-dynamic-var-regexp @font-lock-builtin-face)))
@@ -565,8 +571,9 @@ literals with regex grammar."
     ;; No wonder the tree-sitter-clojure grammar only touches syntax, and not semantics
     :feature 'definition ;; defn and defn like macros
     :language 'clojure
-    `(((list_lit :anchor meta: _ :*
+    `(((list_lit :anchor [(comment) (meta_lit) (old_meta_lit)] :*
                  :anchor (sym_lit (sym_name) @font-lock-keyword-face)
+                 :anchor [(comment) (meta_lit) (old_meta_lit)] :*
                  :anchor (sym_lit (sym_name) @font-lock-function-name-face))
        (:match ,(rx-to-string
                  `(seq bol
@@ -579,25 +586,27 @@ literals with regex grammar."
                         "deftest"
                         "deftest-"
                         "defmacro"
-                        "definline")
+                        "definline"
+                        "defonce")
                        eol))
                @font-lock-keyword-face))
       ((anon_fn_lit
         marker: "#" @font-lock-property-face))
       ;; Methods implementation
       ((list_lit
-        ((sym_lit name: (sym_name) @def)
-         ((:match ,(rx-to-string
-                    `(seq bol
-                          (or
-                           "defrecord"
-                           "definterface"
-                           "deftype"
-                           "defprotocol")
-                          eol))
-                  @def)))
-        :anchor
-        (sym_lit (sym_name) @font-lock-type-face)
+        :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+        :anchor ((sym_lit name: (sym_name) @def)
+                 ((:match ,(rx-to-string
+                            `(seq bol
+                                  (or
+                                   "defrecord"
+                                   "definterface"
+                                   "deftype"
+                                   "defprotocol")
+                                  eol))
+                          @def)))
+        :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+        :anchor (sym_lit (sym_name) @font-lock-type-face)
         (list_lit
          (sym_lit name: (sym_name) @font-lock-function-name-face))))
       ((list_lit
@@ -605,7 +614,8 @@ literals with regex grammar."
          ((:match ,(rx-to-string
                     `(seq bol
                           (or "reify"
-                              "extend-protocol")
+                              "extend-protocol"
+                              "extend-type")
                           eol))
                   @def)))
         (list_lit
@@ -620,8 +630,9 @@ literals with regex grammar."
 
     :feature 'variable ;; def, defonce
     :language 'clojure
-    `(((list_lit :anchor meta: _ :*
+    `(((list_lit :anchor [(comment) (meta_lit) (old_meta_lit)] :*
                  :anchor (sym_lit (sym_name) @font-lock-keyword-face)
+                 :anchor [(comment) (meta_lit) (old_meta_lit)] :*
                  :anchor (sym_lit (sym_name) @font-lock-variable-name-face))
        (:match ,clojure-ts--variable-definition-symbol-regexp @font-lock-keyword-face)))
 
@@ -669,7 +680,7 @@ literals with regex grammar."
      (treesit-font-lock-rules
       :feature 'doc
       :language 'markdown-inline
-      :override t
+      :override 'prepend
       `([((image_description) @link)
          ((link_destination) @font-lock-constant-face)
          ((code_span) @font-lock-constant-face)
@@ -744,6 +755,7 @@ literals with regex grammar."
     `((comment) @font-lock-comment-face
       (dis_expr
        marker: "#_" @font-lock-comment-delimiter-face
+       meta: (meta_lit) :* @font-lock-comment-face
        value: _ @font-lock-comment-face)
       (,(append
          '(list_lit :anchor (sym_lit) @font-lock-comment-delimiter-face)
@@ -788,7 +800,8 @@ literals with regex grammar."
 
 (defun clojure-ts--metadata-node-p (node)
   "Return non-nil if NODE is a Clojure metadata node."
-  (string-equal "meta_lit" (treesit-node-type node)))
+  (or (string-equal "meta_lit" (treesit-node-type node))
+      (string-equal "old_meta_lit" (treesit-node-type node))))
 
 (defun clojure-ts--var-node-p (node)
   "Return non-nil if NODE is a var (eg.  #\\'foo)."
@@ -821,11 +834,11 @@ Skip the optional metadata node at pos 0 if present."
        n)
      t)))
 
-(defun clojure-ts--node-with-metadata-parent (node)
-  "Return parent for NODE only if NODE has metadata, otherwise return nil."
-  (when-let* ((prev-sibling (treesit-node-prev-sibling node))
-              ((clojure-ts--metadata-node-p prev-sibling)))
-    (treesit-node-parent (treesit-node-parent node))))
+(defun clojure-ts--first-value-child (node)
+  "Return the first value child of the NODE.
+
+This will skip metadata and comment nodes."
+  (treesit-node-child-by-field-name node "value"))
 
 (defun clojure-ts--symbol-matches-p (symbol-regexp node)
   "Return non-nil if NODE is a symbol that matches SYMBOL-REGEXP."
@@ -1043,6 +1056,7 @@ The possible values for this variable are
     ("try"             . ((:block 0)))
     ("with-out-str"    . ((:block 0)))
     ("defprotocol"     . ((:block 1) (:inner 1)))
+    ("definterface"    . ((:block 1) (:inner 1)))
     ("binding"         . ((:block 1)))
     ("case"            . ((:block 1)))
     ("cond->"          . ((:block 1)))
@@ -1299,31 +1313,31 @@ indentation rule in `clojure-ts--semantic-indent-rules-defaults' or
 according to the rule.  If NODE is nil, use next node after BOL."
   (and (or (clojure-ts--list-node-p parent)
            (clojure-ts--anon-fn-node-p parent))
-       (let* ((first-child (clojure-ts--node-child-skip-metadata parent 0)))
+       (let* ((first-child (clojure-ts--first-value-child parent)))
          (when-let* ((rule (clojure-ts--find-semantic-rule node parent 0)))
-           (and (not (clojure-ts--match-with-metadata node))
-                (let ((rule-type (car rule))
-                      (rule-value (cadr rule)))
-                  (if (equal rule-type :block)
-                      (if (zerop rule-value)
-                          ;; Special treatment for block 0 rule.
-                          (clojure-ts--match-block-0-body bol first-child)
-                        (clojure-ts--node-pos-match-block node parent bol rule-value))
-                    ;; Return true for any inner rule.
-                    t)))))))
+           (let ((rule-type (car rule))
+                 (rule-value (cadr rule)))
+             (if (equal rule-type :block)
+                 (if (zerop rule-value)
+                     ;; Special treatment for block 0 rule.
+                     (clojure-ts--match-block-0-body bol first-child)
+                   (clojure-ts--node-pos-match-block node parent bol rule-value))
+               ;; Return true for any inner rule.
+               t))))))
 
 (defun clojure-ts--match-function-call-arg (node parent _bol)
   "Match NODE if PARENT is a list expressing a function or macro call."
   (and (or (clojure-ts--list-node-p parent)
            (clojure-ts--anon-fn-node-p parent))
-       ;; Can the following two clauses be replaced by checking indexes?
-       ;; Does the second child exist, and is it not equal to the current node?
-       (clojure-ts--node-child-skip-metadata parent 1)
-       (not (treesit-node-eq (clojure-ts--node-child-skip-metadata parent 1) node))
-       (let ((first-child (clojure-ts--node-child-skip-metadata parent 0)))
-         (or (clojure-ts--symbol-node-p first-child)
-             (clojure-ts--keyword-node-p first-child)
-             (clojure-ts--var-node-p first-child)))))
+       (let ((first-child (clojure-ts--first-value-child parent))
+             (second-child (clojure-ts--node-child-skip-metadata parent 1)))
+         (and first-child
+              ;; Does the second child exist, and is it not equal to the current node?
+              second-child
+              (not (treesit-node-eq second-child node))
+              (or (clojure-ts--symbol-node-p first-child)
+                  (clojure-ts--keyword-node-p first-child)
+                  (clojure-ts--var-node-p first-child))))))
 
 (defvar clojure-ts--threading-macro
   (eval-and-compile
@@ -1336,55 +1350,25 @@ according to the rule.  If NODE is nil, use next node after BOL."
   ;; If not, then align function arg.
   (and (or (clojure-ts--list-node-p parent)
            (clojure-ts--anon-fn-node-p parent))
-       (let ((first-child (treesit-node-child parent 0 t)))
+       (let ((first-child (clojure-ts--first-value-child parent)))
          (clojure-ts--symbol-matches-p
           clojure-ts--threading-macro
           first-child))))
 
-(defun clojure-ts--match-fn-docstring (node)
-  "Match NODE when it is a docstring for PARENT function definition node."
-  ;; A string that is the third node in a function defn block
-  (let ((parent (treesit-node-parent node)))
-    (and (treesit-node-eq node (treesit-node-child parent 2 t))
-         (let ((first-auncle (treesit-node-child parent 0 t)))
-           (clojure-ts--symbol-matches-p
-            (regexp-opt clojure-ts-function-docstring-symbols)
-            first-auncle)))))
-
-(defun clojure-ts--match-def-docstring (node)
-  "Match NODE when it is a docstring for PARENT variable definition node."
-  ;; A string that is the fourth node in a variable definition block.
-  (let ((parent (treesit-node-parent node)))
-    (and (treesit-node-eq node (treesit-node-child parent 2 t))
-         ;; There needs to be a value after the string.
-         ;; If there is no 4th child, then this string is the value.
-         (treesit-node-child parent 3 t)
-         (let ((first-auncle (treesit-node-child parent 0 t)))
-           (clojure-ts--symbol-matches-p
-            (regexp-opt clojure-ts-definition-docstring-symbols)
-            first-auncle)))))
-
-(defun clojure-ts--match-method-docstring (node)
-  "Match NODE when it is a docstring in a method definition."
-  (let* ((grandparent (treesit-node-parent ;; the protocol/interface
-                       (treesit-node-parent node))) ;; the method definition
-         (first-grandauncle (treesit-node-child grandparent 0 t)))
-    (clojure-ts--symbol-matches-p
-     clojure-ts--interface-def-symbol-regexp
-     first-grandauncle)))
-
 (defun clojure-ts--match-docstring (_node parent _bol)
   "Match PARENT when it is a docstring node."
-  (and (clojure-ts--string-node-p parent) ;; We are IN a string
-       (or (clojure-ts--match-def-docstring parent)
-           (clojure-ts--match-fn-docstring parent)
-           (clojure-ts--match-method-docstring parent))))
+  (when-let* ((top-level-node (treesit-parent-until parent 'defun t))
+              (result (treesit-query-capture top-level-node
+                                             clojure-ts--match-docstring-query-compiled)))
+    (seq-find (lambda (elt)
+                (and (eq (car elt) 'font-lock-doc-face)
+                     (treesit-node-eq (cdr elt) parent)))
+              result)))
 
 (defun clojure-ts--match-with-metadata (node &optional _parent _bol)
   "Match NODE when it has metadata."
-  (let ((prev-sibling (treesit-node-prev-sibling node)))
-    (and prev-sibling
-         (clojure-ts--metadata-node-p prev-sibling))))
+  (when-let* ((prev-sibling (treesit-node-prev-sibling node)))
+    (clojure-ts--metadata-node-p prev-sibling)))
 
 (defun clojure-ts--anchor-parent-opening-paren (_node parent _bol)
   "Return position of PARENT start for NODE.
@@ -1398,21 +1382,10 @@ for forms with type hints."
                 (treesit-search-subtree #'clojure-ts--opening-paren-node-p nil t 1)
                 (treesit-node-start)))
 
-(defun clojure-ts--match-collection-item-with-metadata (node-type)
-  "Return a matcher for a collection item with metadata by NODE-TYPE.
-
-The returned matcher accepts NODE, PARENT and BOL and returns true only
-if NODE has metadata and its parent has type NODE-TYPE."
-  (lambda (node _parent _bol)
-    (string-equal node-type
-                  (treesit-node-type
-                   (clojure-ts--node-with-metadata-parent node)))))
-
 (defun clojure-ts--anchor-nth-sibling (n)
   "Return the start of the Nth child of PARENT skipping metadata."
   (lambda (_n parent &rest _)
-    (treesit-node-start
-     (clojure-ts--node-child-skip-metadata parent n))))
+    (treesit-node-start (treesit-node-child parent n t))))
 
 (defun clojure-ts--semantic-indent-rules ()
   "Return a list of indentation rules for `treesit-simple-indent-rules'.
@@ -1425,19 +1398,6 @@ used."
   `((clojure
      ((parent-is "^source$") parent-bol 0)
      (clojure-ts--match-docstring parent 0)
-     ;; Collections items with metadata.
-     ;;
-     ;; This should be before `clojure-ts--match-with-metadata', otherwise they
-     ;; will never be matched.
-     (,(clojure-ts--match-collection-item-with-metadata "^vec_lit$") grand-parent 1)
-     (,(clojure-ts--match-collection-item-with-metadata "^map_lit$") grand-parent 1)
-     (,(clojure-ts--match-collection-item-with-metadata "^set_lit$") grand-parent 2)
-     ;;
-     ;; If we enable this rule for lists, it will break many things.
-     ;; (,(clojure-ts--match-collection-item-with-metadata "list_lit") grand-parent 1)
-     ;;
-     ;; All other forms with metadata.
-     (clojure-ts--match-with-metadata parent 0)
      ;; Literal Sequences
      ((parent-is "^vec_lit$") parent 1) ;; https://guide.clojure.style/#bindings-alignment
      ((parent-is "^map_lit$") parent 1) ;; https://guide.clojure.style/#map-keys-alignment
@@ -1453,7 +1413,9 @@ used."
      ;; https://guide.clojure.style/#vertically-align-fn-args
      (clojure-ts--match-function-call-arg ,(clojure-ts--anchor-nth-sibling 1) 0)
      ;; https://guide.clojure.style/#one-space-indent
-     ((parent-is "^list_lit$") parent 1))))
+     ((parent-is "^list_lit$") parent 1)
+     ((parent-is "^anon_fn_lit$") parent 2)
+     (clojure-ts--match-with-metadata parent 0))))
 
 (defun clojure-ts--configured-indent-rules ()
   "Gets the configured choice of indent rules."
@@ -1496,7 +1458,7 @@ of the first symbol of a functional literal NODE."
   (when (or (clojure-ts--list-node-p node)
             (and include-anon-fn-lit
                  (clojure-ts--anon-fn-node-p node)))
-    (when-let* ((first-child (clojure-ts--node-child-skip-metadata node 0))
+    (when-let* ((first-child (clojure-ts--first-value-child node))
                 ((clojure-ts--symbol-node-p first-child)))
       (clojure-ts--named-node-text first-child))))
 
@@ -1545,10 +1507,19 @@ function literal."
     "code_span")
   "Nodes representing s-expressions in the `markdown-inline' parser.")
 
+(defun clojure-ts--default-sexp-node-p (node)
+  "Return TRUE if point is after the # marker of set or function literal NODE."
+  (and (eq (char-before (point)) ?\#)
+       (string-match-p (rx bol (or "anon_fn_lit" "set_lit") eol)
+                       (treesit-node-type (treesit-node-parent node)))))
+
 (defconst clojure-ts--thing-settings
   `((clojure
      (sexp ,(regexp-opt clojure-ts--sexp-nodes))
      (list ,(regexp-opt clojure-ts--list-nodes))
+     (sexp-default
+      ;; For `C-M-f' in "#|(a)" or "#|{1 2 3}"
+      (,(rx (or "(" "{")) . ,#'clojure-ts--default-sexp-node-p))
      (text ,(regexp-opt '("comment")))
      (defun ,#'clojure-ts--defun-node-p))
     (when clojure-ts-use-markdown-inline
@@ -1598,10 +1569,7 @@ BOUND bounds the whitespace search."
               (point))
           (when-let* ((cur-sexp (treesit-node-first-child-for-pos root-node (point) t)))
             (goto-char (treesit-node-start cur-sexp))
-            (if (and (string= "sym_lit" (treesit-node-type cur-sexp))
-                     (clojure-ts--metadata-node-p (treesit-node-child cur-sexp 0 t))
-                     (and (not (treesit-node-child-by-field-name cur-sexp "value"))
-                          (string-empty-p (clojure-ts--named-node-text cur-sexp))))
+            (if (clojure-ts--metadata-node-p cur-sexp)
                 (treesit-end-of-thing 'sexp 2 'restricted)
               (treesit-end-of-thing 'sexp 1 'restricted))
             (when (looking-at-p ",")
@@ -1913,6 +1881,7 @@ parenthesis."
       (delete-region beg (point))
       ;; `raise-sexp' doesn't work properly for function literals (it loses one
       ;; of the parenthesis).  Seems like an Emacs' bug.
+      (backward-up-list)
       (delete-pair))))
 
 (defun clojure-ts--fix-sexp-whitespace ()
@@ -1952,19 +1921,25 @@ With universal argument \\[universal-argument], fully unwinds thread."
               (end (thread-first threading-sexp
                                  (treesit-node-end)
                                  (copy-marker))))
-          (while (> n 0)
-            (cond
-             ((string-match-p (rx bol (* "some") "->" eol) sym)
-              (clojure-ts--unwind-thread-first))
-             ((string-match-p (rx bol (* "some") "->>" eol) sym)
-              (clojure-ts--unwind-thread-last)))
-            (setq n (1- n))
-            ;; After unwinding we check if it is the last expression and maybe
-            ;; splice it.
-            (when (clojure-ts--nothing-more-to-unwind)
-              (clojure-ts--pop-out-of-threading)
-              (clojure-ts--fix-sexp-whitespace)
-              (setq n 0)))
+          ;; If it's the last expression, just raise it out of the threading
+          ;; macro.
+          (if (clojure-ts--nothing-more-to-unwind)
+              (progn
+                (clojure-ts--pop-out-of-threading)
+                (clojure-ts--fix-sexp-whitespace))
+            (while (> n 0)
+              (cond
+               ((string-match-p (rx bol (* "some") "->" eol) sym)
+                (clojure-ts--unwind-thread-first))
+               ((string-match-p (rx bol (* "some") "->>" eol) sym)
+                (clojure-ts--unwind-thread-last)))
+              (setq n (1- n))
+              ;; After unwinding we check if it is the last expression and maybe
+              ;; splice it.
+              (when (clojure-ts--nothing-more-to-unwind)
+                (clojure-ts--pop-out-of-threading)
+                (clojure-ts--fix-sexp-whitespace)
+                (setq n 0))))
           (indent-region beg end)
           (delete-trailing-whitespace beg end)))
     (user-error "No threading form to unwind at point")))
@@ -2117,9 +2092,9 @@ type, etc.  See `treesit-thing-settings' for more details."
 (defun clojure-ts--add-arity-internal (fn-node)
   "Add an arity to a function defined by FN-NODE."
   (let* ((first-coll (clojure-ts--node-child fn-node (rx bol (or "vec_lit" "list_lit") eol)))
-         (coll-start (clojure-ts--node-start-skip-metadata first-coll))
+         (coll-start (treesit-node-start first-coll))
          (line-parent (thread-first fn-node
-                                    (clojure-ts--node-child-skip-metadata 0)
+                                    (clojure-ts--first-value-child)
                                     (treesit-node-start)
                                     (line-number-at-pos)))
          (line-args (line-number-at-pos coll-start))
@@ -2138,7 +2113,7 @@ type, etc.  See `treesit-thing-settings' for more details."
 (defun clojure-ts--add-arity-defprotocol-internal (fn-node)
   "Add an arity to a defprotocol function defined by FN-NODE."
   (let* ((args-vec (clojure-ts--node-child fn-node (rx bol "vec_lit" eol)))
-         (args-vec-start (clojure-ts--node-start-skip-metadata args-vec))
+         (args-vec-start (treesit-node-start args-vec))
          (line-parent (thread-first fn-node
                                     (clojure-ts--node-child-skip-metadata 0)
                                     (treesit-node-start)
@@ -2158,7 +2133,7 @@ type, etc.  See `treesit-thing-settings' for more details."
 (defun clojure-ts--add-arity-reify-internal (fn-node)
   "Add an arity to a reify function defined by FN-NODE."
   (let* ((fn-name (clojure-ts--list-node-sym-text fn-node)))
-    (goto-char (clojure-ts--node-start-skip-metadata fn-node))
+    (goto-char (treesit-node-start fn-node))
     (insert "(" fn-name " [])")
     (newline-and-indent)
     ;; Put the point between sqare brackets.
@@ -2340,7 +2315,7 @@ before DELIM-OPEN."
                        ("when" "when-not")
                        ("when-not" "when"))))
         (save-excursion
-          (goto-char (clojure-ts--node-start-skip-metadata cond-node))
+          (goto-char (treesit-node-start cond-node))
           (down-list 1)
           (delete-char (length cond-sym))
           (insert new-sym)
@@ -2350,25 +2325,10 @@ before DELIM-OPEN."
           (indent-region beg end-marker)))
     (user-error "No conditional expression found")))
 
-(defun clojure-ts--point-outside-node-p (node)
-  "Return non-nil if point is outside of the actual NODE start.
-
-Clojure grammar treats metadata as part of an expression, so for example
-^boolean (not (= 2 2)) is a single list node, including metadata.  This
-causes issues for functions that navigate by s-expressions and lists.
-This function returns non-nil if point is outside of the outermost
-parenthesis."
-  (let* ((actual-node-start (clojure-ts--node-start-skip-metadata node))
-         (node-end (treesit-node-end node))
-         (pos (point)))
-    (or (< pos actual-node-start)
-        (> pos node-end))))
-
 (defun clojure-ts-cycle-not ()
   "Add or remove a not form around the current form."
   (interactive)
-  (if-let* ((list-node (clojure-ts--parent-until (rx bol "list_lit" eol)))
-            ((not (clojure-ts--point-outside-node-p list-node))))
+  (if-let* ((list-node (clojure-ts--parent-until (rx bol "list_lit" eol))))
       (let ((beg (treesit-node-start list-node))
             (end-marker (copy-marker (treesit-node-end list-node)))
             (pos (copy-marker (point) t)))
@@ -2475,7 +2435,7 @@ parenthesis."
 
 (defconst clojure-ts-grammar-recipes
   '((clojure "https://github.com/sogaiu/tree-sitter-clojure.git"
-             "v0.0.13")
+             "unstable-20250526")
     (markdown-inline "https://github.com/MDeiml/tree-sitter-markdown"
                      "v0.4.1"
                      "tree-sitter-markdown-inline/src")
@@ -2483,12 +2443,20 @@ parenthesis."
            "v0.24.3"))
   "Intended to be used as the value for `treesit-language-source-alist'.")
 
+(defun clojure-ts--grammar-outdated-p ()
+  "Return TRUE if currently installed grammar is outdated."
+  (treesit-query-valid-p 'clojure '((sym_lit (meta_lit)))))
+
 (defun clojure-ts--ensure-grammars ()
   "Install required language grammars if not already available."
   (when clojure-ts-ensure-grammars
     (dolist (recipe clojure-ts-grammar-recipes)
       (let ((grammar (car recipe)))
-        (unless (treesit-language-available-p grammar nil)
+        (when (or (not (treesit-language-available-p grammar nil))
+                  ;; If Clojure grammar is available, but outdated, re-install
+                  ;; it.
+                  (and (equal grammar 'clojure)
+                       (clojure-ts--grammar-outdated-p)))
           (message "Installing %s Tree-sitter grammar" grammar)
           ;; `treesit-language-source-alist' is dynamically scoped.
           ;; Binding it in this let expression allows
@@ -2686,11 +2654,15 @@ Useful if you want to switch to the `clojure-mode's mode mappings."
   (treesit-query-compile
    'clojure
    '(((source (list_lit
+               :anchor [(comment) (meta_lit) (old_meta_lit)] :*
                :anchor (sym_lit name: (sym_name) @ns)
+               :anchor [(comment) (meta_lit) (old_meta_lit)] :*
                :anchor (sym_lit name: (sym_name) @ns-name)))
       (:equal @ns "ns"))
      ((source (list_lit
+               :anchor [(comment) (meta_lit) (old_meta_lit)] :*
                :anchor (sym_lit name: (sym_name) @in-ns)
+               :anchor [(comment) (meta_lit) (old_meta_lit)] :*
                :anchor (quoting_lit
                         :anchor (sym_lit name: (sym_name) @ns-name))))
       (:equal @in-ns "in-ns")))))
