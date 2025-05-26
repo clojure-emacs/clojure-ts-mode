@@ -371,18 +371,22 @@ Only intended for use at development time.")
   "Return a regular expression that matches one of SYMBOLS exactly."
   (concat "^" (regexp-opt symbols) "$"))
 
-(defvar clojure-ts-function-docstring-symbols
-  '("definline"
-    "defmulti"
-    "defmacro"
-    "defn"
-    "defn-"
-    "defprotocol"
-    "ns")
+(defconst clojure-ts-function-docstring-symbols
+  (eval-and-compile
+    (rx line-start
+        (or "definline"
+            "defmulti"
+            "defmacro"
+            "defn"
+            "defn-"
+            "defprotocol"
+            "ns")
+        line-end))
   "Symbols that accept an optional docstring as their second argument.")
 
-(defvar clojure-ts-definition-docstring-symbols
-  '("def")
+(defconst clojure-ts-definition-docstring-symbols
+  (eval-and-compile
+    (rx line-start "def" line-end))
   "Symbols that accept an optional docstring as their second argument.
 Any symbols added here should only treat their second argument as a docstring
 if a third argument (the value) is provided.
@@ -428,7 +432,7 @@ if a third argument (the value) is provided.
                :anchor (str_lit (str_content) ,capture-symbol) @font-lock-doc-face
                ;; The variable's value
                :anchor (_))
-     (:match ,(clojure-ts-symbol-regexp clojure-ts-definition-docstring-symbols)
+     (:match ,clojure-ts-definition-docstring-symbols
              @_def_symbol))
     ;; Captures docstrings in metadata of definitions
     ((list_lit :anchor [(comment) (meta_lit) (old_meta_lit)] :*
@@ -456,7 +460,7 @@ if a third argument (the value) is provided.
                :anchor (sym_lit)
                :anchor [(comment) (meta_lit) (old_meta_lit)] :*
                :anchor (str_lit (str_content) ,capture-symbol) @font-lock-doc-face)
-     (:match ,(clojure-ts-symbol-regexp clojure-ts-function-docstring-symbols)
+     (:match ,clojure-ts-function-docstring-symbols
              @_def_symbol))
     ;; Captures docstrings in defprotcol, definterface
     ((list_lit :anchor [(comment) (meta_lit) (old_meta_lit)] :*
@@ -1498,7 +1502,15 @@ function literal."
                                              "definline"
                                              "defrecord"
                                              "defmacro"
-                                             "defmulti")
+                                             "defmulti"
+                                             "defonce"
+                                             "defprotocol"
+                                             "deftest"
+                                             "deftest-"
+                                             "ns"
+                                             "definterface"
+                                             "deftype"
+                                             "defstruct")
                                          eol)))
 
 (defconst clojure-ts--markdown-inline-sexp-nodes
@@ -1509,7 +1521,7 @@ function literal."
 
 (defun clojure-ts--default-sexp-node-p (node)
   "Return TRUE if point is after the # marker of set or function literal NODE."
-  (and (eq (char-before (point)) ?\#)
+  (and (eq (char-before) ?\#)
        (string-match-p (rx bol (or "anon_fn_lit" "set_lit") eol)
                        (treesit-node-type (treesit-node-parent node)))))
 
