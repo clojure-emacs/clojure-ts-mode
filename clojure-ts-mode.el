@@ -1570,7 +1570,10 @@ BOUND bounds the whitespace search."
           (when-let* ((cur-sexp (treesit-node-first-child-for-pos root-node (point) t)))
             (goto-char (treesit-node-start cur-sexp))
             (if (clojure-ts--metadata-node-p cur-sexp)
-                (treesit-end-of-thing 'sexp 2 'restricted)
+                (progn
+                  (treesit-end-of-thing 'sexp 1 'restricted)
+                  (just-one-space)
+                  (treesit-end-of-thing 'sexp 1 'restricted))
               (treesit-end-of-thing 'sexp 1 'restricted))
             (when (looking-at-p ",")
               (forward-char))
@@ -1603,6 +1606,33 @@ BOUND bounds the whitespace search."
                                        sexp-end
                                        t)))
 
+(defvar clojure-ts--align-query
+  (treesit-query-compile 'clojure
+                         (append
+                          `(((map_lit) @map)
+                            ((ns_map_lit) @ns-map)
+                            ((list_lit
+                              ((sym_lit) @sym
+                               (:match ,(clojure-ts-symbol-regexp clojure-ts-align-binding-forms) @sym))
+                              (vec_lit) @bindings-vec))
+                            ((list_lit
+                              ((sym_lit) @sym
+                               (:match ,(clojure-ts-symbol-regexp clojure-ts-align-cond-forms) @sym)))
+                             @cond)
+                            ((anon_fn_lit
+                              ((sym_lit) @sym
+                               (:match ,(clojure-ts-symbol-regexp clojure-ts-align-binding-forms) @sym))
+                              (vec_lit) @bindings-vec))
+                            ((anon_fn_lit
+                              ((sym_lit) @sym
+                               (:match ,(clojure-ts-symbol-regexp clojure-ts-align-cond-forms) @sym)))
+                             @cond)))))
+
+(defvar clojure-ts--align-reader-conditionals-query
+  (treesit-query-compile 'clojure
+                         '(((read_cond_lit) @read-cond)
+                           ((splicing_read_cond_lit) @read-cond))))
+
 (defun clojure-ts--get-nodes-to-align (beg end)
   "Return a plist of nodes data for alignment.
 
@@ -1617,31 +1647,15 @@ have changed."
   ;; By default `treesit-query-capture' captures all nodes that cross the range.
   ;; We need to restrict it to only nodes inside of the range.
   (let* ((region-node (clojure-ts--region-node beg end))
-         (query (treesit-query-compile 'clojure
-                                       (append
-                                        `(((map_lit) @map)
-                                          ((ns_map_lit) @ns-map)
-                                          ((list_lit
-                                            ((sym_lit) @sym
-                                             (:match ,(clojure-ts-symbol-regexp clojure-ts-align-binding-forms) @sym))
-                                            (vec_lit) @bindings-vec))
-                                          ((list_lit
-                                            ((sym_lit) @sym
-                                             (:match ,(clojure-ts-symbol-regexp clojure-ts-align-cond-forms) @sym)))
-                                           @cond)
-                                          ((anon_fn_lit
-                                            ((sym_lit) @sym
-                                             (:match ,(clojure-ts-symbol-regexp clojure-ts-align-binding-forms) @sym))
-                                            (vec_lit) @bindings-vec))
-                                          ((anon_fn_lit
-                                            ((sym_lit) @sym
-                                             (:match ,(clojure-ts-symbol-regexp clojure-ts-align-cond-forms) @sym)))
-                                           @cond))
-                                        (when clojure-ts-align-reader-conditionals
-                                          '(((read_cond_lit) @read-cond)
-                                            ((splicing_read_cond_lit) @read-cond)))))))
-    (thread-last (treesit-query-capture region-node query beg end)
+         (nodes (append (treesit-query-capture region-node clojure-ts--align-query beg end)
+                        (when clojure-ts-align-reader-conditionals
+                          (treesit-query-capture region-node clojure-ts--align-reader-conditionals-query beg end)))))
+    (thread-last nodes
                  (seq-remove (lambda (elt) (eq (car elt) 'sym)))
+                 ;; Reverse the result to align the most deeply nested nodes
+                 ;; first.  This way we can prevent breaking alignment of outer
+                 ;; nodes.
+                 (seq-reverse)
                  ;; When first node is reindented, all other nodes become
                  ;; outdated.  Executing the entire query everytime is very
                  ;; expensive, instead we use markers for every captured node to
