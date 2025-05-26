@@ -5,6 +5,12 @@
 - [#96](https://github.com/clojure-emacs/clojure-ts-mode/pull/96): Highlight function name properly in `extend-protocol` form.
 - [#96](https://github.com/clojure-emacs/clojure-ts-mode/pull/96): Add support for extend-protocol forms to `clojure-ts-add-arity` refactoring
   command.
+- Improve navigation by s-expression by switching to an experimental Clojure
+  grammar.
+- More consistent docstrings highlighting and `fill-paragraph` behavior.
+- Fix bug in `clojure-ts-align` when nested form has extra spaces.
+- Fix bug in `clojure-ts-unwind` when there is only one expression after threading
+  symbol.
 
 ## 0.4.0 (2025-05-15)
 

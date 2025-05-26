@@ -205,6 +205,13 @@
     (clojure-ts-unwind)
     (clojure-ts-unwind))
 
+  (when-refactoring-it "should work correctly when there is only one expression"
+    "(->> (filter even? [1 2 3 4]))"
+
+    "(filter even? [1 2 3 4])"
+
+    (clojure-ts-unwind))
+
   (when-refactoring-it "should unwind N steps with numeric prefix arg"
     "(->> [1 2 3 4 5]
      (filter even?)
