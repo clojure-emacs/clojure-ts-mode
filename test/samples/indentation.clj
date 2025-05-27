@@ -228,7 +228,6 @@
  :foo
  "bar"}
 
-;; NOTE: It works well now with the alternative grammar.
 '(one
   two ^:foo
   three)
