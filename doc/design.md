@@ -253,8 +253,62 @@ To find more details one can evaluate the following expression in Emacs:
 
 ## Indentation
 
-TODO
+To enable the parser-based indentation engine, `clojure-ts-mode` sets the
+`treesit-simple-indent-rules` with the output of
+`clojure-ts--configured-indent-rules`, and then call `treesit-major-mode-setup`.
 
-## Semantic Interpretation in clojure-ts-mode
+According to the documentation of `treesit-simple-indnet-rules` variable, its
+values is:
 
-TODO: demonstrate how clojure-ts-mode creates semantic meaning from a given syntax tree. Show examples of how new semantic meaning can be added (with highlighting, indentation, etc).
+> A list of indent rule settings.
+> Each indent rule setting should be (LANGUAGE RULE...), where LANGUAGE is
+> a language symbol, and each RULE is of the form
+>
+>     (MATCHER ANCHOR OFFSET)
+>
+> MATCHER determines whether this rule applies, ANCHOR and
+> OFFSET together determines which column to indent to.
+
+For example rule like this:
+
+```emacs-lisp
+'((clojure
+   ((parent-is "^vec_lit$") parent 1)
+   ((parent-is "^map_lit$") parent 1)
+   ((parent-is "^set_lit$") parent 2)))
+```
+
+will indent any node whose parent node is a `vec_lit` or `map_lit` with 1 space,
+starting from the beginning of the parent node.  For `set_lit`, it will add two
+spaces because sets have two opening characters: `#` and `{`.
+
+In the example above, the `parent-is` matcher and `parent` anchor are built-in
+presets.  There are many predefined presets provided by Emacs.  The list of all
+available presets can be found in the documentation for the
+`treesit-simple-indent-presets` variable.
+
+Sometimes, more complex behavior than predefined built-in presets is required.
+In such cases, you can write your own matchers and anchors.  One good example is
+the `clojure-ts--match-form-body` matcher.  It attempts to match a node at point
+using the combined value of `clojure-ts--semantic-indent-rules-defaults` and
+`clojure-ts-semantic-indent-rules`.  These rules have a similar format to cljfmt
+indentation rules.  `clojure-ts-semantic-indent-rules` is a customization option
+that users can tweak.  `clojure-ts--match-form-body` traverses the syntax tree,
+starting from the node at point, towards the top of the tree in order to find a
+match.  In addition to `clojure-ts--semantic-indent-rules-defaults` and
+`clojure-ts-semantic-indent-rules`, it may also use `clojure-ts-get-indent-function`
+if it is not `nil`.  This function provides an API for dynamic indentation and
+must return a value compatible with `cider-nrepl`.  Searching for an indentation
+rule across all these variables is slow; therefore,
+`clojure-ts--semantic-indent-rules-cache` was introduced.  It is set when
+`clojure-ts-mode` is activated in a Clojure source buffer and refreshed every time
+`clojure-ts-semantic-indent-rules` is updated (using setopt or the customization
+interface) or when a `.dir-locals.el` file is updated.
+
+### Additional information
+
+To find more details one can evaluate the following expression in Emacs:
+
+```emacs-lisp
+(info "(elisp) Parser-based Indentation")
+```
