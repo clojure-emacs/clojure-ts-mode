@@ -306,7 +306,7 @@ Only intended for use at development time.")
   "Syntax table for `clojure-ts-mode'.")
 
 (defconst clojure-ts--builtin-dynamic-var-regexp
-  (eval-and-compile
+  (eval-when-compile
     (concat "^"
             (regexp-opt
              '("*1" "*2" "*3" "*agent*"
@@ -323,7 +323,7 @@ Only intended for use at development time.")
             "$")))
 
 (defconst clojure-ts--builtin-symbol-regexp
-  (eval-and-compile
+  (eval-when-compile
     (concat "^"
             (regexp-opt
              '("do" "if" "let*" "var"
@@ -372,52 +372,46 @@ Only intended for use at development time.")
   (concat "^" (regexp-opt symbols) "$"))
 
 (defconst clojure-ts-function-docstring-symbols
-  (eval-and-compile
-    (rx line-start
-        (or "definline"
-            "defmulti"
-            "defmacro"
-            "defn"
-            "defn-"
-            "defprotocol"
-            "ns")
-        line-end))
+  (rx line-start
+      (or "definline"
+          "defmulti"
+          "defmacro"
+          "defn"
+          "defn-"
+          "defprotocol"
+          "ns")
+      line-end)
   "Symbols that accept an optional docstring as their second argument.")
 
 (defconst clojure-ts-definition-docstring-symbols
-  (eval-and-compile
-    (rx line-start "def" line-end))
+  (rx line-start "def" line-end)
   "Symbols that accept an optional docstring as their second argument.
 Any symbols added here should only treat their second argument as a docstring
 if a third argument (the value) is provided.
 \"def\" is the only builtin Clojure symbol that behaves like this.")
 
 (defconst clojure-ts--variable-definition-symbol-regexp
-  (eval-and-compile
-    (rx line-start (or "def" "defonce") line-end))
+  (rx line-start (or "def" "defonce") line-end)
   "A regular expression matching a symbol used to define a variable.")
 
 (defconst clojure-ts--typedef-symbol-regexp
-  (eval-and-compile
-    (rx line-start
-        (or "defprotocol" "defmulti" "deftype" "defrecord"
-            "definterface" "defmethod" "defstruct")
-        line-end))
+  (rx line-start
+      (or "defprotocol" "defmulti" "deftype" "defrecord"
+          "definterface" "defmethod" "defstruct")
+      line-end)
   "A regular expression matching a symbol used to define a type.")
 
 (defconst clojure-ts--type-symbol-regexp
-  (eval-and-compile
-    (rx line-start
-        (or "deftype" "defrecord"
-            ;; While not reifying, helps with doc strings
-            "defprotocol" "definterface"
-            "reify" "proxy" "extend-type" "extend-protocol")
-        line-end))
+  (rx line-start
+      (or "deftype" "defrecord"
+          ;; While not reifying, helps with doc strings
+          "defprotocol" "definterface"
+          "reify" "proxy" "extend-type" "extend-protocol")
+      line-end)
   "A regular expression matching a symbol used to define or instantiate a type.")
 
 (defconst clojure-ts--interface-def-symbol-regexp
-  (eval-and-compile
-    (rx line-start (or "defprotocol" "definterface") line-end))
+  (rx line-start (or "defprotocol" "definterface") line-end)
   "A regular expression matching a symbol used to define an interface.")
 
 (defun clojure-ts--docstring-query (capture-symbol)

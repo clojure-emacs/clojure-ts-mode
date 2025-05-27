@@ -32,29 +32,43 @@ In short:
 
 ## tree-sitter-clojure
 
-Clojure-ts-mode uses the tree-sitter-clojure grammar, which can be found at <https://github.com/sogaiu/tree-sitter-clojure>
-The clojure-ts-mode grammar provides very basic, low level nodes that try to match Clojure's very light syntax.
+`clojure-ts-mode` uses the experimental version tree-sitter-clojure grammar, which
+can be found at
+<https://github.com/sogaiu/tree-sitter-clojure/tree/unstable-20250526>. The
+`clojure-ts-mode` grammar provides very basic, low level nodes that try to match
+Clojure's very light syntax.
 
 There are nodes to represent:
 
-- Symbols (sym_lit)
-  - Contain (sym_ns) and (sym_name) nodes
-- Keywords (kwd_lit)
-  - Contain (kwd_ns) and (kw_name) nodes
-- Strings (str_lit)
-- Chars (char_lit)
-- Nil (nil_lit)
-- Booleans (bool_lit)
-- Numbers (num_lit)
-- Comments (comment, dis_expr)
-  - dis_expr is the `#_` discard expression
-- Lists (list_list)
-- Vectors (vec_lit)
-- Maps (map_lit)
-- Sets (set_lit)
+- Symbols `(sym_lit)`
+  - Contain `(sym_ns)` and `(sym_name)` nodes
+- Keywords `(kwd_lit)`
+  - Contain `(kwd_ns)` and `(kw_name)` nodes
+- Strings `(str_lit)`
+  - Contains `(str_content)` node
+- Chars `(char_lit)`
+- Nil `(nil_lit)`
+- Booleans `(bool_lit)`
+- Numbers `(num_lit)`
+- Comments `(comment, dis_expr)`
+  - `dis_expr` is the `#_` discard expression
+- Lists `(list_list)`
+- Vectors `(vec_lit)`
+- Maps `(map_lit)`
+- Sets `(set_lit)`
+- Metadata nodes `(meta_lit)`
+- Regex content `(regex_content)`
+- Function literals `(anon_fn_lit)`
 
-There are also nodes to represent metadata, which appear on `meta:` child fields of the nodes the metadata is defined on.
-For example a simple vector with metadata defined on it like so
+The best place to learn more about the tree-sitter-clojure grammar is to read
+the [grammar.js file from the tree-sitter-clojure repository](https://github.com/sogaiu/tree-sitter-clojure/blob/master/grammar.js "grammar.js").
+
+### Difference between stable grammar and experimental
+
+#### Standalone metadata nodes
+
+Metadata nodes in stable grammar appear as child nodes of the nodes the metadata
+is defined on. For example a simple vector with metadata defined on it like so:
 
 ```clojure
 ^:has-metadata [1]
@@ -69,7 +83,27 @@ will produce a parse tree like so
   value: (num_lit))
 ```
 
-The best place to learn more about the tree-sitter-clojure grammar is to read the [grammar.js file from the tree-sitter-clojure repository](https://github.com/sogaiu/tree-sitter-clojure/blob/master/grammar.js "grammar.js").
+Although it's somewhat closer to hoe Clojure treats metadata itself, in the
+context of a text editor it creates some problems, which were discussed [here](https://github.com/sogaiu/tree-sitter-clojure/issues/65). To
+name a few:
+- `forward-sexp` command would skip both, metadata and the node it's attached
+  to. Called from an opening paren it would signal an error "No more sexp to
+  move across".
+- `kill-sexp` command would kill both, metadata and the node it's attached to.
+- `backward-up-list` called from the inside of a list with metadata would move
+  point to the beginning of metadata node.
+- Internally we had to introduce some workarounds to skip metadata nodes or
+  figure out where the actual node starts.
+
+#### Special nodes for string content and regex content
+
+To parse the content of certain strings with a separate grammar, it is necessary
+to extract the string's content, excluding its opening and closing quotes.  To
+achieve this, Emacs 31 allows specifying offsets for `treesit-range-settings`.
+However, in Emacs 30.1, this feature is broken due to bug [#77848](https://debbugs.gnu.org/cgi/bugreport.cgi?bug=77848) (a fix is
+anticipated in Emacs 30.2).  The presence of `str_content` and `regex_content` nodes
+allows us to support this feature across all Emacs versions without relying on
+offsets.
 
 ### Clojure Syntax, not Clojure Semantics
 
