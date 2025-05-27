@@ -2441,7 +2441,8 @@ parenthesis."
          ["Fully thread a form with ->>" clojure-ts-thread-last-all]
          "--"
          ["Unwind once" clojure-ts-unwind]
-         ["Fully unwind a threading macro" clojure-ts-unwind-all])))
+         ["Fully unwind a threading macro" clojure-ts-unwind-all])
+        ["Version" clojure-mode-display-version]))
     map)
   "Keymap for `clojure-ts-mode'.")
 
