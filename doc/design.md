@@ -183,7 +183,73 @@ changes in the grammar.
 
 ## Syntax Highlighting
 
-TODO
+To set up Tree-sitter fontification, `clojure-ts-mode` sets the
+`treesit-font-lock-settings` variable with the output of
+`clojure-ts--font-lock-settings`, and then calls `treesit-major-mode-setup`.
+
+`clojure-ts--font-lock-settings` returns a list of compiled queries.  Each query
+must have at least one capture name (names that start with `@`).  If a capture
+name matches an existing face name (e.g., `font-lock-keyword-face`), the
+captured node will be fontified with that face.
+
+A capture name can also be arbitrary and used to check the text of the captured
+node.  It can also be used for both fontification and text checking.  For
+example in the following query:
+
+```emacs-lisp
+`((list_lit :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+            :anchor (sym_lit !namespace name: (sym_name) @font-lock-keyword-face))
+  (:match ,clojure-ts--builtin-symbol-regexp @font-lock-keyword-face))
+```
+
+We match any list whose first symbol (skipping any number of comments and
+metadata nodes) does not have a namespace and matches a regex stored in the
+`clojure-ts--builtin-symbol-regexp` variable.  The matched symbol is fontified
+using `font-lock-keyword-face`.
+
+### Embedded parsers
+
+The Clojure grammar in `clojure-ts-mode` is a main or "host" grammar.  Emacs
+also supports the use of any number of "embedded" grammars.  `clojure-ts-mode`
+currently uses the `markdown-inline` grammar to highlight Markdown constructs in
+docstrings and the `regex` grammar to highlight regular expression syntax.
+
+To use an embedded parser, `clojure-ts-mode` must set an appropriate value for
+the `treesit-range-settings` variable.  The Clojure grammar provides convenient
+nodes to capture only the content of strings and regexes, which makes defining
+range settings for regexes quite simple:
+
+```emacs-lisp
+(treesit-range-rules
+ :embed 'regex
+ :host 'clojure
+ :local t
+ '((regex_content) @capture))
+```
+
+For docstrings, the query is a bit more complex.  Therefore, we have the
+function `clojure-ts--docstring-query`, which is used for syntax highlighting,
+indentation rules, and range settings for the embedded Markdown parser:
+
+```emacs-lisp
+(treesit-range-rules
+ :embed 'markdown-inline
+ :host 'clojure
+ :local t
+ (clojure-ts--docstring-query '@capture))
+ ```
+
+It is important to use the `:local` option for embedded parsers; otherwise, the
+range will not be restricted to the captured node, which will lead to broken
+fontification (see bug [#77733](https://debbugs.gnu.org/cgi/bugreport.cgi?bug=77733)).
+
+### Additional information
+
+To find more details one can evaluate the following expression in Emacs:
+
+```emacs-lisp
+(info "(elisp) Parser-based Font Lock")
+```
 
 ## Indentation
 
