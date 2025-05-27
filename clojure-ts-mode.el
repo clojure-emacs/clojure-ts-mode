@@ -128,6 +128,18 @@ double quotes on the third column."
   :safe #'booleanp
   :package-version '(clojure-ts-mode . "0.4"))
 
+(defcustom clojure-ts-clojurescript-use-js-parser t
+  "When non-nil, use JS grammar to highlight syntax in js* forms."
+  :type 'boolean
+  :safe #'booleanp
+  :package-version '(clojure-ts-mode . "0.5"))
+
+(defcustom clojure-ts-jank-use-cpp-parser t
+  "When non-nil, use C++ grammar to highlight syntax in native/raw forms."
+  :type 'boolean
+  :safe #'booleanp
+  :package-version '(clojure-ts-mode . "0.5"))
+
 (defcustom clojure-ts-auto-remap t
   "When non-nil, redirect all `clojure-mode' buffers to `clojure-ts-mode'."
   :safe #'booleanp
@@ -489,6 +501,34 @@ When USE-REGEX is non-nil, include range settings for regex parser."
       :local t
       '((regex_content) @capture)))))
 
+(defun clojure-ts--fontify-string (node override _start _end &optional _rest)
+  "Fontify string content NODE with `font-lock-string-face'.
+
+In order to support embedded syntax highlighting for JS in ClojureScript
+and C++ in Jank we need to avoid fontifying string content in some
+special forms, such as native/raw in Jank and js* in ClojureScript,
+otherwise string face will interfere with embedded parser's faces.
+
+This function respects OVERRIDE argument by passing it to
+`treesit-fontify-with-override'.
+
+START and END arguments that are passed to this function are not start
+and end of the NODE, so we ignore them."
+  (let* ((prev (treesit-node-prev-sibling (treesit-node-parent node)))
+         (jank-native-p (and (derived-mode-p 'clojure-ts-jank-mode)
+                             clojure-ts-jank-use-cpp-parser
+                             (clojure-ts--symbol-node-p prev)
+                             (string= (treesit-node-text prev) "native/raw")))
+         (js-interop-p (and (derived-mode-p 'clojure-ts-clojurescript-mode)
+                            clojure-ts-clojurescript-use-js-parser
+                            (clojure-ts--symbol-node-p prev)
+                            (string= (treesit-node-text prev) "js*"))))
+    (when (not (or jank-native-p js-interop-p))
+      (treesit-fontify-with-override (treesit-node-start node)
+                                     (treesit-node-end node)
+                                     'font-lock-string-face
+                                     override))))
+
 (defun clojure-ts--font-lock-settings (markdown-available regex-available)
   "Return font lock settings suitable for use in `treesit-font-lock-settings'.
 
@@ -501,7 +541,9 @@ literals with regex grammar."
    (treesit-font-lock-rules
     :feature 'string
     :language 'clojure
-    '((str_lit) @font-lock-string-face
+    '((str_lit open: _ @font-lock-string-face
+               (str_content) @clojure-ts--fontify-string
+               close: _ @font-lock-string-face)
       (regex_lit) @font-lock-regexp-face)
 
     :feature 'regex
@@ -1400,7 +1442,6 @@ regexes with anchors matching the beginning and end of the line are
 used."
   `((clojure
      ((parent-is "^source$") parent-bol 0)
-     (clojure-ts--match-docstring parent 0)
      ;; Literal Sequences
      ((parent-is "^vec_lit$") parent 1) ;; https://guide.clojure.style/#bindings-alignment
      ((parent-is "^map_lit$") parent 1) ;; https://guide.clojure.style/#map-keys-alignment
@@ -1418,7 +1459,12 @@ used."
      ;; https://guide.clojure.style/#one-space-indent
      ((parent-is "^list_lit$") parent 1)
      ((parent-is "^anon_fn_lit$") parent 2)
-     (clojure-ts--match-with-metadata parent 0))))
+     (clojure-ts--match-with-metadata parent 0)
+     ;; This is slow and only matches when point is inside of a docstring and
+     ;; only when Markdown grammar is disabled.  `indent-region' tries to match
+     ;; all the rules from top to bottom, so order matters here (the slowest
+     ;; rules should be at the bottom).
+     (clojure-ts--match-docstring parent 0))))
 
 (defun clojure-ts--configured-indent-rules ()
   "Gets the configured choice of indent rules."
@@ -2518,6 +2564,44 @@ function can also be used to upgrade the grammars if they are outdated."
       (let ((treesit-language-source-alist clojure-ts-grammar-recipes))
         (treesit-install-language-grammar grammar)))))
 
+(defsubst clojure-ts--font-lock-setting-update-override (setting)
+  "Return SETTING with override set to TRUE."
+  (let ((new-setting (copy-tree setting)))
+    (setf (nth 3 new-setting) t)
+    new-setting))
+
+(defun clojure-ts--harvest-treesit-configs (mode)
+  "Harvest tree-sitter configs from MODE.
+Return a plist with the following keys and value:
+
+    :font-lock (from `treesit-font-lock-settings')
+    :simple-indent (from `treesit-simple-indent-rules')"
+  (with-temp-buffer
+    (funcall mode)
+    ;; We need to set :override t for all external queries, otherwise new faces
+    ;; won't be applied on top of the string face defined for `clojure-ts-mode'.
+    (list :font-lock (seq-map #'clojure-ts--font-lock-setting-update-override
+                              treesit-font-lock-settings)
+          :simple-indent treesit-simple-indent-rules)))
+
+(defun clojure-ts--add-config-for-mode (mode)
+  "Add configurations for MODE to current buffer.
+
+Configuration includes font-lock and indent.  For font-lock rules, use
+the same features enabled in MODE."
+  (let ((configs (clojure-ts--harvest-treesit-configs mode)))
+    (setq treesit-font-lock-settings
+          (append treesit-font-lock-settings
+                  (plist-get configs :font-lock)))
+    ;; FIXME: This works a bit aggressively.  `indent-region' always tries to
+    ;; use rules for embedded parser.  Without it users can format embedded code
+    ;; in an arbitrary way.
+    ;;
+    ;; (setq treesit-simple-indent-rules
+    ;;       (append treesit-simple-indent-rules
+    ;;               (plist-get configs :simple-indent)))
+    ))
+
 (defun clojure-ts-mode-variables (&optional markdown-available regex-available)
   "Initialize buffer-local variables for `clojure-ts-mode'.
 
@@ -2625,7 +2709,20 @@ REGEX-AVAILABLE."
 (define-derived-mode clojure-ts-clojurescript-mode clojure-ts-mode "ClojureScript[TS]"
   "Major mode for editing ClojureScript code.
 
-\\{clojure-ts-clojurescript-mode-map}")
+\\{clojure-ts-clojurescript-mode-map}"
+  (when (and clojure-ts-clojurescript-use-js-parser
+             (treesit-ready-p 'javascript t))
+    (setq-local treesit-range-settings
+                (append treesit-range-settings
+                        (treesit-range-rules
+                         :embed 'javascript
+                         :host 'clojure
+                         :local t
+                         '(((list_lit (sym_lit) @_sym-name
+                                      :anchor (str_lit (str_content) @capture))
+                            (:equal @_sym-name "js*"))))))
+    (clojure-ts--add-config-for-mode 'js-ts-mode)
+    (treesit-major-mode-setup)))
 
 ;;;###autoload
 (define-derived-mode clojure-ts-clojurec-mode clojure-ts-mode "ClojureC[TS]"
@@ -2643,7 +2740,20 @@ REGEX-AVAILABLE."
 (define-derived-mode clojure-ts-jank-mode clojure-ts-mode "Jank[TS]"
   "Major mode for editing Jank code.
 
-\\{clojure-ts-jank-mode-map}")
+\\{clojure-ts-jank-mode-map}"
+  (when (and clojure-ts-jank-use-cpp-parser
+             (treesit-ready-p 'cpp t))
+    (setq-local treesit-range-settings
+                (append treesit-range-settings
+                        (treesit-range-rules
+                         :embed 'cpp
+                         :host 'clojure
+                         :local t
+                         '(((list_lit (sym_lit) @_sym-name
+                                      :anchor (str_lit (str_content) @capture))
+                            (:equal @_sym-name "native/raw"))))))
+    (clojure-ts--add-config-for-mode 'c++-ts-mode)
+    (treesit-major-mode-setup)))
 
 (defun clojure-ts--register-novel-modes ()
   "Set up Clojure modes not present in progenitor clojure-mode.el."
