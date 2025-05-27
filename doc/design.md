@@ -83,9 +83,10 @@ will produce a parse tree like so
   value: (num_lit))
 ```
 
-Although it's somewhat closer to hoe Clojure treats metadata itself, in the
+Although it's somewhat closer to how Clojure treats metadata itself, in the
 context of a text editor it creates some problems, which were discussed [here](https://github.com/sogaiu/tree-sitter-clojure/issues/65). To
 name a few:
+
 - `forward-sexp` command would skip both, metadata and the node it's attached
   to. Called from an opening paren it would signal an error "No more sexp to
   move across".
