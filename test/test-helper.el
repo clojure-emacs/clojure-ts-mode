@@ -48,7 +48,7 @@ and point left there."
        ,@body)))
 
 (defun clojure-ts--s-index-of (needle s &optional ignore-case)
-  "Returns first index of NEEDLE in S, or nil.
+  "Return first index of NEEDLE in S, or nil.
 
 If IGNORE-CASE is non-nil, the comparison is done without paying
 attention to case differences."

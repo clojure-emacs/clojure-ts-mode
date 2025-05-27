@@ -833,7 +833,7 @@ Skip the optional metadata node at pos 0 if present."
      t)))
 
 (defun clojure-ts--first-value-child (node)
-  "Returns the first value child of the given NODE.
+  "Return the first value child of the given NODE.
 
 In the syntax tree, there are a few types of possible child nodes:
 unnamed standalone nodes (e.g., comments), anonymous nodes (e.g.,
@@ -885,7 +885,7 @@ See `clojure-ts--definition-node-p' when an exact match is possible."
 (defun clojure-ts--standard-definition-node-name (node)
   "Return the definition name for the given NODE.
 
-Returns nil if NODE is not a list with symbols as the first two
+Return nil if NODE is not a list with symbols as the first two
 children.  For example the node representing the expression (def foo 1)
 would return foo.  The node representing (ns user) would return user.
 Does not do any matching on the first symbol (def, defn, etc), so
@@ -909,7 +909,7 @@ Can be called directly, but intended for use as `treesit-defun-name-function'."
 (defun clojure-ts--kwd-definition-node-name (node)
   "Return the keyword name for the given NODE.
 
-Returns nil if NODE is not a list where the first element is a symbol
+Return nil if NODE is not a list where the first element is a symbol
 and the second is a keyword.  For example, a node representing the
 expression (s/def ::foo int?) would return foo.
 

@@ -124,7 +124,7 @@ DESCRIPTION is a string with the description of the spec."
 ;; Mock `cider--get-symbol-indent' function
 
 (defun cider--get-symbol-indent-mock (symbol-name)
-  "Returns static mocked indentation specs for SYMBOL-NAME if available."
+  "Return static mocked indentation specs for SYMBOL-NAME if available."
   (when (stringp symbol-name)
     (cond
      ((string-equal symbol-name "my-with-in-str") 1)
