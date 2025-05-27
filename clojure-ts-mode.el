@@ -470,7 +470,7 @@ if a third argument (the value) is provided.
                :*)
      (:match ,clojure-ts--interface-def-symbol-regexp @_def_symbol))))
 
-(defconst clojure-ts--match-docstring-query-compiled
+(defconst clojure-ts--match-docstring-query
   (treesit-query-compile 'clojure (clojure-ts--docstring-query '@font-lock-doc-face))
   "Precompiled query that matches a Clojure docstring.")
 
@@ -839,9 +839,14 @@ Skip the optional metadata node at pos 0 if present."
      t)))
 
 (defun clojure-ts--first-value-child (node)
-  "Return the first value child of the NODE.
+  "Returns the first value child of the given NODE.
 
-This will skip metadata and comment nodes."
+In the syntax tree, there are a few types of possible child nodes:
+unnamed standalone nodes (e.g., comments), anonymous nodes (e.g.,
+opening or closing parentheses), and named nodes.  Named nodes are
+standalone nodes that are labeled by a specific name.  The most common
+names are meta and value.  This function skips any unnamed, anonymous,
+and metadata nodes and returns the first value node."
   (treesit-node-child-by-field-name node "value"))
 
 (defun clojure-ts--symbol-matches-p (symbol-regexp node)
@@ -1363,7 +1368,7 @@ according to the rule.  If NODE is nil, use next node after BOL."
   "Match PARENT when it is a docstring node."
   (when-let* ((top-level-node (treesit-parent-until parent 'defun t))
               (result (treesit-query-capture top-level-node
-                                             clojure-ts--match-docstring-query-compiled)))
+                                             clojure-ts--match-docstring-query)))
     (seq-find (lambda (elt)
                 (and (eq (car elt) 'font-lock-doc-face)
                      (treesit-node-eq (cdr elt) parent)))
@@ -1529,6 +1534,9 @@ function literal."
   `((clojure
      (sexp ,(regexp-opt clojure-ts--sexp-nodes))
      (list ,(regexp-opt clojure-ts--list-nodes))
+     ;; `sexp-default' thing allows to fallback to the default implementation of
+     ;; `forward-sexp' function where `treesit-forward-sexp' produces undesired
+     ;; results.
      (sexp-default
       ;; For `C-M-f' in "#|(a)" or "#|{1 2 3}"
       (,(rx (or "(" "{")) . ,#'clojure-ts--default-sexp-node-p))
@@ -2470,8 +2478,13 @@ before DELIM-OPEN."
            "v0.24.3"))
   "Intended to be used as the value for `treesit-language-source-alist'.")
 
-(defun clojure-ts--grammar-outdated-p ()
-  "Return TRUE if currently installed grammar is outdated."
+(defun clojure-ts--clojure-grammar-outdated-p ()
+  "Return TRUE if currently installed grammar is outdated.
+
+This function checks if `clojure-ts-mode' is compatible with the
+currently installed grammar.  The simplest way to do this is to validate
+a query that is valid in a previous grammar version but invalid in the
+required version."
   (treesit-query-valid-p 'clojure '((sym_lit (meta_lit)))))
 
 (defun clojure-ts--ensure-grammars ()
@@ -2483,7 +2496,7 @@ before DELIM-OPEN."
                   ;; If Clojure grammar is available, but outdated, re-install
                   ;; it.
                   (and (equal grammar 'clojure)
-                       (clojure-ts--grammar-outdated-p)))
+                       (clojure-ts--clojure-grammar-outdated-p)))
           (message "Installing %s Tree-sitter grammar" grammar)
           ;; `treesit-language-source-alist' is dynamically scoped.
           ;; Binding it in this let expression allows
