@@ -133,6 +133,14 @@ Once installed, evaluate `clojure-ts-mode.el` and you should be ready to go.
 - [tree-sitter-regex](https://github.com/tree-sitter/tree-sitter-regex/releases/tag/v0.24.3), which will be used for regex literals if available and if
   `clojure-ts-use-regex-parser` is not `nil`.
 
+`clojure-ts-clojurescript-mode` can optionally use `tree-sitter-javascript` grammar
+to highlight JS syntax in `js*` forms.  This is enabled by default and can be
+turned off by setting `clojure-ts-clojurescript-use-js-parser` to `nil`.
+
+`clojure-ts-jank-mode` can optionally use `tree-sitter-cpp` grammar to highlight C++
+syntax in `native/raw` forms.  This is enabled by default and can be turned off by
+setting `clojure-ts-jank-use-cpp-parser` to `nil`.
+
 If you have `git` and a C compiler (`cc`) available on your system's `PATH`,
 `clojure-ts-mode` will install the
 grammars when you first open a Clojure file and `clojure-ts-ensure-grammars` is
