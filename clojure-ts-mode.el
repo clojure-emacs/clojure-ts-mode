@@ -2472,6 +2472,12 @@ before DELIM-OPEN."
            "v0.24.3"))
   "Intended to be used as the value for `treesit-language-source-alist'.")
 
+(defun clojure-ts--query-valid-p (query)
+  "Return non-nil if QUERY is valid in Clojure, nil otherwise."
+  (ignore-errors
+    (treesit-query-compile 'clojure query t)
+    t))
+
 (defun clojure-ts--clojure-grammar-outdated-p ()
   "Return TRUE if currently installed grammar is outdated.
 
@@ -2479,7 +2485,7 @@ This function checks if `clojure-ts-mode' is compatible with the
 currently installed grammar.  The simplest way to do this is to validate
 a query that is valid in a previous grammar version but invalid in the
 required version."
-  (treesit-query-valid-p 'clojure '((sym_lit (meta_lit)))))
+  (clojure-ts--query-valid-p '((sym_lit (meta_lit)))))
 
 (defun clojure-ts--ensure-grammars ()
   "Install required language grammars if not already available."
