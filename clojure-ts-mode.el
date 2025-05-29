@@ -2472,6 +2472,7 @@ before DELIM-OPEN."
            "v0.24.3"))
   "Intended to be used as the value for `treesit-language-source-alist'.")
 
+;; TODO: Eventually this should be replaced with `treesit-query-valid-p'
 (defun clojure-ts--query-valid-p (query)
   "Return non-nil if QUERY is valid in Clojure, nil otherwise."
   (ignore-errors
