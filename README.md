@@ -318,6 +318,37 @@ highlighted like regular Clojure code.
 > section](https://www.gnu.org/software/emacs/manual/html_node/emacs/Parser_002dbased-Font-Lock.html)
 > of the Emacs manual for more details.
 
+#### Extending font-lock rules
+
+In `clojure-ts-mode` it is possible to specify additional defn-like forms that
+should be fontified.  For example to highlight the following form from Hiccup
+library as a function definition:
+
+```clojure
+(defelem file-upload
+  "Creates a file upload input."
+  [name]
+  (input-field "file" name nil))
+```
+
+You can add `defelem` to `clojure-ts-extra-def-forms` list like this:
+
+```emacs-lisp
+(add-to-list 'clojure-ts-extra-def-forms "defelem")
+```
+
+or set this variable using `setopt`:
+
+```emacs-lisp
+(setopt clojure-ts-extra-def-forms '("defelem"))
+```
+
+This setting will highlight `defelem` symbol, function name and the docstring.
+
+**NOTE**: Setting `clojure-ts-extra-def-forms` won't change the indentation rule for
+these forms.  For indentation rules you should use
+`clojure-ts-semantic-indent-rules` variable (see [semantic indentation](#customizing-semantic-indentation) section).
+
 ### Highlight markdown syntax in docstrings
 
 By default Markdown syntax is highlighted in the docstrings using

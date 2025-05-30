@@ -230,3 +230,22 @@ DESCRIPTION is the description of the spec."
     (set-parameter [m ^PreparedStatement s i]
       (.setObject s i (->pgobject m))))"
      (81 93 font-lock-function-name-face))))
+
+;;;; Extra def forms
+
+(describe "clojure-ts-extra-def-forms"
+  (it "should respect the value of clojure-ts-extra-def-forms"
+    (with-clojure-ts-buffer "(defelem file-upload
+  \"Creates a file upload input.\"
+  [name]
+  (input-field \"file\" name nil))"
+      (setopt clojure-ts-extra-def-forms '("defelem"))
+      (clojure-ts-mode)
+      (font-lock-ensure)
+      (goto-char (point-min))
+      (expect (get-text-property 2 'face)
+              :to-equal 'font-lock-keyword-face)
+      (expect (get-text-property 10 'face)
+              :to-equal 'font-lock-function-name-face)
+      (expect (get-text-property 25 'face)
+              :to-equal 'font-lock-doc-face))))
