@@ -260,6 +260,12 @@ values like this:
   :safe #'booleanp
   :type 'boolean)
 
+(defcustom clojure-ts-extra-def-forms nil
+  "List of forms that should be fontified the same way as defn."
+  :package-version '(clojure-ts-mode . "0.5")
+  :safe #'listp
+  :type '(repeat string))
+
 (defvar clojure-ts-mode-remappings
   '((clojure-mode . clojure-ts-mode)
     (clojurescript-mode . clojure-ts-clojurescript-mode)
@@ -468,6 +474,15 @@ if a third argument (the value) is provided.
                :anchor (str_lit (str_content) ,capture-symbol) @font-lock-doc-face)
      (:match ,clojure-ts-function-docstring-symbols
              @_def_symbol))
+    ((list_lit :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+               :anchor (sym_lit) @_def_symbol
+               :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+               ;; Function_name
+               :anchor (sym_lit)
+               :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+               :anchor (str_lit (str_content) ,capture-symbol) @font-lock-doc-face)
+     (:match ,(clojure-ts-symbol-regexp clojure-ts-extra-def-forms)
+             @_def_symbol))
     ;; Captures docstrings in defprotcol, definterface
     ((list_lit :anchor [(comment) (meta_lit) (old_meta_lit)] :*
                :anchor (sym_lit) @_def_symbol
@@ -629,6 +644,12 @@ literals with regex grammar."
                         "definline"
                         "defonce")
                        eol))
+               @font-lock-keyword-face))
+      ((list_lit :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+                 :anchor (sym_lit (sym_name) @font-lock-keyword-face)
+                 :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+                 :anchor (sym_lit (sym_name) @font-lock-function-name-face))
+       (:match ,(clojure-ts-symbol-regexp clojure-ts-extra-def-forms)
                @font-lock-keyword-face))
       ((anon_fn_lit
         marker: "#" @font-lock-property-face))

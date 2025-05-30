@@ -11,11 +11,12 @@
 - [#99](https://github.com/clojure-emacs/clojure-ts-mode/pull/99): Fix bug in `clojure-ts-align` when nested form has extra spaces.
 - [#99](https://github.com/clojure-emacs/clojure-ts-mode/pull/99): Fix bug in `clojure-ts-unwind` when there is only one expression after
   threading symbol.
-- Introduce `clojure-ts-jank-use-cpp-parser` customization which allows
+- [#103](https://github.com/clojure-emacs/clojure-ts-mode/issues/103): Introduce `clojure-ts-jank-use-cpp-parser` customization which allows
   highlighting C++ syntax in Jank `native/raw` forms.
-- Introduce `clojure-ts-clojurescript-use-js-parser` customization which allows
-  highlighting JS syntax in ClojureScript `js*` forms.
-
+- [#103](https://github.com/clojure-emacs/clojure-ts-mode/issues/103): Introduce `clojure-ts-clojurescript-use-js-parser` customization which
+  allows highlighting JS syntax in ClojureScript `js*` forms.
+- Introduce the `clojure-ts-extra-def-forms` customization option to specify
+  additional `defn`-like forms that should be fontified.
 
 ## 0.4.0 (2025-05-15)
 
