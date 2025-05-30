@@ -1668,25 +1668,33 @@ BOUND bounds the whitespace search."
 
 (defvar clojure-ts--align-query
   (treesit-query-compile 'clojure
-                         (append
-                          `(((map_lit) @map)
-                            ((ns_map_lit) @ns-map)
-                            ((list_lit
-                              ((sym_lit) @sym
-                               (:match ,(clojure-ts-symbol-regexp clojure-ts-align-binding-forms) @sym))
-                              (vec_lit) @bindings-vec))
-                            ((list_lit
-                              ((sym_lit) @sym
-                               (:match ,(clojure-ts-symbol-regexp clojure-ts-align-cond-forms) @sym)))
-                             @cond)
-                            ((anon_fn_lit
-                              ((sym_lit) @sym
-                               (:match ,(clojure-ts-symbol-regexp clojure-ts-align-binding-forms) @sym))
-                              (vec_lit) @bindings-vec))
-                            ((anon_fn_lit
-                              ((sym_lit) @sym
-                               (:match ,(clojure-ts-symbol-regexp clojure-ts-align-cond-forms) @sym)))
-                             @cond)))))
+                         `(((map_lit) @map)
+                           ((ns_map_lit) @ns-map)
+                           ((list_lit
+                             ((sym_lit) @sym
+                              (:match ,(clojure-ts-symbol-regexp clojure-ts-align-binding-forms) @sym))
+                             (vec_lit) @bindings-vec))
+                           ((list_lit
+                             :anchor
+                             ((sym_lit) @sym
+                              (:match ,(rx bol (or "for" "doseq") eol) @sym))
+                             (vec_lit
+                              ((kwd_lit) @kwd
+                               (:equal ":let" @kwd))
+                              :anchor
+                              (vec_lit) @bindings-vec)))
+                           ((list_lit
+                             ((sym_lit) @sym
+                              (:match ,(clojure-ts-symbol-regexp clojure-ts-align-cond-forms) @sym)))
+                            @cond)
+                           ((anon_fn_lit
+                             ((sym_lit) @sym
+                              (:match ,(clojure-ts-symbol-regexp clojure-ts-align-binding-forms) @sym))
+                             (vec_lit) @bindings-vec))
+                           ((anon_fn_lit
+                             ((sym_lit) @sym
+                              (:match ,(clojure-ts-symbol-regexp clojure-ts-align-cond-forms) @sym)))
+                            @cond))))
 
 (defvar clojure-ts--align-reader-conditionals-query
   (treesit-query-compile 'clojure
@@ -2564,12 +2572,6 @@ function can also be used to upgrade the grammars if they are outdated."
       (let ((treesit-language-source-alist clojure-ts-grammar-recipes))
         (treesit-install-language-grammar grammar)))))
 
-(defsubst clojure-ts--font-lock-setting-update-override (setting)
-  "Return SETTING with override set to TRUE."
-  (let ((new-setting (copy-tree setting)))
-    (setf (nth 3 new-setting) t)
-    new-setting))
-
 (defun clojure-ts--harvest-treesit-configs (mode)
   "Harvest tree-sitter configs from MODE.
 Return a plist with the following keys and value:
@@ -2578,10 +2580,7 @@ Return a plist with the following keys and value:
     :simple-indent (from `treesit-simple-indent-rules')"
   (with-temp-buffer
     (funcall mode)
-    ;; We need to set :override t for all external queries, otherwise new faces
-    ;; won't be applied on top of the string face defined for `clojure-ts-mode'.
-    (list :font-lock (seq-map #'clojure-ts--font-lock-setting-update-override
-                              treesit-font-lock-settings)
+    (list :font-lock treesit-font-lock-settings
           :simple-indent treesit-simple-indent-rules)))
 
 (defun clojure-ts--add-config-for-mode (mode)
