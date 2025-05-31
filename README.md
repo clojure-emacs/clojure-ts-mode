@@ -345,9 +345,12 @@ or set this variable using `setopt`:
 
 This setting will highlight `defelem` symbol, function name and the docstring.
 
-**NOTE**: Setting `clojure-ts-extra-def-forms` won't change the indentation rule for
-these forms.  For indentation rules you should use
-`clojure-ts-semantic-indent-rules` variable (see [semantic indentation](#customizing-semantic-indentation) section).
+> [!IMPORTANT]
+>
+> Setting `clojure-ts-extra-def-forms` won't change the indentation rule for
+> these forms.  For indentation rules you should use
+> `clojure-ts-semantic-indent-rules` variable (see [semantic
+> indentation](#customizing-semantic-indentation) section).
 
 ### Highlight markdown syntax in docstrings
 
