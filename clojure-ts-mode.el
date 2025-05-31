@@ -530,6 +530,9 @@ This function respects OVERRIDE argument by passing it to
 START and END arguments that are passed to this function are not start
 and end of the NODE, so we ignore them."
   (let* ((prev (treesit-node-prev-sibling (treesit-node-parent node)))
+         ;; TODO: Seems jank has removed this syntax, so we might drop this
+         ;; after jank 1.0 gets released
+         ;; See https://github.com/jank-lang/jank/issues/24#issuecomment-2924460595
          (jank-native-p (and (derived-mode-p 'clojure-ts-jank-mode)
                              clojure-ts-jank-use-cpp-parser
                              (clojure-ts--symbol-node-p prev)
