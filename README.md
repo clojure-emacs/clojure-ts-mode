@@ -144,10 +144,22 @@ setting `clojure-ts-jank-use-cpp-parser` to `nil`.
 If you have `git` and a C compiler (`cc`) available on your system's `PATH`,
 `clojure-ts-mode` will install the
 grammars when you first open a Clojure file and `clojure-ts-ensure-grammars` is
-set to `t` (the default).
+set to `t` (the default). macOS users can install the required tools like this:
+
+```shell
+xcode-select --install
+```
+
+Similarly, Debian/Ubuntu users can do something like:
+
+```shell
+sudo apt install build-essential
+```
+
+This installs GCC, G++, `make`, and other essential development tools.
 
 If `clojure-ts-mode` fails to automatically install the grammar, you have the
-option to install it manually, Please, refer to the installation instructions of
+option to install it manually. Please, refer to the installation instructions of
 each required grammar and make sure you're install the versions expected (see
 `clojure-ts-grammar-recipes` for details).
 
@@ -249,7 +261,7 @@ Note that `clojure-ts-semantic-indent-rules` should be set using the
 customization interface or `setopt`; otherwise, it will not be applied
 correctly.
 
-#### Project local indentation
+#### Project-specific indentation
 
 Custom indentation rules can be set for individual projects. To achieve this,
 you need to create a `.dir-locals.el` file in the project root. The content
@@ -261,7 +273,7 @@ should look like:
 ```
 
 In order to apply directory-local variables to existing buffers, they must be
-reverted.
+"reverted" (reloaded).
 
 ### Vertical alignment
 
