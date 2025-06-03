@@ -539,6 +539,21 @@ multi-arity function or macro. Function can be defined using `defn`, `fn` or
 By default prefix for all refactoring commands is `C-c C-r`. It can be changed
 by customizing `clojure-ts-refactor-map-prefix` variable.
 
+## Code completion
+
+`clojure-ts-mode` provides basic code completion functionality.  Completion only
+works for the current source buffer and includes completion of top-level
+definitions and local bindings.  This feature can be turned off by setting:
+
+```emacs-lisp
+(setopt clojure-ts-completion-enabled nil)
+```
+
+Here's the short video illustrating the feature with built-in completion (it
+should also work well with more advanced packages like company and corfu):
+
+https://github.com/user-attachments/assets/7c37179f-5a5d-424f-9bd6-9c8525f6b2f7
+
 ## Migrating to clojure-ts-mode
 
 If you are migrating to `clojure-ts-mode` note that `clojure-mode` is still
@@ -576,11 +591,6 @@ and `clojure-mode` (this is very helpful when dealing with `derived-mode-p` chec
 - Navigation by sexp/lists might work differently on Emacs versions lower
   than 31. Starting with version 31, Emacs uses Tree-sitter 'things' settings, if
   available, to rebind some commands.
-- The indentation of list elements with metadata is inconsistent with other
-  collections. This inconsistency stems from the grammar's interpretation of
-  nearly every definition or function call as a list. Therefore, modifying the
-  indentation for list elements would adversely affect the indentation of
-  numerous other forms.
 
 ## Frequently Asked Questions
 
