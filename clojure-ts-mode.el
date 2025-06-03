@@ -266,6 +266,12 @@ values like this:
   :safe #'listp
   :type '(repeat string))
 
+(defcustom clojure-ts-completion-enabled t
+  "Enable built-in completion feature."
+  :package-version '(clojure-ts-mode . "0.5")
+  :safe #'booleanp
+  :type 'boolean)
+
 (defvar clojure-ts-mode-remappings
   '((clojure-mode . clojure-ts-mode)
     (clojurescript-mode . clojure-ts-clojurescript-mode)
@@ -1561,26 +1567,28 @@ function literal."
     "map_lit" "ns_map_lit" "vec_lit" "set_lit")
   "A regular expression that matches nodes that can be treated as lists.")
 
+(defconst clojure-ts--defun-symbols-regex
+  (rx bol
+      (or "def"
+          "defn"
+          "defn-"
+          "definline"
+          "defrecord"
+          "defmacro"
+          "defmulti"
+          "defonce"
+          "defprotocol"
+          "deftest"
+          "deftest-"
+          "ns"
+          "definterface"
+          "deftype"
+          "defstruct")
+      eol))
+
 (defun clojure-ts--defun-node-p (node)
   "Return TRUE if NODE is a function or a var definition."
-  (clojure-ts--list-node-sym-match-p node
-                                     (rx bol
-                                         (or "def"
-                                             "defn"
-                                             "defn-"
-                                             "definline"
-                                             "defrecord"
-                                             "defmacro"
-                                             "defmulti"
-                                             "defonce"
-                                             "defprotocol"
-                                             "deftest"
-                                             "deftest-"
-                                             "ns"
-                                             "definterface"
-                                             "deftype"
-                                             "defstruct")
-                                         eol)))
+  (clojure-ts--list-node-sym-match-p node clojure-ts--defun-symbols-regex))
 
 (defconst clojure-ts--markdown-inline-sexp-nodes
   '("inline_link" "full_reference_link" "collapsed_reference_link"
@@ -2512,6 +2520,126 @@ before DELIM-OPEN."
     map)
   "Keymap for `clojure-ts-mode'.")
 
+;;; Completion
+
+(defconst clojure-ts--completion-query-defuns
+  (treesit-query-compile 'clojure
+                         `((source
+                            (list_lit
+                             ((sym_lit) @sym
+                              (:match ,clojure-ts--defun-symbols-regex @sym))
+                             :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+                             :anchor ((sym_lit) @defun-candidate)))))
+  "Query that matches top-level definitions.")
+
+(defconst clojure-ts--completion-defn-with-args-sym-regex
+  (rx bol
+      (or "defn"
+          "defn-"
+          "fn"
+          "fn*"
+          "defmacro"
+          "defmethod")
+      eol)
+  "Regexp that matches a symbol of definition with arguments vector.")
+
+(defconst clojure-ts--completion-let-like-sym-regex
+  (rx bol
+      (or "let"
+          "if-let"
+          "when-let"
+          "if-some"
+          "when-some"
+          "loop"
+          "with-open"
+          "dotimes"
+          "with-local-vars")
+      eol)
+  "Regexp that matches a symbol of let-like form.")
+
+(defconst clojure-ts--completion-locals-query
+  (treesit-query-compile 'clojure `((vec_lit (sym_lit) @local-candidate)
+                                    (map_lit (sym_lit) @local-candidate)))
+  "Query that matches a local binding symbol.
+
+Symbold must be a direct child of a vector or a map.  This query covers
+bindings vector as well as destructuring syntax.")
+
+(defconst clojure-ts--completion-annotations
+  (list 'defun-candidate " Definition"
+        'local-candidate " Local variable")
+  "Property list of completion candidate type and annotation string.")
+
+(defun clojure-ts--completion-annotation-function (candidate)
+  "Return annotation for a completion CANDIDATE."
+  (thread-last minibuffer-completion-table
+               (alist-get candidate)
+               (plist-get clojure-ts--completion-annotations)))
+
+(defun clojure-ts--completion-defun-with-args-node-p (node)
+  "Return non-nil if NODE is a function definition with arguments."
+  (when-let* ((sym-name (clojure-ts--list-node-sym-text node)))
+    (string-match-p clojure-ts--completion-defn-with-args-sym-regex sym-name)))
+
+(defun clojure-ts--completion-fn-args-nodes ()
+  "Return a list of captured nodes that represent function arguments.
+
+The function traverses the syntax tree upwards and returns nodes from
+all functions along the way."
+  (let ((parent-defun (clojure-ts--parent-until #'clojure-ts--completion-defun-with-args-node-p))
+        (captured-nodes))
+    (while parent-defun
+      (when-let* ((args-vec (clojure-ts--node-child parent-defun "vec_lit")))
+        (setq captured-nodes
+              (append captured-nodes
+                      (treesit-query-capture args-vec clojure-ts--completion-locals-query))
+              parent-defun (treesit-parent-until parent-defun
+                                                 #'clojure-ts--completion-defun-with-args-node-p))))
+    captured-nodes))
+
+(defun clojure-ts--completion-let-like-node-p (node)
+  "Return non-nil if NODE is a let-like form."
+  (when-let* ((sym-name (clojure-ts--list-node-sym-text node)))
+    (string-match-p clojure-ts--completion-let-like-sym-regex sym-name)))
+
+(defun clojure-ts--completion-let-locals-nodes ()
+  "Return a list of captured nodes that represent bindings in let forms.
+
+The function tranverses the syntax tree upwards and returns nodes from
+all let bindings found along the way."
+  (let ((parent-let (clojure-ts--parent-until #'clojure-ts--completion-let-like-node-p))
+        (captured-nodes))
+    (while parent-let
+      (when-let* ((bindings-vec (clojure-ts--node-child parent-let "vec_lit")))
+        (setq captured-nodes
+              (append captured-nodes
+                      (treesit-query-capture bindings-vec clojure-ts--completion-locals-query))
+              parent-let (treesit-parent-until parent-let
+                                               #'clojure-ts--completion-let-like-node-p))))
+    captured-nodes))
+
+(defun clojure-ts-completion-at-point-function ()
+  "Return a completion table for the symbol around point."
+  (when-let* ((bounds (bounds-of-thing-at-point 'symbol))
+              (source (treesit-buffer-root-node 'clojure))
+              (nodes (append (treesit-query-capture source clojure-ts--completion-query-defuns)
+                             (clojure-ts--completion-fn-args-nodes)
+                             (clojure-ts--completion-let-locals-nodes))))
+    (list (car bounds)
+          (cdr bounds)
+          (thread-last nodes
+                       ;; Remove node at point
+                       (seq-remove (lambda (item) (= (treesit-node-end (cdr item)) (point))))
+                       ;; Remove unwanted captured nodes
+                       (seq-filter (lambda (item)
+                                     (not (member (car item) '(sym kwd)))))
+                       ;; Produce alist of candidates
+                       (seq-map (lambda (item) (cons (treesit-node-text (cdr item) t) (car item))))
+                       ;; Remove duplicated candidates
+                       (seq-uniq))
+          :exclusive 'no
+          :annotation-function #'clojure-ts--completion-annotation-function)))
+
 (defvar clojure-ts-clojurescript-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map clojure-ts-mode-map)
@@ -2670,7 +2798,10 @@ REGEX-AVAILABLE."
               clojure-ts--imenu-settings)
 
   (when (boundp 'treesit-thing-settings) ;; Emacs 30+
-    (setq-local treesit-thing-settings clojure-ts--thing-settings)))
+    (setq-local treesit-thing-settings clojure-ts--thing-settings))
+
+  (when clojure-ts-completion-enabled
+    (add-to-list 'completion-at-point-functions #'clojure-ts-completion-at-point-function)))
 
 ;;;###autoload
 (define-derived-mode clojure-ts-mode prog-mode "Clojure[TS]"

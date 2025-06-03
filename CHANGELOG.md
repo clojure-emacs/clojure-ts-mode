@@ -15,8 +15,9 @@
   highlighting C++ syntax in Jank `native/raw` forms.
 - [#103](https://github.com/clojure-emacs/clojure-ts-mode/issues/103): Introduce `clojure-ts-clojurescript-use-js-parser` customization which
   allows highlighting JS syntax in ClojureScript `js*` forms.
-- Introduce the `clojure-ts-extra-def-forms` customization option to specify
+- [#104](https://github.com/clojure-emacs/clojure-ts-mode/pull/104): Introduce the `clojure-ts-extra-def-forms` customization option to specify
   additional `defn`-like forms that should be fontified.
+- Introduce completion feature and `clojure-ts-completion-enabled` customization.
 
 ## 0.4.0 (2025-05-15)
 
