@@ -596,7 +596,7 @@ and `clojure-mode` (this is very helpful when dealing with `derived-mode-p` chec
 
 ### What `clojure-mode` features are currently missing?
 
-As of version 0.4.x, `clojure-ts-mode` provides almost all `clojure-mode` features.
+As of version 0.5.x, `clojure-ts-mode` provides almost all `clojure-mode` features.
 Currently only a few refactoring commands are missing.
 
 ### Does `clojure-ts-mode` work with CIDER?
@@ -622,7 +622,7 @@ Check out [this article](https://metaredux.com/posts/2024/02/19/cider-preliminar
 
 ### Does `clojure-ts-mode` work with `inf-clojure`?
 
-Currently, there is an [open PR](https://github.com/clojure-emacs/inf-clojure/pull/215) adding support for inf-clojure.
+Yes, it does. `inf-clojure` 3.3+ supports `clojure-ts-mode`.
 
 ### Why does `clojure-ts-mode` require Emacs 30?
 
