@@ -2,6 +2,8 @@
 
 ## main (unreleased)
 
+## 0.5.0 (2025-06-04)
+
 - [#96](https://github.com/clojure-emacs/clojure-ts-mode/pull/96): Highlight function name properly in `extend-protocol` form.
 - [#96](https://github.com/clojure-emacs/clojure-ts-mode/pull/96): Add support for extend-protocol forms to `clojure-ts-add-arity` refactoring
   command.
