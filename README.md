@@ -549,8 +549,8 @@ definitions and local bindings.  This feature can be turned off by setting:
 (setopt clojure-ts-completion-enabled nil)
 ```
 
-Here's the short video illustrating the feature with built-in completion (it
-should also work well with more advanced packages like company and corfu):
+Here's the short video illustrating the feature with Emacs's built-in completion UI (it
+should also work well with more advanced packages like `company` and `corfu`):
 
 https://github.com/user-attachments/assets/7c37179f-5a5d-424f-9bd6-9c8525f6b2f7
 
