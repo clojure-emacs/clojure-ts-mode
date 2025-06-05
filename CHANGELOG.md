@@ -2,6 +2,8 @@
 
 ## main (unreleased)
 
+- [#109](https://github.com/clojure-emacs/clojure-ts-mode/issues/109): Improve performance by pre-compiling Tree-sitter queries.
+
 ## 0.5.0 (2025-06-04)
 
 - [#96](https://github.com/clojure-emacs/clojure-ts-mode/pull/96): Highlight function name properly in `extend-protocol` form.

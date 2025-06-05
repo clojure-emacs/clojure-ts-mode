@@ -207,6 +207,12 @@ metadata nodes) does not have a namespace and matches a regex stored in the
 `clojure-ts--builtin-symbol-regexp` variable.  The matched symbol is fontified
 using `font-lock-keyword-face`.
 
+> [!IMPORTANT]
+>
+> Compiling queries at runtime is very expensive; therefore, it should be
+> avoided as much as possible.  Ideally, all queries should be pre-compiled and
+> stored as `defconst` constants.
+
 ### Embedded parsers
 
 The Clojure grammar in `clojure-ts-mode` is a main or "host" grammar.  Emacs
