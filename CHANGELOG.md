@@ -3,6 +3,8 @@
 ## main (unreleased)
 
 - [#109](https://github.com/clojure-emacs/clojure-ts-mode/issues/109): Improve performance by pre-compiling Tree-sitter queries.
+- [#111](https://github.com/clojure-emacs/clojure-ts-mode/pull/111): Set `clojure-ts-completion-at-point-function` only for `clojure-ts-mode`
+  buffers.
 
 ## 0.5.0 (2025-06-04)
 
@@ -21,7 +23,8 @@
   allows highlighting JS syntax in ClojureScript `js*` forms.
 - [#104](https://github.com/clojure-emacs/clojure-ts-mode/pull/104): Introduce the `clojure-ts-extra-def-forms` customization option to specify
   additional `defn`-like forms that should be fontified.
-- Introduce completion feature and `clojure-ts-completion-enabled` customization.
+- [#108](https://github.com/clojure-emacs/clojure-ts-mode/pull/108): Introduce completion feature and `clojure-ts-completion-enabled`
+  customization.
 
 ## 0.4.0 (2025-05-15)
 

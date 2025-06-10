@@ -2858,7 +2858,8 @@ REGEX-AVAILABLE."
     (setq-local treesit-thing-settings clojure-ts--thing-settings))
 
   (when clojure-ts-completion-enabled
-    (add-to-list 'completion-at-point-functions #'clojure-ts-completion-at-point-function)))
+    (add-hook 'completion-at-point-functions
+              #'clojure-ts-completion-at-point-function nil 'local)))
 
 ;;;###autoload
 (define-derived-mode clojure-ts-mode prog-mode "Clojure[TS]"
