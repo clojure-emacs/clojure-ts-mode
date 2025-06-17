@@ -13,7 +13,7 @@ jobs:
 
     strategy:
       matrix:
-        emacs_version: ['snapshot']
+        emacs_version: ['30.1', 'snapshot']
 
     steps:
     - name: Set up Emacs
@@ -59,7 +59,7 @@ jobs:
 
     strategy:
       matrix:
-        emacs_version: ['snapshot']
+        emacs_version: ['30.1', 'snapshot']
 
     steps:
     - name: Set up Emacs
