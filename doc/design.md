@@ -4,8 +4,10 @@
 
 Clojure-ts-mode is based on the tree-sitter-clojure grammar.
 
-If you want to contribute to clojure-ts-mode, it is recommend that you familiarize yourself with how Tree-sitter works.
-The official documentation is a great place to start: <https://tree-sitter.github.io/tree-sitter/>
+If you want to contribute to clojure-ts-mode, it is recommend that you
+familiarize yourself with how Tree-sitter works.  The official documentation is
+a great place to start: <https://tree-sitter.github.io/tree-sitter/>
+
 These guides for Emacs Tree-sitter development are also useful:
 
 - <https://casouri.github.io/note/2023/tree-sitter-starter-guide/index.html>
@@ -110,12 +112,23 @@ offsets.
 
 ### Clojure Syntax, not Clojure Semantics
 
-An important observation that anyone familiar with popular Tree-sitter grammars may have picked up on is that there are no nodes representing things like functions, macros, types, and other semantic concepts.
-Representing the semantics of Clojure in a Tree-sitter grammar is much more difficult than traditional languages that do not use macros heavily like Clojure and other lisps.
-To understand what an expression represents in Clojure source code requires macro-expansion of the source code.
-Macro-expansion requires a runtime, and Tree-sitter does not have access to a Clojure runtime and will never have access to a Clojure runtime.
-Additionally Tree-sitter never looks back on what it has parsed, only forward, considering what is directly ahead of it. So even if it could identify a macro like `myspecialdef` it would forget about it as soon as it moved passed the declaring `defmacro` node.
-Another way to think about this: Tree-sitter is designed to be fast and good-enough for tooling to implement syntax highlighting, indentation, and other editing conveniences. It is not meant for interpreting and execution.
+An important observation that anyone familiar with popular Tree-sitter grammars
+may have picked up on is that there are no nodes representing things like
+functions, macros, types, and other semantic concepts.  Representing the
+semantics of Clojure in a Tree-sitter grammar is much more difficult than
+traditional languages that do not use macros heavily like Clojure and other
+Lisps.
+
+To understand what an expression represents in Clojure source code
+requires macro-expansion of the source code.  Macro-expansion requires a
+runtime, and Tree-sitter does not have access to a Clojure runtime and will
+never have access to a Clojure runtime.  Additionally Tree-sitter never looks
+back on what it has parsed, only forward, considering what is directly ahead of
+it. So even if it could identify a macro like `myspecialdef` it would forget
+about it as soon as it moved passed the declaring `defmacro` node.  Another way
+to think about this: Tree-sitter is designed to be fast and good-enough for
+tooling to implement syntax highlighting, indentation, and other editing
+conveniences. _It is not meant for interpreting and execution._
 
 #### Example 1: False Negative Function Classification
 
@@ -128,8 +141,11 @@ Consider the following macro
 (defn2 dog [] "bark")
 ```
 
-This macro lets the caller define a function, but a hypothetical tree-sitter-clojure semantic grammar might just see a function call where a variable dog is passed as an argument.
-How should Tree-sitter know that `dog` should be highlighted like function? It would have to evaluate the `defn2` macro to understand that.
+This macro lets the caller define a function, but a hypothetical
+tree-sitter-clojure semantic grammar might just see a function call where a
+variable dog is passed as an argument.  How should Tree-sitter know that `dog`
+should be highlighted like function? It would have to evaluate the `defn2` macro
+to understand that.
 
 #### Example 2: False Positive Function Classification
 
@@ -154,13 +170,17 @@ How is Tree-sitter supposed to understand that `(defn foo [] 2)` of the expressi
 
 #### Syntax and Semantics: Conclusions
 
-While these examples are silly, they illustrate the issue with encoding semantics into the tree-sitter-clojure grammar.
-If we tried to make the grammar understand functions, macros, types, and other semantic elements it will end up giving false positives and negatives in the parse tree.
-While this is an inevitability for simple static analysis of Clojure code, tree-sitter-clojure chooses to avoid making these kinds of mistakes all-together.
-Instead, it is up to the emacs-lisp code and other consumers of the tree-sitter-clojure grammar to make decisions about the semantic meaning of clojure-code.
+While these examples are silly, they illustrate the issue with encoding
+semantics into the tree-sitter-clojure grammar.  If we tried to make the grammar
+understand functions, macros, types, and other semantic elements it will end up
+giving false positives and negatives in the parse tree.  While this is an
+inevitability for simple static analysis of Clojure code, tree-sitter-clojure
+chooses to avoid making these kinds of mistakes all-together.  Instead, it is up
+to the emacs-lisp code and other consumers of the tree-sitter-clojure grammar to
+make decisions about the semantic meaning of clojure-code.
 
-There are some pros and cons of this decision for tree-sitter-clojure to only consider syntax and not semantics.
-Some of the (non-exhaustive) upsides:
+There are some pros and cons of this decision for tree-sitter-clojure to only
+consider syntax and not semantics.  Some of the (non-exhaustive) upsides:
 
 - No semantic false positives or negatives in the parse tree.
 - Simple grammar to maintain with less nodes and rules
