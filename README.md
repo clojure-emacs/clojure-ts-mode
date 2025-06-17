@@ -636,6 +636,27 @@ simple - the initial Tree-sitter support in Emacs 29 had quite a few issues and
 we felt it's better to nudge most people interested in using it to Emacs 30,
 which fixed a lot of the problems.
 
+## Contributing
+
+We welcome contributions of any kind!
+
+If you're not familiar with Tree-sitter, a good place to start is our
+[design documentation](doc/design.md), which explains how Tree-sitter
+works in Emacs in broad strokes and covers some of the design
+decisions we've made a long the way.
+
+We're using [Eldev](https://github.com/emacs-eldev/eldev) as our build tool, so you'll
+have to install it. We also provide a simple [Makefile](Makefile) with targets invoking Eldev. You
+only need to know a couple of them:
+
+```shell
+make lint
+
+make test
+```
+
+The process of releasing a new version of `clojure-ts-mode` is documented [here](doc/release-process).
+
 ## License
 
 Copyright © 2022-2025 Danny Freeman, Bozhidar Batsov and [contributors][].
