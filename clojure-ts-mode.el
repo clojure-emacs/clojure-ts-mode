@@ -1129,8 +1129,8 @@ See `clojure-ts--standard-definition-node-name' for the implementation used.")
 
 (defun clojure-ts--outline-level ()
   "Return the current level of the outline heading at point."
-  (let* ((node (treesit-outline--at-point))
-         (node-text (treesit-node-text node)))
+  (when-let* ((node (treesit-thing-at (point) #'clojure-ts--outline-predicate))
+              (node-text (treesit-node-text node)))
     (string-match ";;\\(;+\\) " node-text)
     (- (match-end 1) (match-beginning 1))))
 
@@ -1873,7 +1873,7 @@ between BEG and END."
          ;; We have to disable it here to avoid endless recursion.
          (clojure-ts-align-forms-automatically nil))
     (save-excursion
-      (indent-region beg end)
+      (indent-region beg (marker-position end))
       (dolist (sexp sexps-to-align)
         ;; After reindenting a node, all other nodes in the `sexps-to-align'
         ;; list become outdated, so we need to fetch updated nodes for every
@@ -1893,7 +1893,7 @@ between BEG and END."
           ;; After every iteration we have to re-indent the s-expression,
           ;; otherwise some can be indented inconsistently.
           (indent-region (marker-position (plist-get sexp :beg-marker))
-                         (plist-get sexp :end-marker))))
+                         (marker-position (plist-get sexp :end-marker)))))
       ;; If `clojure-ts-align-separator' is used, `align-region' leaves trailing
       ;; whitespaces on empty lines.
       (delete-trailing-whitespace beg (marker-position end)))))
@@ -2114,7 +2114,7 @@ With universal argument \\[universal-argument], fully unwinds thread."
                 (clojure-ts--pop-out-of-threading)
                 (clojure-ts--fix-sexp-whitespace)
                 (setq n 0))))
-          (indent-region beg end)
+          (indent-region (marker-position beg) (marker-position end))
           (delete-trailing-whitespace beg end)))
     (user-error "No threading form to unwind at point")))
 
@@ -2191,7 +2191,7 @@ cannot be found."
           (clojure-ts--thread-first))
          ((string-match-p (rx bol (* "some") "->>" eol) sym)
           (clojure-ts--thread-last)))
-        (indent-region beg end)
+        (indent-region (marker-position beg) (marker-position end))
         (delete-trailing-whitespace beg end)
         t)
     (when called-by-user-p
@@ -2383,7 +2383,7 @@ type, etc.  See `treesit-thing-settings' for more details."
               (string= parent-def-sym "extend-protocol"))
           (clojure-ts--add-arity-reify-internal fn-node))
          (t (clojure-ts--add-arity-internal fn-node)))
-        (indent-region beg-marker end-marker))
+        (indent-region (marker-position beg-marker) (marker-position end-marker)))
     (user-error "No suitable form to add an arity at point")))
 
 (defun clojure-ts-cycle-keyword-string ()
@@ -2496,7 +2496,7 @@ before DELIM-OPEN."
           (when (member cond-sym '("if" "if-not"))
             (forward-sexp 2)
             (transpose-sexps 1))
-          (indent-region beg end-marker)))
+          (indent-region beg (marker-position end-marker))))
     (user-error "No conditional expression found")))
 
 (defun clojure-ts-cycle-not ()
@@ -2512,7 +2512,7 @@ before DELIM-OPEN."
             (clojure-ts--raise-sexp)
           (insert-pair 1 ?\( ?\))
           (insert "not "))
-        (indent-region beg end-marker)
+        (indent-region beg (marker-position end-marker))
         ;; `save-excursion' doesn't work well when point is at the opening
         ;; paren.
         (goto-char pos))
