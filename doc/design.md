@@ -1,15 +1,17 @@
 # Design of clojure-ts-mode
 
-This document is still a work in progress.
+**Note:** This document is still a work in progress.
 
 Clojure-ts-mode is based on the tree-sitter-clojure grammar.
 
 If you want to contribute to clojure-ts-mode, it is recommend that you familiarize yourself with how Tree-sitter works.
 The official documentation is a great place to start: <https://tree-sitter.github.io/tree-sitter/>
-These guides for Emacs Tree-sitter development are also useful
+These guides for Emacs Tree-sitter development are also useful:
 
 - <https://casouri.github.io/note/2023/tree-sitter-starter-guide/index.html>
 - `Developing major modes with tree-sitter` (From the Emacs 29+ Manual, `C-h i`, search for `tree-sitter`)
+- [How to Get Started with Tree-sitter](https://www.masteringemacs.org/article/how-to-get-started-tree-sitter)
+- [Emacs 30 Tree-sitter changes](https://archive.casouri.cc/note/2024/emacs-30-tree-sitter/)
 
 In short:
 
