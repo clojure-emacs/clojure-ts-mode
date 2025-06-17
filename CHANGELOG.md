@@ -2,9 +2,10 @@
 
 ## main (unreleased)
 
+## 0.5.1 (2025-06-17)
+
 - [#109](https://github.com/clojure-emacs/clojure-ts-mode/issues/109): Improve performance by pre-compiling Tree-sitter queries.
-- [#111](https://github.com/clojure-emacs/clojure-ts-mode/pull/111): Set `clojure-ts-completion-at-point-function` only for `clojure-ts-mode`
-  buffers.
+- [#111](https://github.com/clojure-emacs/clojure-ts-mode/pull/111): Set `clojure-ts-completion-at-point-function` only for `clojure-ts-mode` buffers.
 
 ## 0.5.0 (2025-06-04)
 
