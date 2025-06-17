@@ -2,6 +2,8 @@
 
 ## main (unreleased)
 
+- Add a dedicated mode for editing Joker code. (`clojure-ts-joker-mode`)
+
 ## 0.5.1 (2025-06-17)
 
 - [#109](https://github.com/clojure-emacs/clojure-ts-mode/issues/109): Improve performance by pre-compiling Tree-sitter queries.

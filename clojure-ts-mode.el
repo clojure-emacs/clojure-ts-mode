@@ -271,7 +271,8 @@ values like this:
     (clojurescript-mode . clojure-ts-clojurescript-mode)
     (clojurec-mode . clojure-ts-clojurec-mode)
     (clojuredart-mode . clojure-ts-clojuredart-mode)
-    (jank-mode . clojure-ts-jank-mode))
+    (jank-mode . clojure-ts-jank-mode)
+    (joker-mode . clojure-ts-joker-mode))
   "Alist of entries to `major-mode-remap-defaults'.
 
 See also `clojure-ts-activate-mode-remappings' and
@@ -2719,6 +2720,11 @@ all let bindings found along the way."
     (set-keymap-parent map clojure-ts-mode-map)
     map))
 
+(defvar clojure-ts-joker-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map clojure-ts-mode-map)
+    map))
+
 (defun clojure-ts-mode-display-version ()
   "Display the current `clojure-mode-version' in the minibuffer."
   (interactive)
@@ -2972,6 +2978,12 @@ REGEX-AVAILABLE."
     (clojure-ts--add-config-for-mode 'c++-ts-mode)
     (treesit-major-mode-setup)))
 
+;;;###autoload
+(define-derived-mode clojure-ts-joker-mode clojure-ts-mode "Joker[TS]"
+  "Major mode for editing Joker code.
+
+\\{clojure-ts-joker-mode-map}")
+
 (defun clojure-ts-activate-mode-remappings ()
   "Remap all `clojure-mode' file-specified modes to use `clojure-ts-mode'.
 
@@ -3004,6 +3016,7 @@ Useful if you want to switch to the `clojure-mode's mode mappings."
         (add-to-list 'auto-mode-alist '("\\.cljc\\'" . clojure-ts-clojurec-mode))
         (add-to-list 'auto-mode-alist '("\\.cljd\\'" . clojure-ts-clojuredart-mode))
         (add-to-list 'auto-mode-alist '("\\.jank\\'" . clojure-ts-jank-mode))
+        (add-to-list 'auto-mode-alist '("\\.joke\\'" . clojure-ts-joker-mode))
         ;; boot build scripts are Clojure source files
         (add-to-list 'auto-mode-alist '("\\(?:build\\|profile\\)\\.boot\\'" . clojure-ts-mode))
         ;; babashka scripts are Clojure source files
