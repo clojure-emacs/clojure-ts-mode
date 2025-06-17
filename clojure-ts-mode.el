@@ -269,7 +269,9 @@ values like this:
 (defvar clojure-ts-mode-remappings
   '((clojure-mode . clojure-ts-mode)
     (clojurescript-mode . clojure-ts-clojurescript-mode)
-    (clojurec-mode . clojure-ts-clojurec-mode))
+    (clojurec-mode . clojure-ts-clojurec-mode)
+    (clojuredart-mode . clojure-ts-clojuredart-mode)
+    (jank-mode . clojure-ts-jank-mode))
   "Alist of entries to `major-mode-remap-defaults'.
 
 See also `clojure-ts-activate-mode-remappings' and
@@ -2970,11 +2972,6 @@ REGEX-AVAILABLE."
     (clojure-ts--add-config-for-mode 'c++-ts-mode)
     (treesit-major-mode-setup)))
 
-(defun clojure-ts--register-novel-modes ()
-  "Set up Clojure modes not present in progenitor clojure-mode.el."
-  (add-to-list 'auto-mode-alist '("\\.cljd\\'" . clojure-ts-clojuredart-mode))
-  (add-to-list 'auto-mode-alist '("\\.jank\\'" . clojure-ts-jank-mode)))
-
 (defun clojure-ts-activate-mode-remappings ()
   "Remap all `clojure-mode' file-specified modes to use `clojure-ts-mode'.
 
@@ -2995,10 +2992,8 @@ Useful if you want to switch to the `clojure-mode's mode mappings."
 (if (treesit-available-p)
     ;; Redirect clojure-mode to clojure-ts-mode if clojure-mode is present
     (if (require 'clojure-mode nil 'noerror)
-        (progn
-          (when clojure-ts-auto-remap
-            (clojure-ts-activate-mode-remappings))
-          (clojure-ts--register-novel-modes))
+        (when clojure-ts-auto-remap
+          (clojure-ts-activate-mode-remappings))
       ;; When Clojure-mode is not present, setup auto-modes ourselves
       (progn
         ;; Regular clojure/edn files
@@ -3007,13 +3002,14 @@ Useful if you want to switch to the `clojure-mode's mode mappings."
                      '("\\.\\(clj\\|dtm\\|edn\\)\\'" . clojure-ts-mode))
         (add-to-list 'auto-mode-alist '("\\.cljs\\'" . clojure-ts-clojurescript-mode))
         (add-to-list 'auto-mode-alist '("\\.cljc\\'" . clojure-ts-clojurec-mode))
+        (add-to-list 'auto-mode-alist '("\\.cljd\\'" . clojure-ts-clojuredart-mode))
+        (add-to-list 'auto-mode-alist '("\\.jank\\'" . clojure-ts-jank-mode))
         ;; boot build scripts are Clojure source files
         (add-to-list 'auto-mode-alist '("\\(?:build\\|profile\\)\\.boot\\'" . clojure-ts-mode))
         ;; babashka scripts are Clojure source files
         (add-to-list 'interpreter-mode-alist '("bb" . clojure-ts-mode))
         ;; nbb scripts are ClojureScript source files
-        (add-to-list 'interpreter-mode-alist '("nbb" . clojure-ts-clojurescript-mode))
-        (clojure-ts--register-novel-modes)))
+        (add-to-list 'interpreter-mode-alist '("nbb" . clojure-ts-clojurescript-mode))))
   (message "Clojure TS Mode will not be activated as Tree-sitter support is missing."))
 
 (defvar clojure-ts--find-ns-query
