@@ -2592,6 +2592,10 @@ before DELIM-OPEN."
                              :anchor ((sym_lit) @defun-candidate)))))
   "Query that matches top-level definitions.")
 
+(defconst clojure-ts--completion-query-keywords
+  (treesit-query-compile 'clojure '((kwd_lit) @keyword-candidate))
+  "Query that matches any Clojure keyword.")
+
 (defconst clojure-ts--completion-defn-with-args-sym-regex
   (rx bol
       (or "defn"
@@ -2613,7 +2617,9 @@ before DELIM-OPEN."
           "loop"
           "with-open"
           "dotimes"
-          "with-local-vars")
+          "with-local-vars"
+          "for"
+          "doseq")
       eol)
   "Regexp that matches a symbol of let-like form.")
 
@@ -2627,7 +2633,8 @@ bindings vector as well as destructuring syntax.")
 
 (defconst clojure-ts--completion-annotations
   (list 'defun-candidate " Definition"
-        'local-candidate " Local variable")
+        'local-candidate " Local variable"
+        'keyword-candidate " Keyword")
   "Property list of completion candidate type and annotation string.")
 
 (defun clojure-ts--completion-annotation-function (candidate)
@@ -2652,9 +2659,9 @@ all functions along the way."
       (when-let* ((args-vec (clojure-ts--node-child parent-defun "vec_lit")))
         (setq captured-nodes
               (append captured-nodes
-                      (treesit-query-capture args-vec clojure-ts--completion-locals-query))
-              parent-defun (treesit-parent-until parent-defun
-                                                 #'clojure-ts--completion-defun-with-args-node-p))))
+                      (treesit-query-capture args-vec clojure-ts--completion-locals-query))))
+      (setq parent-defun (treesit-parent-until parent-defun
+                                               #'clojure-ts--completion-defun-with-args-node-p)))
     captured-nodes))
 
 (defun clojure-ts--completion-let-like-node-p (node)
@@ -2673,9 +2680,9 @@ all let bindings found along the way."
       (when-let* ((bindings-vec (clojure-ts--node-child parent-let "vec_lit")))
         (setq captured-nodes
               (append captured-nodes
-                      (treesit-query-capture bindings-vec clojure-ts--completion-locals-query))
-              parent-let (treesit-parent-until parent-let
-                                               #'clojure-ts--completion-let-like-node-p))))
+                      (treesit-query-capture bindings-vec clojure-ts--completion-locals-query))))
+      (setq parent-let (treesit-parent-until parent-let
+                                             #'clojure-ts--completion-let-like-node-p)))
     captured-nodes))
 
 (defun clojure-ts-completion-at-point-function ()
@@ -2683,6 +2690,7 @@ all let bindings found along the way."
   (when-let* ((bounds (bounds-of-thing-at-point 'symbol))
               (source (treesit-buffer-root-node 'clojure))
               (nodes (append (treesit-query-capture source clojure-ts--completion-query-defuns)
+                             (treesit-query-capture source clojure-ts--completion-query-keywords)
                              (clojure-ts--completion-fn-args-nodes)
                              (clojure-ts--completion-let-locals-nodes))))
     (list (car bounds)
@@ -2692,7 +2700,7 @@ all let bindings found along the way."
                        (seq-remove (lambda (item) (= (treesit-node-end (cdr item)) (point))))
                        ;; Remove unwanted captured nodes
                        (seq-filter (lambda (item)
-                                     (not (member (car item) '(sym kwd)))))
+                                     (not (equal (car item) 'sym))))
                        ;; Produce alist of candidates
                        (seq-map (lambda (item) (cons (treesit-node-text (cdr item) t) (car item))))
                        ;; Remove duplicated candidates

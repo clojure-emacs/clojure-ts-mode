@@ -46,7 +46,9 @@ b|"
       (expect (nth 2 (clojure-ts-completion-at-point-function))
               :to-equal '(("foo" . defun-candidate)
                           ("bar" . defun-candidate)
-                          ("baz" . defun-candidate)))))
+                          ("baz" . defun-candidate)
+                          (":first" . keyword-candidate)
+                          (":second" . keyword-candidate)))))
 
   (it "should complete function arguments"
     (with-clojure-ts-buffer-point "
@@ -61,6 +63,8 @@ b|"
               :to-equal '(("foo" . defun-candidate)
                           ("bar" . defun-candidate)
                           ("baz" . defun-candidate)
+                          (":first" . keyword-candidate)
+                          (":second" . keyword-candidate)
                           ("username" . local-candidate)))))
 
   (it "should not complete function arguments outside of function"
@@ -77,7 +81,9 @@ u|"
       (expect (nth 2 (clojure-ts-completion-at-point-function))
               :to-equal '(("foo" . defun-candidate)
                           ("bar" . defun-candidate)
-                          ("baz" . defun-candidate)))))
+                          ("baz" . defun-candidate)
+                          (":first" . keyword-candidate)
+                          (":second" . keyword-candidate)))))
 
   (it "should complete destructured function arguments"
     (with-clojure-ts-buffer-point "
@@ -86,6 +92,7 @@ u|"
   (println u|))"
       (expect (nth 2 (clojure-ts-completion-at-point-function))
               :to-equal '(("baz" . defun-candidate)
+                          (":keys" . keyword-candidate)
                           ("username" . local-candidate))))
 
     (with-clojure-ts-buffer-point "
@@ -94,6 +101,7 @@ u|"
   (println u|))"
       (expect (nth 2 (clojure-ts-completion-at-point-function))
               :to-equal '(("baz" . defun-candidate)
+                          (":strs" . keyword-candidate)
                           ("username" . local-candidate))))
 
     (with-clojure-ts-buffer-point "
@@ -102,6 +110,7 @@ u|"
   (println u|))"
       (expect (nth 2 (clojure-ts-completion-at-point-function))
               :to-equal '(("baz" . defun-candidate)
+                          (":syms" . keyword-candidate)
                           ("username" . local-candidate))))
 
     (with-clojure-ts-buffer-point "
@@ -110,6 +119,7 @@ u|"
   (println u|))"
       (expect (nth 2 (clojure-ts-completion-at-point-function))
               :to-equal '(("baz" . defun-candidate)
+                          (":name" . keyword-candidate)
                           ("username" . local-candidate))))
 
     (with-clojure-ts-buffer-point "
@@ -131,6 +141,9 @@ u|"
     a|))"
       (expect (nth 2 (clojure-ts-completion-at-point-function))
               :to-equal '(("baz" . defun-candidate)
+                          (":street" . keyword-candidate)
+                          (":zip-code" . keyword-candidate)
+                          (":keys" . keyword-candidate)
                           ("first-name" . local-candidate)
                           ("last-name" . local-candidate)
                           ("address" . local-candidate)
@@ -147,7 +160,43 @@ u|"
       (expect (nth 2 (clojure-ts-completion-at-point-function))
               :to-equal '(("baz" . defun-candidate)
                           ("first-name" . local-candidate)
-                          ("full-name" . local-candidate))))))
+                          ("full-name" . local-candidate)))))
+
+  (it "should complete any keyword"
+    (with-clojure-ts-buffer-point "
+(defn baz
+  [first-name]
+  (let [last-name \"Doe\"
+        address {:street \"Whatever\" :zip-code 2222}
+        {:keys [street zip-code]} address]
+    (println street zip-code)))
+
+:|"
+      (expect (nth 2 (clojure-ts-completion-at-point-function))
+              :to-equal '(("baz" . defun-candidate)
+                          (":street" . keyword-candidate)
+                          (":zip-code" . keyword-candidate)
+                          (":keys" . keyword-candidate)))))
+
+  (it "should complete locals of for bindings"
+    (with-clojure-ts-buffer-point "
+(for [digit [\"one\" \"two\" \"three\"]
+      :let  [prefixed-digit (str \"hello-\" digit)]]
+  (println d|))"
+      (expect (nth 2 (clojure-ts-completion-at-point-function))
+              :to-equal '((":let" . keyword-candidate)
+                          ("digit" . local-candidate)
+                          ("prefixed-digit" . local-candidate)))))
+
+  (it "should complete locals of doseq bindings"
+    (with-clojure-ts-buffer-point "
+(doseq [digit [\"one\" \"two\" \"three\"]
+        :let  [prefixed-digit (str \"hello-\" digit)]]
+  (println d|))"
+      (expect (nth 2 (clojure-ts-completion-at-point-function))
+              :to-equal '((":let" . keyword-candidate)
+                          ("digit" . local-candidate)
+                          ("prefixed-digit" . local-candidate))))))
 
 (provide 'clojure-ts-mode-completion)
 ;;; clojure-ts-mode-completion.el ends here
