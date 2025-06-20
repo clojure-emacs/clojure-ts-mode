@@ -54,3 +54,18 @@
             ;; Both arguments are available here.
             (= item top-arg))
           [1 2 3 4 5]))
+
+;; Works for top-level bindings and for nested `:let` bindings.
+(for [digit vec-variable
+      :let  [prefixed-digit (str "hello-" digit)]]
+  (println prefixed-digit digit))
+
+;; Same for `doseq`
+(doseq [word vec-variable
+        :let  [suffixed-word (str "hello-" word)]]
+  (println suffixed-word word))
+
+;; Can complete any keyword from the buffer
+(do :users/usename
+    :address
+    :kwd)
