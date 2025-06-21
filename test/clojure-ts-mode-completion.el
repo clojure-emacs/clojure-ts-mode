@@ -196,7 +196,33 @@ u|"
       (expect (nth 2 (clojure-ts-completion-at-point-function))
               :to-equal '((":let" . keyword-candidate)
                           ("digit" . local-candidate)
-                          ("prefixed-digit" . local-candidate))))))
+                          ("prefixed-digit" . local-candidate)))))
+
+  (it "should complete all imported symbols from a ns form"
+    (with-clojure-ts-buffer-point "
+(ns completion
+  (:require
+   [clojure.string :as str]
+   [clojure.test :as test :refer [deftest testing is]])
+  (:import
+   (java.time Instant LocalDate)))
+
+s|"
+      (expect (nth 2 (clojure-ts-completion-at-point-function))
+              :to-equal '(("completion" . defun-candidate)
+                          (":require" . keyword-candidate)
+                          (":as" . keyword-candidate)
+                          (":refer" . keyword-candidate)
+                          (":import" . keyword-candidate)
+                          (":require" . kwd)
+                          ("str" . ns-alias-candidate)
+                          ("test" . ns-alias-candidate)
+                          ("deftest" . defun-candidate)
+                          ("testing" . defun-candidate)
+                          ("is" . defun-candidate)
+                          (":import" . kwd)
+                          ("Instant" . import-candidate)
+                          ("LocalDate" . import-candidate))))))
 
 (provide 'clojure-ts-mode-completion)
 ;;; clojure-ts-mode-completion.el ends here

@@ -2592,6 +2592,30 @@ before DELIM-OPEN."
                              :anchor ((sym_lit) @defun-candidate)))))
   "Query that matches top-level definitions.")
 
+(defconst clojure-ts--completion-query-ns
+  (treesit-query-compile
+   'clojure
+   '(((source (list_lit
+               :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+               :anchor (sym_lit name: (sym_name) @sym)
+               ;; require
+               (list_lit
+                :anchor ((kwd_lit) @kwd (:equal ":require" @kwd))
+                (vec_lit
+                 :anchor (sym_lit)
+                 [(sym_lit) @ns-alias-candidate
+                  (vec_lit (sym_lit) @defun-candidate)]))))
+      (:equal "ns" @sym))
+     ((source (list_lit
+               :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+               :anchor (sym_lit name: (sym_name) @sym)
+               ;; import
+               (((list_lit
+                  :anchor ((kwd_lit) @kwd (:equal ":import" @kwd))
+                  (list_lit :anchor (sym_lit) (sym_lit) @import-candidate))))))
+      (:equal "ns" @sym))))
+  "Query that matches all imported symbols in a Clojure ns form.")
+
 (defconst clojure-ts--completion-query-keywords
   (treesit-query-compile 'clojure '((kwd_lit) @keyword-candidate))
   "Query that matches any Clojure keyword.")
@@ -2634,7 +2658,9 @@ bindings vector as well as destructuring syntax.")
 (defconst clojure-ts--completion-annotations
   (list 'defun-candidate " Definition"
         'local-candidate " Local variable"
-        'keyword-candidate " Keyword")
+        'keyword-candidate " Keyword"
+        'ns-alias-candidate " Namespace alias"
+        'import-candidate " Class")
   "Property list of completion candidate type and annotation string.")
 
 (defun clojure-ts--completion-annotation-function (candidate)
@@ -2691,6 +2717,7 @@ all let bindings found along the way."
               (source (treesit-buffer-root-node 'clojure))
               (nodes (append (treesit-query-capture source clojure-ts--completion-query-defuns)
                              (treesit-query-capture source clojure-ts--completion-query-keywords)
+                             (treesit-query-capture source clojure-ts--completion-query-ns)
                              (clojure-ts--completion-fn-args-nodes)
                              (clojure-ts--completion-let-locals-nodes))))
     (list (car bounds)

@@ -6,6 +6,8 @@
 - [#113](https://github.com/clojure-emacs/clojure-ts-mode/pull/113): Fix non-working refactoring commands for Emacs-30.
 - [#114](https://github.com/clojure-emacs/clojure-ts-mode/pull/114): Extend built-in completion to complete keywords and local bindings in
   `for` and `doseq` forms.
+- [#116](https://github.com/clojure-emacs/clojure-ts-mode/pull/116): Extend built-in completion to complete all imported symbols from an `ns`
+  form.
 
 ## 0.5.1 (2025-06-17)
 
