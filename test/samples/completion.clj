@@ -1,4 +1,9 @@
-(ns completion)
+(ns completion
+  (:require
+   [clojure.string :as str]
+   [clojure.test :as test :refer [deftest testing is]])
+  (:import
+   (java.time Instant LocalDate)))
 
 (def my-var "Hello")
 (def my-another-var "World")
