@@ -2549,6 +2549,108 @@ before DELIM-OPEN."
     map)
   "Keymap for `clojure-ts-mode' refactoring commands.")
 
+;;; Bug reporting
+(defconst clojure-ts-mode-report-bug-url "https://github.com/clojure-emacs/clojure-ts-mode/issues/new"
+  "The URL to report a `clojure-ts-mode' issue.")
+
+(defun clojure-ts-mode-report-bug ()
+  "Report a bug in your default browser."
+  (interactive)
+  (browse-url clojure-ts-mode-report-bug-url))
+
+;; Clojure guides
+(defconst clojure-ts-guides-base-url "https://clojure.org/guides/"
+  "The base URL for official Clojure guides.")
+
+(defconst clojure-ts-guides '(("Getting Started" . "getting_started")
+                              ("Install Clojure" . "install_clojure")
+                              ("Editors" . "editors")
+                              ("Structural Editing" . "structural_editing")
+                              ("REPL Programming" . "repl/introduction")
+                              ("Learn Clojure" . "learn/clojure")
+                              ("FAQ" . "faq")
+                              ("spec" . "spec")
+                              ("Reading Clojure Characters" . "weird_characters")
+                              ("Destructuring" . "destructuring")
+                              ("Threading Macros" . "threading_macros")
+                              ("Equality" . "equality")
+                              ("Comparators" . "comparators")
+                              ("Reader Conditionals" . "reader_conditionals")
+                              ("Higher Order Functions" . "higher_order_functions")
+                              ("Dev Startup Time" . "dev_startup_time")
+                              ("Deps and CLI" . "deps_and_cli")
+                              ("tools.build" . "tools_build")
+                              ("core.async Walkthrough" . "async_walkthrough")
+                              ("Go Block Best Practices" . "core_async_go")
+                              ("test.check" . "test_check_beginner"))
+  "A list of all official Clojure guides.")
+
+(defun clojure-ts-view-guide ()
+  "Open a Clojure guide in your default browser.
+
+The command will prompt you to select one of the available guides."
+  (interactive)
+  (let ((guide (completing-read "Select a guide: " (mapcar #'car clojure-ts-guides))))
+    (when guide
+      (let ((guide-url (concat clojure-ts-guides-base-url (cdr (assoc guide clojure-ts-guides)))))
+        (browse-url guide-url)))))
+
+(defconst clojure-ts-reference-base-url "https://clojure.org/reference/"
+  "The base URL for the official Clojure reference.")
+
+(defconst clojure-ts-reference-sections '(("The Reader" . "reader")
+                                          ("The REPL and main" . "repl_and_main")
+                                          ("Evaluation" . "evaluation")
+                                          ("Special Forms" . "special_forms")
+                                          ("Macros" . "macros")
+                                          ("Other Functions" . "other_functions")
+                                          ("Data Structures" . "data_structures")
+                                          ("Datatypes" . "datatypes")
+                                          ("Sequences" . "sequences")
+                                          ("Transients" . "transients")
+                                          ("Transducers" . "transducers")
+                                          ("Multimethods and Hierarchies" . "multimethods")
+                                          ("Protocols" . "protocols")
+                                          ("Metadata" . "metadata")
+                                          ("Namespaces" . "namespaces")
+                                          ("Libs" . "libs")
+                                          ("Vars and Environments" . "vars")
+                                          ("Refs and Transactions" . "refs")
+                                          ("Agents" . "agents")
+                                          ("Atoms" . "atoms")
+                                          ("Reducers" . "reducers")
+                                          ("Java Interop" . "java_interop")
+                                          ("Compilation and Class Generation" . "compilation")
+                                          ("Other Libraries" . "other_libraries")
+                                          ("Differences with Lisps" . "lisps")
+                                          ("Deps and CLI" . "deps_and_cli")))
+
+(defun clojure-ts-view-reference-section ()
+  "Open a Clojure reference section in your default browser.
+
+The command will prompt you to select one of the available sections."
+  (interactive)
+  (let ((section (completing-read "Select a reference section: " (mapcar #'car clojure-ts-reference-sections))))
+    (when section
+      (let ((section-url (concat clojure-ts-reference-base-url (cdr (assoc section clojure-ts-reference-sections)))))
+        (browse-url section-url)))))
+
+(defconst clojure-ts-cheatsheet-url "https://clojure.org/api/cheatsheet"
+  "The URL of the official Clojure cheatsheet.")
+
+(defun clojure-ts-view-cheatsheet ()
+  "Open the Clojure cheatsheet in your default browser."
+  (interactive)
+  (browse-url clojure-ts-cheatsheet-url))
+
+(defconst clojure-ts-style-guide-url "https://guide.clojure.style"
+  "The URL of the Clojure style guide.")
+
+(defun clojure-ts-view-style-guide ()
+  "Open the Clojure style guide in your default browser."
+  (interactive)
+  (browse-url clojure-ts-style-guide-url))
+
 (defvar clojure-ts-mode-map
   (let ((map (make-sparse-keymap)))
     ;;(set-keymap-parent map clojure-mode-map)
@@ -2576,7 +2678,14 @@ before DELIM-OPEN."
          "--"
          ["Unwind once" clojure-ts-unwind]
          ["Fully unwind a threading macro" clojure-ts-unwind-all])
-        ["Version" clojure-mode-display-version]))
+        ("Documentation"
+         ["View a Clojure guide" clojure-ts-view-guide]
+         ["View a Clojure reference section" clojure-ts-view-reference-section]
+         ["View the Clojure cheatsheet" clojure-ts-view-cheatsheet]
+         ["View the Clojure style guide" clojure-ts-view-style-guide])
+        "--"
+        ["Report a clojure-mode bug" clojure-ts-mode-report-bug]
+        ["Version" clojure-ts-mode-display-version]))
     map)
   "Keymap for `clojure-ts-mode'.")
 

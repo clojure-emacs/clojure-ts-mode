@@ -8,6 +8,7 @@
   `for` and `doseq` forms.
 - [#116](https://github.com/clojure-emacs/clojure-ts-mode/pull/116): Extend built-in completion to complete all imported symbols from an `ns`
   form.
+- Add documentation and bug reporting commands from `clojure-mode`.
 
 ## 0.5.1 (2025-06-17)
 
