@@ -21,12 +21,54 @@
 
 ;; The unit test suite of Clojure TS Mode
 
+;;; Code:
+
 (require 'clojure-ts-mode)
 (require 'buttercup)
+(require 'test-helper "test/test-helper")
 
 (describe "clojure-ts-mode-version"
   (it "should not be nil"
     (expect clojure-ts-mode-version)))
+
+(defvar clojure-ts-cache-project)
+
+(let ((project-dir "/home/user/projects/my-project/")
+      (clj-file-path "/home/user/projects/my-project/src/clj/my_project/my_ns/my_file.clj")
+      (project-relative-clj-file-path "src/clj/my_project/my_ns/my_file.clj")
+      (clj-file-ns "my-project.my-ns.my-file")
+      (clojure-ts-cache-project nil))
+
+  (describe "clojure-ts-project-root-path"
+    (it "nbb subdir"
+      (with-temp-dir temp-dir
+                     (let* ((bb-edn (expand-file-name "nbb.edn" temp-dir))
+                            (bb-edn-src (expand-file-name "src" temp-dir)))
+                       (write-region "{}" nil bb-edn)
+                       (make-directory bb-edn-src)
+                       (expect (expand-file-name (clojure-ts-project-dir bb-edn-src))
+                               :to-equal (file-name-as-directory temp-dir))))))
+
+  (describe "clojure-ts-project-relative-path"
+    (cl-letf (((symbol-function 'clojure-ts-project-dir) (lambda () project-dir)))
+      (expect (clojure-ts-project-relative-path clj-file-path)
+              :to-equal project-relative-clj-file-path)))
+
+  (describe "clojure-ts-expected-ns"
+    (it "should return the namespace matching a path"
+      (cl-letf (((symbol-function 'clojure-ts-project-relative-path)
+                 (lambda (&optional _current-buffer-file-name)
+                   project-relative-clj-file-path)))
+        (expect (clojure-ts-expected-ns clj-file-path)
+                :to-equal clj-file-ns)))
+
+    (it "should return the namespace even without a path"
+      (cl-letf (((symbol-function 'clojure-ts-project-relative-path)
+                 (lambda (&optional _current-buffer-file-name)
+                   project-relative-clj-file-path)))
+        (expect (let ((buffer-file-name clj-file-path))
+                  (clojure-ts-expected-ns))
+                :to-equal clj-file-ns)))))
 
 (describe "clojure-ts-find-ns"
   (it "should find common namespace declarations"
