@@ -58,6 +58,7 @@
 (require 'treesit)
 (require 'align)
 (require 'subr-x)
+(require 'project)
 
 (declare-function treesit-parser-create "treesit.c")
 (declare-function treesit-node-eq "treesit.c")
@@ -265,6 +266,52 @@ values like this:
   :package-version '(clojure-ts-mode . "0.5")
   :safe #'booleanp
   :type 'boolean)
+
+(defcustom clojure-ts-build-tool-files
+  '("project.clj"      ; Leiningen
+    "build.boot"       ; Boot
+    "build.gradle"     ; Gradle
+    "build.gradle.kts" ; Gradle
+    "deps.edn"         ; Clojure CLI (a.k.a. tools.deps)
+    "shadow-cljs.edn"  ; shadow-cljs
+    "bb.edn"           ; babashka
+    "nbb.edn"          ; nbb
+    "basilisp.edn"     ; Basilisp (Python)
+    )
+  "A list of files, which identify a Clojure project's root."
+  :type '(repeat string)
+  :package-version '(clojure-ts-mode . "0.6.0")
+  :safe (lambda (value)
+          (and (listp value)
+               (cl-every 'stringp value))))
+
+(defcustom clojure-ts-cache-project-dir t
+  "Whether to cache the results of `clojure-ts-project-dir'."
+  :type 'boolean
+  :safe #'booleanp
+  :package-version '(clojure-ts-mode . "0.6.0"))
+
+(defcustom clojure-ts-cache-ns nil
+  "Whether to cache the results of `clojure-ts-find-ns'.
+
+Note that this won't work well in buffers with multiple namespace
+declarations (which rarely occur in practice) and you'll have to
+invalidate this manually after changing the ns for a buffer.  If you
+update the ns using `clojure-ts-update-ns' the cached value will be
+updated automatically."
+  :type 'boolean
+  :safe #'booleanp
+  :package-version '(clojure-ts-mode . "0.6.0"))
+
+(defcustom clojure-ts-directory-prefixes
+  '("^\\(?:[^/]+/\\)*clj[csxd]*/")
+  "A list of directory prefixes used by `clojure-expected-ns'.
+The prefixes are used to generate the correct namespace."
+  :type '(repeat string)
+  :package-version '(clojure-mode . "0.6.0")
+  :safe (lambda (value)
+          (and (listp value)
+               (cl-every 'stringp value))))
 
 (defvar clojure-ts-mode-remappings
   '((clojure-mode . clojure-ts-mode)
@@ -2689,6 +2736,146 @@ The command will prompt you to select one of the available sections."
     map)
   "Keymap for `clojure-ts-mode'.")
 
+;;; Project helpers
+
+(defun clojure-ts-project-root-path (&optional dir-name)
+  "Return the absolute path to the project's root directory.
+
+Uses `default-directory' if DIR-NAME is nil.  Return nil if not inside
+of a project.
+
+NOTE: this function uses `project.el' internally, so if Clojure source
+is located in a non-Clojure project, but still under version control,
+the root of the project will be returned."
+  (let ((default-directory (or dir-name default-directory))
+        (project-vc-extra-root-markers clojure-ts-build-tool-files))
+    (expand-file-name (project-root (project-current)))))
+
+(defcustom clojure-ts-project-root-function #'clojure-ts-project-root-path
+  "Function to locate Clojure project root directory."
+  :type 'function
+  :risky t
+  :package-version '(clojure-ts-mode . "0.6.0"))
+
+(defvar-local clojure-ts-cached-project-dir nil
+  "A project dir cache used to speed up related operations.")
+
+(defun clojure-ts-project-dir (&optional dir-name)
+  "Return an absolute path to the project's root directory.
+
+Call is delegated down to `clojure-ts-project-root-function' with
+optional DIR-NAME as argument.
+
+When `clojure-ts-cache-project-dir' is non-nil, the result of the
+command is cached in a buffer local variable
+`clojure-ts-cached-project-dir'."
+  (let ((project-dir (or clojure-ts-cached-project-dir
+                         (funcall clojure-ts-project-root-function dir-name))))
+    (when (and clojure-ts-cache-project-dir
+               (derived-mode-p 'clojure-ts-mode)
+               (not clojure-ts-cached-project-dir))
+      (setq-local clojure-ts-cached-project-dir project-dir))
+    project-dir))
+
+(defun clojure-ts-project-relative-path (path)
+  "Denormalize PATH by making it relative to the project root."
+  (file-relative-name path (clojure-ts-project-dir)))
+
+;;; ns manipulation
+
+(defun clojure-ts-expected-ns (&optional path)
+  "Return the namespace matching PATH.
+
+PATH is expected to be an absolute file path.
+
+If PATH is nil, use the path to the file backing the current buffer."
+  (when-let* ((path (or path (when-let* ((buf-file-name (buffer-file-name)))
+                               (file-truename buf-file-name))))
+              (relative (clojure-ts-project-relative-path path))
+              ;; Drop prefix from ns for projects with structure
+              ;; src/{clj,cljs,cljc}
+              (without-prefix (seq-reduce (lambda (acc regex)
+                                            (replace-regexp-in-string regex "" acc))
+                                          clojure-ts-directory-prefixes
+                                          relative)))
+    (thread-last without-prefix
+                 (file-name-sans-extension)
+                 (string-replace "_" "-")
+                 (string-replace "/" "."))))
+
+(defvar-local clojure-ts-expected-ns-function nil
+  "The function used to determine the expected namespace of a file.
+
+`clojure-ts-mode' ships a basic function named `clojure-ts-expected-ns'
+that does basic heuristics to figure this out.  It can be redefined by
+other packages to provide a more complex version.")
+
+(defun clojure-ts-insert-ns-form-at-point ()
+  "Insert a namespace form at point."
+  (interactive)
+  (insert (format "(ns %s)" (funcall clojure-ts-expected-ns-function))))
+
+(defun clojure-ts-insert-ns-form ()
+  "Insert a namespace form at the beginning of the buffer."
+  (interactive)
+  (widen)
+  (goto-char (point-min))
+  (clojure-ts-insert-ns-form-at-point))
+
+(defvar-local clojure-ts-cached-ns nil
+  "A buffer ns cache to speed up ns-related operations.")
+
+(defconst clojure-ts--find-ns-query
+  (treesit-query-compile
+   'clojure
+   '(((source (list_lit
+               :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+               :anchor (sym_lit name: (sym_name) @ns)
+               :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+               :anchor (sym_lit name: (sym_name) @ns-name)))
+      (:equal @ns "ns"))
+     ((source (list_lit
+               :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+               :anchor (sym_lit name: (sym_name) @in-ns)
+               :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+               :anchor (quoting_lit
+                        :anchor (sym_lit name: (sym_name) @ns-name))))
+      (:equal @in-ns "in-ns"))))
+  "Compiled Tree-sitter query to capture Clojure ns node.")
+
+(defun clojure-ts-find-ns ()
+  "Return the name of the current namespace."
+  (if (and clojure-ts-cache-ns clojure-ts-cached-ns)
+      clojure-ts-cached-ns
+    (when-let* ((nodes (treesit-query-capture 'clojure clojure-ts--find-ns-query))
+                (ns-name-node (cdr (assoc 'ns-name nodes)))
+                (ns-name (treesit-node-text ns-name-node t)))
+      (when clojure-ts-cache-ns
+        (setq-local clojure-ts-cached-ns ns-name))
+      ;; Set the match data, so the namespace could be easily replaced.
+      (let ((start (treesit-node-start ns-name-node))
+            (end (treesit-node-end ns-name-node)))
+        (set-match-data (list start end)))
+      ns-name)))
+
+(defun clojure-ts-update-ns ()
+  "Update the namespace of the current buffer.
+
+Useful if a file has been renamed."
+  (interactive)
+  (when-let* ((ns-name (funcall clojure-ts-expected-ns-function)))
+    (save-excursion
+      (save-match-data
+        (if (clojure-ts-find-ns)
+            (progn
+              ;; This relies on the match data, set by `clojure-ts-find-ns'
+              ;; function.
+              (replace-match ns-name nil nil nil 0)
+              (message "ns form updated to `%s'" ns-name)
+              (when clojure-ts-cache-ns
+                (setq-local clojure-ts-cached-ns ns-name)))
+          (user-error "Can't find ns form"))))))
+
 ;;; Completion
 
 (defconst clojure-ts--completion-query-defuns
@@ -2978,6 +3165,8 @@ REGEX-AVAILABLE."
                 outline-search-function #'treesit-outline-search
                 outline-level #'clojure-ts--outline-level))
 
+  (setq-local clojure-ts-expected-ns-function #'clojure-ts-expected-ns)
+
   (setq-local treesit-font-lock-settings
               (clojure-ts--font-lock-settings markdown-available regex-available))
   (setq-local treesit-font-lock-feature-list
@@ -3168,28 +3357,6 @@ Useful if you want to switch to the `clojure-mode's mode mappings."
         ;; nbb scripts are ClojureScript source files
         (add-to-list 'interpreter-mode-alist '("nbb" . clojure-ts-clojurescript-mode))))
   (message "Clojure TS Mode will not be activated as Tree-sitter support is missing."))
-
-(defvar clojure-ts--find-ns-query
-  (treesit-query-compile
-   'clojure
-   '(((source (list_lit
-               :anchor [(comment) (meta_lit) (old_meta_lit)] :*
-               :anchor (sym_lit name: (sym_name) @ns)
-               :anchor [(comment) (meta_lit) (old_meta_lit)] :*
-               :anchor (sym_lit name: (sym_name) @ns-name)))
-      (:equal @ns "ns"))
-     ((source (list_lit
-               :anchor [(comment) (meta_lit) (old_meta_lit)] :*
-               :anchor (sym_lit name: (sym_name) @in-ns)
-               :anchor [(comment) (meta_lit) (old_meta_lit)] :*
-               :anchor (quoting_lit
-                        :anchor (sym_lit name: (sym_name) @ns-name))))
-      (:equal @in-ns "in-ns")))))
-
-(defun clojure-ts-find-ns ()
-  "Return the name of the current namespace."
-  (let ((nodes (treesit-query-capture 'clojure clojure-ts--find-ns-query)))
-    (treesit-node-text (cdr (assoc 'ns-name nodes)) t)))
 
 (provide 'clojure-ts-mode)
 

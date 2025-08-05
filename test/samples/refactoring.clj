@@ -146,4 +146,4 @@
   clojure.lang.IPersistentMap
   (set-parameter [])
   (set-parameter [m ^PreparedStatement s i]
-    (.setObject| s i (->pgobject m))))
+    (.setObject s i (->pgobject m))))
