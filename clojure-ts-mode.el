@@ -2325,7 +2325,12 @@ type, etc.  See `treesit-thing-settings' for more details."
     (when same-line-p
       (newline-and-indent))
     (when single-arity-p
-      (insert-pair 2 ?\( ?\))
+      (save-excursion
+        (backward-up-list)
+        (forward-list)
+        (down-list -1)
+        (insert ")"))
+      (insert "(")
       (backward-up-list))
     (insert "([])\n")
     ;; Put the point between square brackets.

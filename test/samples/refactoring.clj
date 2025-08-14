@@ -133,7 +133,8 @@
 (defn foo
   ^{:bla "meta"}
   [arg]
-  body)
+  body
+  second-expr)
 
 (if ^boolean (= 2 2)
   true
