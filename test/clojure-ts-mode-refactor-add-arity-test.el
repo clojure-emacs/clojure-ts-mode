@@ -80,6 +80,22 @@
 
     (clojure-ts-add-arity))
 
+  (when-refactoring-with-point-it "should handle a single-arity defn with multiple body expressions"
+    "(defn fo|o
+  ^{:bla \"meta\"}
+  [arg]
+  body
+  second-expr)"
+
+    "(defn foo
+  ^{:bla \"meta\"}
+  ([|])
+  ([arg]
+   body
+   second-expr))"
+
+    (clojure-ts-add-arity))
+
   (when-refactoring-with-point-it "should add an arity to a multi-arity defn"
     "(defn foo
   ([arg1])
