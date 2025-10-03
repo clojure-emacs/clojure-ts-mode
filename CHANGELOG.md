@@ -11,6 +11,7 @@
 - Add documentation and bug reporting commands from `clojure-mode`.
 - [#118](https://github.com/clojure-emacs/clojure-ts-mode/pull/118): Add some ns manipulation functions from `clojure-mode`.
 - Fix a bug in `clojure-ts-add-arity` when body has more than one expression.
+- [#120](https://github.com/clojure-emacs/clojure-ts-mode/issues/120): Fix a bug when symbols with metadata were not listed in imenu.
 
 ## 0.5.1 (2025-06-17)
 

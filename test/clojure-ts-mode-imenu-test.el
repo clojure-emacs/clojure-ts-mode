@@ -33,6 +33,12 @@
         (expect (imenu-find-default "a" flatten-index)
                 :to-equal "Variable:a"))))
 
+  (it "should index def with meta data before symbol"
+    (with-clojure-ts-buffer "(def ^:private a 1)"
+      (let ((flatten-index (imenu--flatten-index-alist (imenu--make-index-alist) t)))
+        (expect (imenu-find-default "a" flatten-index)
+                :to-equal "Variable:a"))))
+
   (it "should index defn with meta data"
     (with-clojure-ts-buffer "^{:foo 1}(defn a [])"
       (let ((flatten-index (imenu--flatten-index-alist (imenu--make-index-alist) t)))
