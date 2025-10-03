@@ -1003,13 +1003,10 @@ If there is no namespace, returns nil."
 (defun clojure-ts--node-child-skip-metadata (node n)
   "Return the Nth child of NODE like `treesit-node-child', sans metadata.
 Skip the optional metadata node at pos 0 if present."
-  (let ((first-child (treesit-node-child node 0 t)))
-    (treesit-node-child
-     node
-     (if (clojure-ts--metadata-node-p first-child)
-         (1+ n)
-       n)
-     t)))
+  (let ((value-nodes (thread-last (treesit-node-children node t)
+                                  (seq-filter (lambda (child)
+                                                (string= (treesit-node-field-name child) "value"))))))
+    (seq-elt value-nodes n)))
 
 (defun clojure-ts--first-value-child (node)
   "Return the first value child of the given NODE.
