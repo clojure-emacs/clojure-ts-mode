@@ -1003,9 +1003,9 @@ If there is no namespace, returns nil."
 (defun clojure-ts--node-child-skip-metadata (node n)
   "Return the Nth child of NODE like `treesit-node-child', sans metadata.
 Skip the optional metadata node at pos 0 if present."
-  (let ((value-nodes (thread-last (treesit-node-children node t)
-                                  (seq-filter (lambda (child)
-                                                (string= (treesit-node-field-name child) "value"))))))
+  (let ((value-nodes (seq-filter (lambda (child)
+                                   (string= (treesit-node-field-name child) "value"))
+                                 (treesit-node-children node t))))
     (seq-elt value-nodes n)))
 
 (defun clojure-ts--first-value-child (node)
@@ -1213,8 +1213,7 @@ The possible values for this variable are
         (and (clojure-ts--list-node-p parent)
              ;; Should we also check for keyword first child, as in (:k map) calls?
              (let ((first-child (treesit-node-child parent 0 t)))
-               (or (clojure-ts--symbol-node-p first-child)
-                   (clojure-ts--keyword-node-p first-child)))))
+               (clojure-ts--symbol-node-p first-child))))
       parent 2)
      ((parent-is "vec_lit") parent 1)
      ((parent-is "map_lit") parent 1)

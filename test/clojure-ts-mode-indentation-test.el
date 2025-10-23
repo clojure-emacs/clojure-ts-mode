@@ -24,6 +24,7 @@
 (require 'clojure-ts-mode)
 (require 'cl-lib)
 (require 'buttercup)
+(require 'test-helper "test/test-helper")
 (require 's nil t)               ;Don't burp if it's missing during compilation.
 
 
@@ -74,6 +75,25 @@ DESCRIPTION is a string with the description of the spec."
                       (expect (buffer-string) :to-equal ,(concat "\n" form))))
                  forms))))
 
+(defmacro when-indenting-fixed-it (description &rest forms)
+  "Return a buttercup spec.
+
+Check that all FORMS correspond to properly indented sexps.
+
+DESCRIPTION is a string with the description of the spec.
+
+Sets `clojure-ts-indent-style' to `fixed'."
+  (declare (indent 1))
+  `(it ,description
+     (progn
+       ,@(mapcar (lambda (form)
+                   `(with-temp-buffer
+                      (let ((clojure-ts-indent-style 'fixed))
+                        (clojure-ts-mode)
+                        (insert "\n" ,form);,(replace-regexp-in-string "\n +" "\n " form))
+                        (indent-region (point-min) (point-max))
+                        (expect (buffer-string) :to-equal ,(concat "\n" form)))))
+                 forms))))
 
 (defmacro when-aligning-it (description &rest forms)
   "Return a buttercup spec.
@@ -179,32 +199,32 @@ DESCRIPTION is a string with the description of the spec."
   [_foo]
   (+ 1 1))")
 
-(when-indenting-it "should support function calls via vars"
-   "
+  (when-indenting-it "should support function calls via vars"
+    "
 (#'foo 5
        6)")
 
-(when-indenting-it "should support function literals"
-  "
+  (when-indenting-it "should support function literals"
+    "
 #(or true
      false
      %)")
 
-(when-indenting-it "should support block-0 expressions"
-  "
+  (when-indenting-it "should support block-0 expressions"
+    "
 (do (aligned)
     (vertically))"
 
-  "
+    "
 (do
   (indented)
   (with-2-spaces))"
 
-  "
+    "
 (future
   (body is indented))"
 
-  "
+    "
 (try
   (something)
   ;; A bit of block 2 rule
@@ -214,108 +234,112 @@ DESCRIPTION is a string with the description of the spec."
          e-info
     \"Second argument is aligned vertically with the first one.\"))")
 
-(when-indenting-it "should support block-1 expressions"
-  "
+  (when-indenting-it "should support block-1 expressions"
+    "
 (case x
   2 (print 2)
   3 (print 3)
   (print \"Default\"))"
 
-  "
+    "
 (cond-> {}
   :always (assoc :hello \"World\")
   false (do nothing))"
 
-  "
+    "
 (with-precision 32
   (/ (bigdec 20) (bigdec 30)))"
 
-  "
+    "
 (testing \"Something should work\"
   (is (something-working?)))")
 
-(when-indenting-it "should support block-2 expressions"
-  "
+  (when-indenting-it "should support block-2 expressions"
+    "
 (are [x y]
      (= x y)
   2 3
   4 5
   6 6)"
 
-  "
+    "
 (as-> {} $
   (assoc $ :hello \"World\"))"
 
-  "
+    "
 (as-> {}
       my-map
   (assoc my-map :hello \"World\"))"
 
-  "
+    "
 (defrecord MyThingR []
   IProto
   (foo [this x] x))")
 
-(when-indenting-it "should support inner-0 expressions"
-  "
+  (when-indenting-it "should support inner-0 expressions"
+    "
 (fn named-lambda [x]
   (+ x x))"
 
-  "
+    "
 (defmethod hello :world
   [arg1 arg2]
   (+ arg1 arg2))"
 
-  "
+    "
 (reify
   AutoCloseable
   (close
     [this]
     (is properly indented)))")
 
-(it "should prioritize custom semantic indentation rules"
-  (with-clojure-ts-buffer "
+  (it "should prioritize custom semantic indentation rules"
+    (with-clojure-ts-buffer "
 (are [x y]
      (= x y)
   2 3
   4 5
   6 6)"
-    (setopt clojure-ts-semantic-indent-rules '(("are" . ((:block 1)))))
-    (indent-region (point-min) (point-max))
-    (expect (buffer-string) :to-equal "
+      (setopt clojure-ts-semantic-indent-rules '(("are" . ((:block 1)))))
+      (indent-region (point-min) (point-max))
+      (prog1
+          (expect (buffer-string) :to-equal "
 (are [x y]
   (= x y)
   2 3
   4 5
-  6 6)")))
+  6 6)")
+        ;; `setopt' cannot set variable locally so we need to restore it's
+        ;; original value.
+        (setopt clojure-ts-semantic-indent-rules nil))))
 
-(it "should indent collections elements with metadata correctly"
-  "
+  (it "should indent collections elements with metadata correctly"
+    "
 (def x
   [a b [c ^:foo
         d
         e]])"
 
-  "
+    "
 #{x
   y ^:foo
   z}"
 
-  "
+    "
 {:hello ^:foo
  \"world\"
  :foo
  \"bar\"}")
 
-(it "should indent body of special forms correctly considering metadata"
-  "
+  (it "should indent body of special forms correctly considering metadata"
+    "
 (let [result ^long
       (if true
         1
         2)])")
 
-(it "should pick up dynamic indentation rules from clojure-ts-get-indent-function"
-  (with-clojure-ts-buffer "
+  (it "should pick up dynamic indentation rules from clojure-ts-get-indent-function"
+    (with-clojure-ts-buffer "
 (defmacro my-with-in-str
   \"[DOCSTRING]\"
   {:style/indent 1}
@@ -324,9 +348,9 @@ DESCRIPTION is a string with the description of the spec."
 
 (my-with-in-str \"34\"
 (prompt \"How old are you?\"))"
-    (setq-local clojure-ts-get-indent-function #'cider--get-symbol-indent-mock)
-    (indent-region (point-min) (point-max))
-    (expect (buffer-string) :to-equal "
+      (setq-local clojure-ts-get-indent-function #'cider--get-symbol-indent-mock)
+      (indent-region (point-min) (point-max))
+      (expect (buffer-string) :to-equal "
 (defmacro my-with-in-str
   \"[DOCSTRING]\"
   {:style/indent 1}
@@ -336,7 +360,7 @@ DESCRIPTION is a string with the description of the spec."
 (my-with-in-str \"34\"
   (prompt \"How old are you?\"))"))
 
-  (with-clojure-ts-buffer "
+    (with-clojure-ts-buffer "
 (defmacro my-letfn
   \"[DOCSTRING]\"
   {:style/indent [1 [[:defn]] :form]}
@@ -349,9 +373,9 @@ DESCRIPTION is a string with the description of the spec."
                   (* (twice y) 3))]
 (println \"Twice 15 =\" (twice 15))
 (println \"Six times 15 =\" (six-times 15)))"
-    (setq-local clojure-ts-get-indent-function #'cider--get-symbol-indent-mock)
-    (indent-region (point-min) (point-max))
-    (expect (buffer-string) :to-equal "
+      (setq-local clojure-ts-get-indent-function #'cider--get-symbol-indent-mock)
+      (indent-region (point-min) (point-max))
+      (expect (buffer-string) :to-equal "
 (defmacro my-letfn
   \"[DOCSTRING]\"
   {:style/indent [1 [[:defn]] :form]}
@@ -363,7 +387,15 @@ DESCRIPTION is a string with the description of the spec."
                     (six-times [y]
                       (* (twice y) 3))]
   (println \"Twice 15 =\" (twice 15))
-  (println \"Six times 15 =\" (six-times 15)))"))))
+  (println \"Six times 15 =\" (six-times 15)))")))
+
+  (when-indenting-fixed-it "should indent children of a list with 2 spaces if first node is a symbol"
+    "(ns indentation
+  (:require
+   [clojure.string :as str])
+  (:import
+   (java.util Date
+     UUID)))"))
 
 (describe "clojure-ts-align"
   (it "should handle improperly indented content"
