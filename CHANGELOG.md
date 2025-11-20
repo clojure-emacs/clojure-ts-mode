@@ -4,16 +4,13 @@
 
 - Add a dedicated mode for editing Joker code. (`clojure-ts-joker-mode`).
 - [#113](https://github.com/clojure-emacs/clojure-ts-mode/pull/113): Fix non-working refactoring commands for Emacs-30.
-- [#114](https://github.com/clojure-emacs/clojure-ts-mode/pull/114): Extend built-in completion to complete keywords and local bindings in
-  `for` and `doseq` forms.
-- [#116](https://github.com/clojure-emacs/clojure-ts-mode/pull/116): Extend built-in completion to complete all imported symbols from an `ns`
-  form.
+- [#114](https://github.com/clojure-emacs/clojure-ts-mode/pull/114): Extend built-in completion to complete keywords and local bindings in `for` and `doseq` forms.
+- [#116](https://github.com/clojure-emacs/clojure-ts-mode/pull/116): Extend built-in completion to complete all imported symbols from an `ns` form.
 - Add documentation and bug reporting commands from `clojure-mode`.
 - [#118](https://github.com/clojure-emacs/clojure-ts-mode/pull/118): Add some ns manipulation functions from `clojure-mode`.
 - Fix a bug in `clojure-ts-add-arity` when body has more than one expression.
 - [#120](https://github.com/clojure-emacs/clojure-ts-mode/issues/120): Fix a bug when symbols with metadata were not listed in imenu.
-- [#124](https://github.com/clojure-emacs/clojure-ts-mode/issues/124): Correctly indent lists that start with a keyword when using the
-  `fixed` indentation style.
+- [#124](https://github.com/clojure-emacs/clojure-ts-mode/issues/124): Correctly indent lists that start with a keyword when using the `fixed` indentation style.
 
 ## 0.5.1 (2025-06-17)
 
@@ -23,7 +20,7 @@
 ## 0.5.0 (2025-06-04)
 
 - [#96](https://github.com/clojure-emacs/clojure-ts-mode/pull/96): Highlight function name properly in `extend-protocol` form.
-- [#96](https://github.com/clojure-emacs/clojure-ts-mode/pull/96): Add support for extend-protocol forms to `clojure-ts-add-arity` refactoring
+- [#96](https://github.com/clojure-emacs/clojure-ts-mode/pull/96): Add support for extend-protocol forms to `clojure-ts-add-arity` refactoring.
   command.
 - [#99](https://github.com/clojure-emacs/clojure-ts-mode/pull/99): Improve navigation by s-expression by switching to an experimental
   Clojure grammar.
