@@ -2,6 +2,8 @@
 
 ## main (unreleased)
 
+## 0.6.0 (2025-12-02)
+
 - Add a dedicated mode for editing Joker code. (`clojure-ts-joker-mode`).
 - [#113](https://github.com/clojure-emacs/clojure-ts-mode/pull/113): Fix non-working refactoring commands for Emacs-30.
 - [#114](https://github.com/clojure-emacs/clojure-ts-mode/pull/114): Extend built-in completion to complete keywords and local bindings in `for` and `doseq` forms.
