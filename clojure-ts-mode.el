@@ -535,8 +535,7 @@ captured including quotes."
       ((list_lit :anchor [(comment) (meta_lit) (old_meta_lit)] :*
                  :anchor (sym_lit) @_def_symbol
                  (list_lit :anchor (sym_lit) (vec_lit) :*
-                           (str_lit (str_content) ,capture-symbol) ,quotes-symbol)
-                 :*)
+                           (str_lit (str_content) ,capture-symbol) ,quotes-symbol))
        (:match ,clojure-ts--interface-def-symbol-regexp @_def_symbol)))))
 
 (defconst clojure-ts--match-docstring-query

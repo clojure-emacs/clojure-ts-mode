@@ -11,6 +11,7 @@
 - Fix a bug in `clojure-ts-add-arity` when body has more than one expression.
 - [#120](https://github.com/clojure-emacs/clojure-ts-mode/issues/120): Fix a bug when symbols with metadata were not listed in imenu.
 - [#124](https://github.com/clojure-emacs/clojure-ts-mode/issues/124): Correctly indent lists that start with a keyword when using the `fixed` indentation style.
+- [#127](https://github.com/clojure-emacs/clojure-ts-mode/issues/127): Fix performance issue for some valid Clojure expressions.
 
 ## 0.5.1 (2025-06-17)
 
