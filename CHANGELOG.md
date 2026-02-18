@@ -2,6 +2,8 @@
 
 ## main (unreleased)
 
+- Add project root detection for ClojureCLR project.
+
 ## 0.6.0 (2025-12-02)
 
 - Add a dedicated mode for editing Joker code. (`clojure-ts-joker-mode`).

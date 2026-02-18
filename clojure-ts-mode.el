@@ -277,6 +277,7 @@ values like this:
     "bb.edn"           ; babashka
     "nbb.edn"          ; nbb
     "basilisp.edn"     ; Basilisp (Python)
+    "deps-clr.edn"     ; ClojureCLR
     )
   "A list of files, which identify a Clojure project's root."
   :type '(repeat string)
