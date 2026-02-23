@@ -128,7 +128,7 @@ Once installed, evaluate `clojure-ts-mode.el` and you should be ready to go.
 - The [experimental](https://github.com/sogaiu/tree-sitter-clojure/tree/unstable-20250526) version Clojure grammar. This version includes a few
   improvements, which potentially will be promoted to a stable release (See [the
   discussion](https://github.com/sogaiu/tree-sitter-clojure/issues/65)). This grammar is required for proper work of `clojure-ts-mode`.
-- [markdown-inline](https://github.com/MDeiml/tree-sitter-markdown), which will be used for docstrings if available and if
+- [markdown-inline](https://github.com/tree-sitter-grammars/tree-sitter-markdown), which will be used for docstrings if available and if
   `clojure-ts-use-markdown-inline` is enabled.
 - [tree-sitter-regex](https://github.com/tree-sitter/tree-sitter-regex/releases/tag/v0.24.3), which will be used for regex literals if available and if
   `clojure-ts-use-regex-parser` is not `nil`.
