@@ -3068,8 +3068,8 @@ all let bindings found along the way."
 (defconst clojure-ts-grammar-recipes
   '((clojure "https://github.com/sogaiu/tree-sitter-clojure.git"
              "unstable-20250526")
-    (markdown-inline "https://github.com/MDeiml/tree-sitter-markdown"
-                     "v0.4.1"
+    (markdown-inline "https://github.com/tree-sitter-grammars/tree-sitter-markdown"
+                     "v0.5.2"
                      "tree-sitter-markdown-inline/src")
     (regex "https://github.com/tree-sitter/tree-sitter-regex"
            "v0.24.3"))
