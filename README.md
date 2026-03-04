@@ -192,8 +192,8 @@ like `clojurescript-mode`). To disable this remapping, set
 (setopt clojure-ts-auto-remap nil)
 ```
 
-You can also use the commands `clojure-ts-activate` / `clojure-ts-deactivate` to
-interactively change this behavior.
+You can also use the commands `clojure-ts-activate-mode-remappings` /
+`clojure-ts-deactivate-mode-remappings` to interactively change this behavior.
 
 ### Indentation
 
