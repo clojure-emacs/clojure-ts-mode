@@ -231,6 +231,19 @@ DESCRIPTION is the description of the spec."
       (.setObject s i (->pgobject m))))"
      (81 93 font-lock-function-name-face))))
 
+;;;; Builtin macros
+
+(describe "builtin-macro-highlighting"
+  (when-fontifying-it "should highlight all builtin macros as keywords"
+    ("(io! (println \"hi\"))" (2 4 font-lock-keyword-face))
+    ("(sync nil (println \"hi\"))" (2 5 font-lock-keyword-face))
+    ("(in-ns 'foo)" (2 6 font-lock-keyword-face))
+    ("(let [a 1] a)" (2 4 font-lock-keyword-face))
+    ("(when true 1)" (2 5 font-lock-keyword-face))
+    ("(fn [x] x)" (2 3 font-lock-keyword-face))
+    ("(some->> x inc)" (2 8 font-lock-keyword-face))
+    ("(some-> x inc)" (2 7 font-lock-keyword-face))))
+
 ;;;; Extra def forms
 
 (describe "clojure-ts-extra-def-forms"
