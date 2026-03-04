@@ -129,7 +129,7 @@ Add support for semantic indentation (now the default)
   - [ca3914aa7aa9645ab244658f8db781cc6f95111e](https://github.com/clojure-emacs/clojure-ts-mode/commit/ca3914aa7aa9645ab244658f8db781cc6f95111e)
   - [85871fdbc831b3129dae5762e9c247d453c35e15](https://github.com/clojure-emacs/clojure-ts-mode/commit/85871fdbc831b3129dae5762e9c247d453c35e15)
   - [ff5d7e13dc53cc5da0e8139b04e02d90f61d9065](https://github.com/clojure-emacs/clojure-ts-mode/commit/ff5d7e13dc53cc5da0e8139b04e02d90f61d9065)
-- Highlight "\`quoted-symbols\`  in docs strings like this."
+- Highlight "\`quoted-symbols\`  in docstrings like this."
   - This feature uses a nested markdown parser.
      If the parser is not available this feature should be silently disabled.
     - [9af0a6b35c708309acdfeb4c0c79061b0fd4eb44](https://github.com/clojure-emacs/clojure-ts-mode/commit/9af0a6b35c708309acdfeb4c0c79061b0fd4eb44)

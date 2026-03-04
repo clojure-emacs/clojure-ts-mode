@@ -4,7 +4,7 @@
 
 Clojure-ts-mode is based on the tree-sitter-clojure grammar.
 
-If you want to contribute to clojure-ts-mode, it is recommend that you
+If you want to contribute to clojure-ts-mode, it is recommended that you
 familiarize yourself with how Tree-sitter works.  The official documentation is
 a great place to start: <https://tree-sitter.github.io/tree-sitter/>
 
@@ -56,7 +56,7 @@ There are nodes to represent:
 - Numbers `(num_lit)`
 - Comments `(comment, dis_expr)`
   - `dis_expr` is the `#_` discard expression
-- Lists `(list_list)`
+- Lists `(list_lit)`
 - Vectors `(vec_lit)`
 - Maps `(map_lit)`
 - Sets `(set_lit)`
@@ -283,10 +283,10 @@ To find more details one can evaluate the following expression in Emacs:
 
 To enable the parser-based indentation engine, `clojure-ts-mode` sets the
 `treesit-simple-indent-rules` with the output of
-`clojure-ts--configured-indent-rules`, and then call `treesit-major-mode-setup`.
+`clojure-ts--configured-indent-rules`, and then calls `treesit-major-mode-setup`.
 
-According to the documentation of `treesit-simple-indnet-rules` variable, its
-values is:
+According to the documentation of `treesit-simple-indent-rules` variable, its
+value is:
 
 > A list of indent rule settings.
 > Each indent rule setting should be (LANGUAGE RULE...), where LANGUAGE is

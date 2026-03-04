@@ -51,7 +51,7 @@ You can read more about the vision for `clojure-ts-mode` [here](https://metaredu
 The currently provided functionality should cover the needs of most Clojure programmers, but you
 can expect to encounter some bugs and missing functionality here and there.
 
-Those will be addressed over the time, as more and more people use `clojure-ts-mode`.
+Those will be addressed over time, as more and more people use `clojure-ts-mode`.
 
 ## Installation
 
@@ -80,11 +80,7 @@ Tree-sitter grammars automatically.
 >
 > That's the recommended way to install `clojure-ts-mode`.
 
-If you have `git` and a C compiler (`cc`) available on your system's `PATH`,
-`clojure-ts-mode` will install the
-grammars
-
-clojure-ts-mode is available on [MElPA](https://melpa.org/#/clojure-ts-mode) and
+clojure-ts-mode is available on [MELPA](https://melpa.org/#/clojure-ts-mode) and
 [NonGNU ELPA](https://elpa.nongnu.org/nongnu/clojure-ts-mode.html).
 It can be installed with:
 
@@ -120,12 +116,12 @@ Once installed, evaluate `clojure-ts-mode.el` and you should be ready to go.
 
 > [!NOTE]
 >
-> `clojure-ts-mode` install the required grammars automatically, so for most
+> `clojure-ts-mode` installs the required grammars automatically, so for most
 > people no manual actions will be required.
 
 `clojure-ts-mode` makes use of the following Tree-sitter grammars:
 
-- The [experimental](https://github.com/sogaiu/tree-sitter-clojure/tree/unstable-20250526) version Clojure grammar. This version includes a few
+- The [experimental](https://github.com/sogaiu/tree-sitter-clojure/tree/unstable-20250526) version of the Clojure grammar. This version includes a few
   improvements, which potentially will be promoted to a stable release (See [the
   discussion](https://github.com/sogaiu/tree-sitter-clojure/issues/65)). This grammar is required for proper work of `clojure-ts-mode`.
 - [markdown-inline](https://github.com/tree-sitter-grammars/tree-sitter-markdown), which will be used for docstrings if available and if
@@ -160,12 +156,12 @@ This installs GCC, G++, `make`, and other essential development tools.
 
 If `clojure-ts-mode` fails to automatically install the grammar, you have the
 option to install it manually. Please, refer to the installation instructions of
-each required grammar and make sure you're install the versions expected (see
+each required grammar and make sure you're installing the versions expected (see
 `clojure-ts-grammar-recipes` for details).
 
 If `clojure-ts-ensure-grammars` is enabled, `clojure-ts-mode` will try to upgrade
-the Clojure grammar if it's outdated. This might happen, when you activate
-`clojure-ts-mode` for the first time after package update. If grammar was
+the Clojure grammar if it's outdated. This might happen when you activate
+`clojure-ts-mode` for the first time after a package update. If the grammar was
 previously installed, you might need to restart Emacs, because it has to reload
 the grammar binary.
 
@@ -512,7 +508,7 @@ set. The following commands are available:
 `clojure-ts-add-arity`: Add a new arity to an existing single-arity or
 multi-arity function or macro. Function can be defined using `defn`, `fn` or
 `defmethod` form. This command also supports functions defined inside forms like
-`letfn`, `defprotol`, `reify`, `extend-protocol` or `proxy`.
+`letfn`, `defprotocol`, `reify`, `extend-protocol` or `proxy`.
 
 ### Default keybindings
 
@@ -643,7 +639,7 @@ We welcome contributions of any kind!
 If you're not familiar with Tree-sitter, a good place to start is our
 [design documentation](doc/design.md), which explains how Tree-sitter
 works in Emacs in broad strokes and covers some of the design
-decisions we've made a long the way.
+decisions we've made along the way.
 
 We're using [Eldev](https://github.com/emacs-eldev/eldev) as our build tool, so you'll
 have to install it. We also provide a simple [Makefile](Makefile) with targets invoking Eldev. You
@@ -659,7 +655,7 @@ The process of releasing a new version of `clojure-ts-mode` is documented [here]
 
 ## License
 
-Copyright © 2022-2025 Danny Freeman, Bozhidar Batsov and [contributors][].
+Copyright © 2022-2026 Danny Freeman, Bozhidar Batsov and [contributors][].
 
 Distributed under the GNU General Public License; type <kbd>C-h C-c</kbd> to view it.
 
