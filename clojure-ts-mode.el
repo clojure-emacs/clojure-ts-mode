@@ -72,7 +72,7 @@
   :prefix "clojure-ts-"
   :group 'languages
   :link '(url-link :tag "GitHub" "https://github.com/clojure-emacs/clojure-ts-mode")
-  :link '(emacs-commentary-link :tag "Commentary" "clojure-mode"))
+  :link '(emacs-commentary-link :tag "Commentary" "clojure-ts-mode"))
 
 (defconst clojure-ts-mode-version
   "0.6.0"
@@ -1616,7 +1616,7 @@ It is simply `clojure-ts-docstring-fill-prefix-width' number of spaces."
   (make-string clojure-ts-docstring-fill-prefix-width ? ))
 
 (defun clojure-ts--fill-paragraph (&optional justify)
-  "Like `fill-paragraph', but can handler Clojure docstrings.
+  "Like `fill-paragraph', but can handle Clojure docstrings.
 If JUSTIFY is non-nil, justify as well as fill the paragraph."
   (let ((current-node (treesit-node-at (point) 'clojure t)))
     (if (clojure-ts--match-docstring nil current-node nil)
@@ -1647,7 +1647,7 @@ of the first symbol of a functional literal NODE."
 (defun clojure-ts--list-node-sym-match-p (node regex &optional include-anon-fn-lit)
   "Return non-nil if NODE is a list and its first symbol matches the REGEX.
 
-Optionally if INCLUDE-ANON-FN-LIT is TRUE, perform the same check for a
+Optionally if INCLUDE-ANON-FN-LIT is non-nil, perform the same check for a
 function literal."
   (when-let* ((sym-text (clojure-ts--list-node-sym-text node include-anon-fn-lit)))
     (string-match-p regex sym-text)))
@@ -2949,7 +2949,7 @@ Useful if a file has been renamed."
                                     (map_lit (sym_lit) @local-candidate)))
   "Query that matches a local binding symbol.
 
-Symbold must be a direct child of a vector or a map.  This query covers
+Symbols must be a direct child of a vector or a map.  This query covers
 bindings vector as well as destructuring syntax.")
 
 (defconst clojure-ts--completion-annotations
@@ -3104,7 +3104,7 @@ required version."
           (message "Installing %s Tree-sitter grammar" grammar)
           ;; `treesit-language-source-alist' is dynamically scoped.
           ;; Binding it in this let expression allows
-          ;; `treesit-install-language-gramamr' to pick up the grammar recipes
+          ;; `treesit-install-language-grammar' to pick up the grammar recipes
           ;; without modifying what the user has configured themselves.
           (let ((treesit-language-source-alist clojure-ts-grammar-recipes))
             (treesit-install-language-grammar grammar)))))))
@@ -3123,7 +3123,7 @@ function can also be used to upgrade the grammars if they are outdated."
 
 (defun clojure-ts--harvest-treesit-configs (mode)
   "Harvest tree-sitter configs from MODE.
-Return a plist with the following keys and value:
+Return a plist with the following keys and values:
 
     :font-lock (from `treesit-font-lock-settings')
     :simple-indent (from `treesit-simple-indent-rules')"
@@ -3253,7 +3253,7 @@ REGEX-AVAILABLE."
 
       ;; Workaround for treesit-transpose-sexps not correctly working with
       ;; treesit-thing-settings on Emacs 30.
-      ;; Once treesit-transpose-sexps it working again this can be removed
+      ;; Once treesit-transpose-sexps is working again this can be removed
       (when (and (fboundp 'transpose-sexps-default-function)
                  (< emacs-major-version 31))
         (setq-local transpose-sexps-function #'transpose-sexps-default-function)))))
