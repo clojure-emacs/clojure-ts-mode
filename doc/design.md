@@ -60,7 +60,7 @@ There are nodes to represent:
 - Vectors `(vec_lit)`
 - Maps `(map_lit)`
 - Sets `(set_lit)`
-- Metadata nodes `(meta_lit)`
+- Metadata nodes `(meta_lit, old_meta_lit)`
 - Regex content `(regex_content)`
 - Function literals `(anon_fn_lit)`
 
