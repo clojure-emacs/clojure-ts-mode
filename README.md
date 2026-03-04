@@ -434,6 +434,19 @@ using `imenu`, such as:
 - class (forms such as `deftype`, `defrecord` and `defstruct`)
 - keyword (for example, spec definitions)
 
+### Project detection
+
+`clojure-ts-mode` can detect Clojure project roots by looking for common build
+tool files (e.g. `project.clj`, `deps.edn`, `shadow-cljs.edn`, etc.). The list
+of files used for detection is configured via `clojure-ts-build-tool-files`.
+
+The function used to locate the project root can be customized via
+`clojure-ts-project-root-function` (defaults to `clojure-ts-project-root-path`).
+
+For performance, the project directory and namespace lookups can be cached via
+`clojure-ts-cache-project-dir` (enabled by default) and `clojure-ts-cache-ns`
+(disabled by default).
+
 ### Integration with `outline-minor-mode`
 
 `clojure-ts-mode` supports two integration variants with
