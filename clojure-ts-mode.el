@@ -1728,7 +1728,7 @@ function literal."
   (treesit-node-start (treesit-defun-at-point)))
 
 (defun clojure-ts--end-of-defun-pos ()
-  "Return the point that represends the end of the current defun."
+  "Return the point that represents the end of the current defun."
   (treesit-node-end (treesit-defun-at-point)))
 
 (defun clojure-ts--search-whitespace-after-next-sexp (root-node bound)
@@ -2358,7 +2358,7 @@ type, etc.  See `treesit-thing-settings' for more details."
     (goto-char (treesit-node-start fn-node))
     (insert "(" fn-name " [])")
     (newline-and-indent)
-    ;; Put the point between sqare brackets.
+    ;; Put the point between square brackets.
     (down-list -2)))
 
 (defun clojure-ts--letfn-defn-p (node)
@@ -2732,7 +2732,7 @@ The command will prompt you to select one of the available sections."
          ["View the Clojure cheatsheet" clojure-ts-view-cheatsheet]
          ["View the Clojure style guide" clojure-ts-view-style-guide])
         "--"
-        ["Report a clojure-mode bug" clojure-ts-mode-report-bug]
+        ["Report a clojure-ts-mode bug" clojure-ts-mode-report-bug]
         ["Version" clojure-ts-mode-display-version]))
     map)
   "Keymap for `clojure-ts-mode'.")
@@ -2995,7 +2995,7 @@ all functions along the way."
 (defun clojure-ts--completion-let-locals-nodes ()
   "Return a list of captured nodes that represent bindings in let forms.
 
-The function tranverses the syntax tree upwards and returns nodes from
+The function traverses the syntax tree upwards and returns nodes from
 all let bindings found along the way."
   (let ((parent-let (clojure-ts--parent-until #'clojure-ts--completion-let-like-node-p))
         (captured-nodes))
@@ -3231,7 +3231,7 @@ REGEX-AVAILABLE."
       (treesit-major-mode-setup)
 
       ;; We should assign this after calling `treesit-major-mode-setup',
-      ;; otherwise it will be owerwritten.
+      ;; otherwise it will be overwritten.
       (when clojure-ts-align-forms-automatically
         (setq-local indent-region-function #'clojure-ts-indent-region))
 
