@@ -1167,7 +1167,7 @@ See `clojure-ts--standard-definition-node-name' for the implementation used.")
 ;;; Outline settings
 
 (defun clojure-ts--outline-predicate (node)
-  "Return TRUE if NODE is an outline heading comment."
+  "Return non-nil if NODE is an outline heading comment."
   (and (string= (treesit-node-type node) "comment")
        (string-match-p "^\\(?:;;;;* \\).*" (treesit-node-text node))))
 
@@ -1361,7 +1361,7 @@ If there is no body, check that BOL is not at the same line."
        (line-number-at-pos body-pos))))
 
 (defun clojure-ts--node-pos-match-block (node parent bol block)
-  "Return TRUE if NODE index in the PARENT matches requested BLOCK.
+  "Return non-nil if NODE index in the PARENT matches requested BLOCK.
 
 NODE might be nil (when we insert an empty line for example), in this
 case we look for next available child node in the PARENT after BOL
@@ -1645,7 +1645,7 @@ of the first symbol of a functional literal NODE."
       (clojure-ts--named-node-text first-child))))
 
 (defun clojure-ts--list-node-sym-match-p (node regex &optional include-anon-fn-lit)
-  "Return TRUE if NODE is a list and its first symbol matches the REGEX.
+  "Return non-nil if NODE is a list and its first symbol matches the REGEX.
 
 Optionally if INCLUDE-ANON-FN-LIT is TRUE, perform the same check for a
 function literal."
@@ -1690,7 +1690,7 @@ function literal."
       eol))
 
 (defun clojure-ts--defun-node-p (node)
-  "Return TRUE if NODE is a function or a var definition."
+  "Return non-nil if NODE is a function or a var definition."
   (clojure-ts--list-node-sym-match-p node clojure-ts--defun-symbols-regex))
 
 (defconst clojure-ts--markdown-inline-sexp-nodes
@@ -1700,7 +1700,7 @@ function literal."
   "Nodes representing s-expressions in the `markdown-inline' parser.")
 
 (defun clojure-ts--default-sexp-node-p (node)
-  "Return TRUE if point is after the # marker of set or function literal NODE."
+  "Return non-nil if point is after the # marker of set or function literal NODE."
   (and (eq (char-before) ?\#)
        (string-match-p (rx bol (or "anon_fn_lit" "set_lit") eol)
                        (treesit-node-type (treesit-node-parent node)))))
@@ -1986,7 +1986,7 @@ functional literal node."
     (backward-up-list)))
 
 (defun clojure-ts--multiline-sexp-p ()
-  "Return TRUE if s-expression at point is multiline."
+  "Return non-nil if s-expression at point is multiline."
   (let ((sexp (treesit-thing-at-point 'sexp 'nested)))
     (not (= (line-number-at-pos (treesit-node-start sexp))
             (line-number-at-pos (treesit-node-end sexp))))))
@@ -2056,7 +2056,7 @@ functional literal node."
                 (goto-char)))
 
 (defun clojure-ts--nothing-more-to-unwind ()
-  "Return TRUE if threading expression at point has only one argument."
+  "Return non-nil if threading expression at point has only one argument."
   (let ((threading-sexp (clojure-ts--threading-sexp-node)))
     (save-excursion
       (clojure-ts--skip-first-child threading-sexp)
@@ -3083,7 +3083,7 @@ all let bindings found along the way."
     t))
 
 (defun clojure-ts--clojure-grammar-outdated-p ()
-  "Return TRUE if currently installed grammar is outdated.
+  "Return non-nil if currently installed grammar is outdated.
 
 This function checks if `clojure-ts-mode' is compatible with the
 currently installed grammar.  The simplest way to do this is to validate
