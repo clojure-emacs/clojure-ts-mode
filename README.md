@@ -176,6 +176,21 @@ M-x clojure-ts-reinstall-grammars
 This will install the latest compatible grammars, even if they are already
 installed.
 
+## Supported Modes
+
+`clojure-ts-mode` provides major modes for several Clojure dialects:
+
+| Mode                              | File Extension | Description       |
+|:----------------------------------|:---------------|:------------------|
+| `clojure-ts-mode`                 | `.clj`         | Clojure           |
+| `clojure-ts-clojurescript-mode`   | `.cljs`        | ClojureScript     |
+| `clojure-ts-clojurec-mode`       | `.cljc`        | ClojureC (portable Clojure) |
+| `clojure-ts-clojuredart-mode`    | `.cljd`        | ClojureDart       |
+| `clojure-ts-jank-mode`           | `.jank`        | Jank              |
+| `clojure-ts-joker-mode`          | `.joke`        | Joker             |
+
+All derived modes inherit the full feature set of `clojure-ts-mode`.
+
 ## Configuration
 
 To see a list of available configuration options do `M-x customize-group <RET> clojure-ts`.
