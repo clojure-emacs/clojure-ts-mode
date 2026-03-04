@@ -399,8 +399,8 @@ To make forms inside of `(comment ...)` forms appear as top-level forms for eval
 
 To change the maximal line length used by `M-x prog-fill-reindent-defun` (also
 bound to `M-q` by default) to reformat docstrings and comments it's possible to
-customize `clojure-ts-fill-paragraph` variable (by default set to the value of
-Emacs' `fill-paragraph` value).
+customize `clojure-ts-docstring-fill-column` variable (by default set to the value of
+Emacs' `fill-column` value).
 
 Every new line in the docstrings is indented by
 `clojure-ts-docstring-fill-prefix-width` number of spaces (set to 2 by default
