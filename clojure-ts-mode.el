@@ -306,10 +306,10 @@ updated automatically."
 
 (defcustom clojure-ts-directory-prefixes
   '("^\\(?:[^/]+/\\)*clj[csxd]*/")
-  "A list of directory prefixes used by `clojure-expected-ns'.
+  "A list of directory prefixes used by `clojure-ts-expected-ns'.
 The prefixes are used to generate the correct namespace."
   :type '(repeat string)
-  :package-version '(clojure-mode . "0.6.0")
+  :package-version '(clojure-ts-mode . "0.6.0")
   :safe (lambda (value)
           (and (listp value)
                (cl-every 'stringp value))))
