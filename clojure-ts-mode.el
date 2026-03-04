@@ -516,7 +516,7 @@ captured including quotes."
        ;; Existing regexes don't encompass def and defn
        ;; Naming another regex is very cumbersome.
        (:match ,(clojure-ts-symbol-regexp
-                 '("def" "defonce" "defn" "defn-" "defmacro" "ns"
+                 '("def" "defonce" "defn" "defn-" "defmacro" "definline" "ns"
                    "defmulti" "definterface" "defprotocol"
                    "deftest" "deftest-"
                    "deftype" "defrecord" "defstruct"))
@@ -532,7 +532,7 @@ captured including quotes."
                  :anchor (str_lit (str_content) ,capture-symbol) ,quotes-symbol)
        (:match ,clojure-ts-function-docstring-symbols
                @_def_symbol))
-      ;; Captures docstrings in defprotcol, definterface
+      ;; Captures docstrings in defprotocol, definterface
       ((list_lit :anchor [(comment) (meta_lit) (old_meta_lit)] :*
                  :anchor (sym_lit) @_def_symbol
                  (list_lit :anchor (sym_lit) (vec_lit) :*
@@ -785,8 +785,6 @@ and end of the NODE, so we ignore them."
      (unquoting_lit
       marker: _ @font-lock-delimiter-face)
      (unquote_splicing_lit
-      marker: _ @font-lock-delimiter-face)
-     (var_quoting_lit
       marker: _ @font-lock-delimiter-face))
 
    :feature 'bracket
