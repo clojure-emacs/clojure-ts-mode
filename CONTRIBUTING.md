@@ -14,7 +14,7 @@ do so.
 * Open an issue with a descriptive title and a summary in grammatically correct,
   complete sentences.
 * Mention your Emacs version and operating system.
-* Mention `clojure-ts-mode`'s version info (`M-x clojure-ts-mode-version-info`), e.g.:
+* Mention `clojure-ts-mode`'s version info (`M-x clojure-ts-mode-display-version`), e.g.:
 
 ```el
 clojure-ts-mode (version 2.1.1)

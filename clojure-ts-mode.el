@@ -3058,7 +3058,7 @@ all let bindings found along the way."
     map))
 
 (defun clojure-ts-mode-display-version ()
-  "Display the current `clojure-mode-version' in the minibuffer."
+  "Display the current `clojure-ts-mode-version' in the minibuffer."
   (interactive)
   (let ((pkg-version (package-get-version)))
     (if pkg-version
