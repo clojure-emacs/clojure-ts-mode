@@ -169,6 +169,23 @@ DESCRIPTION is the description of the spec."
      (2 5 font-lock-type-face)
      (8 9 font-lock-keyword-face)))
 
+  (when-fontifying-it "old-style-metadata"
+    ("(def #^:private my-var true)"
+     (6 7 font-lock-operator-face)
+     (8 15 clojure-ts-keyword-face)))
+
+  (when-fontifying-it "dynamic-variables"
+    ("*out*" (1 5 font-lock-builtin-face))
+    ("*in*" (1 4 font-lock-builtin-face))
+    ("*ns*" (1 4 font-lock-builtin-face))
+    ("*err*" (1 5 font-lock-builtin-face)))
+
+  (when-fontifying-it "metadata-docstring-for-definline"
+    ("(definline ^{:doc \"my doc\"} my-fn [x] x)"
+     (14 17 clojure-ts-keyword-face)
+     (19 26 font-lock-doc-face)
+     (29 33 font-lock-function-name-face)))
+
   (when-fontifying-it "function literals"
     ("#(or one two)"
      (3 4 font-lock-keyword-face)))
