@@ -1484,9 +1484,9 @@ only if the CURRENT-DEPTH matches the rule's required depth."
                                         (1+ current-depth))))))
 
 (defun clojure-ts--match-form-body (node parent bol)
-  "Match if NODE has to be indented as a for body.
+  "Match if NODE has to be indented as a form body.
 
-PARENT not should be a list.  If first symbol in the expression has an
+PARENT should be a list.  If first symbol in the expression has an
 indentation rule in `clojure-ts--semantic-indent-rules-defaults' or
 `clojure-ts-semantic-indent-rules' check if NODE should be indented
 according to the rule.  If NODE is nil, use next node after BOL."
@@ -1562,7 +1562,7 @@ for forms with type hints."
                 (treesit-node-start)))
 
 (defun clojure-ts--anchor-nth-sibling (n)
-  "Return the start of the Nth child of PARENT skipping metadata."
+  "Return the start of the Nth named child of PARENT."
   (lambda (_n parent &rest _)
     (treesit-node-start (treesit-node-child parent n t))))
 
