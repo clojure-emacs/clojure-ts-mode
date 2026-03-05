@@ -252,7 +252,11 @@ DESCRIPTION is a string with the description of the spec."
 
     "
 (testing \"Something should work\"
-  (is (something-working?)))")
+  (is (something-working?)))"
+
+    "
+(defstruct employee
+  :name :id)")
 
   (when-indenting-it "should support block-2 expressions"
     "

@@ -1267,6 +1267,7 @@ The possible values for this variable are
     ("with-open"       . ((:block 1)))
     ("with-precision"  . ((:block 1)))
     ("with-redefs"     . ((:block 1)))
+    ("defstruct"       . ((:block 1)))
     ("defrecord"       . ((:block 2) (:inner 1)))
     ("deftype"         . ((:block 2) (:inner 1)))
     ("are"             . ((:block 2)))
