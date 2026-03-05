@@ -985,13 +985,15 @@ literals with regex grammar."
 (defun clojure-ts--named-node-text (node)
   "Gets the name of a symbol or keyword NODE.
 This does not include the NODE's namespace."
-  (treesit-node-text (treesit-node-child-by-field-name node "name")))
+  (when-let* ((name-node (treesit-node-child-by-field-name node "name")))
+    (treesit-node-text name-node)))
 
 (defun clojure-ts--node-namespace-text (node)
   "Gets the namespace of a symbol or keyword NODE.
 
 If there is no namespace, returns nil."
-  (treesit-node-text (treesit-node-child-by-field-name node "namespace")))
+  (when-let* ((ns-node (treesit-node-child-by-field-name node "namespace")))
+    (treesit-node-text ns-node)))
 
 (defun clojure-ts--symbol-named-p (expected-symbol-name node)
   "Return non-nil if NODE is a symbol with text matching EXPECTED-SYMBOL-NAME."
