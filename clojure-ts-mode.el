@@ -815,7 +815,7 @@ and end of the NODE, so we ignore them."
   "Pre-compiled Tree-sitter queries produced from `clojure-ts-extra-def-forms'.")
 
 (defun clojure-ts--compute-extra-def-queries (syms)
-  "Comute font lock rules for extra def forms.
+  "Compute font lock rules for extra def forms.
 
 If SYMS are not provided, return nil.  If SYMS are provided, this
 function returns compiled font lock rules that should be assigned to
@@ -983,13 +983,13 @@ literals with regex grammar."
   (string-equal "var_quoting_lit" (treesit-node-type node)))
 
 (defun clojure-ts--named-node-text (node)
-  "Gets the name of a symbol or keyword NODE.
+  "Return the name of a symbol or keyword NODE.
 This does not include the NODE's namespace."
   (when-let* ((name-node (treesit-node-child-by-field-name node "name")))
     (treesit-node-text name-node)))
 
 (defun clojure-ts--node-namespace-text (node)
-  "Gets the namespace of a symbol or keyword NODE.
+  "Return the namespace of a symbol or keyword NODE.
 
 If there is no namespace, returns nil."
   (when-let* ((ns-node (treesit-node-child-by-field-name node "namespace")))
@@ -1034,7 +1034,7 @@ See `clojure-ts--definition-node-match-p'  when an exact match is not desired."
 
 (defun clojure-ts--definition-node-match-p (definition-type-regexp node)
   "Return non-nil if NODE is a definition matching DEFINITION-TYPE-REGEXP.
-DEFINITION-TYPE-REGEXP matched the symbol used to construct the definition,
+DEFINITION-TYPE-REGEXP matches the symbol used to construct the definition,
 like \"defn\".
 See `clojure-ts--definition-node-p' when an exact match is possible."
   (and
@@ -1601,7 +1601,7 @@ used."
      (clojure-ts--match-docstring parent 0))))
 
 (defun clojure-ts--configured-indent-rules ()
-  "Gets the configured choice of indent rules."
+  "Return the configured indent rules."
   (cond
    ((eq clojure-ts-indent-style 'semantic) (clojure-ts--semantic-indent-rules))
    ((eq clojure-ts-indent-style 'fixed) clojure-ts--fixed-indent-rules)
@@ -2452,7 +2452,7 @@ type, etc.  See `treesit-thing-settings' for more details."
     (goto-char pos)))
 
 (defun clojure-ts--collection-node-at-point ()
-  "Return node at point that represent a collection."
+  "Return node at point that represents a collection."
   (when-let* ((node (thread-first (point)
                                   (treesit-node-at 'clojure)
                                   (treesit-parent-until (rx bol
