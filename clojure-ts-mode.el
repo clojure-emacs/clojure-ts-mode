@@ -1001,8 +1001,7 @@ If there is no namespace, returns nil."
        (string-equal expected-symbol-name (clojure-ts--named-node-text node))))
 
 (defun clojure-ts--node-child-skip-metadata (node n)
-  "Return the Nth child of NODE like `treesit-node-child', sans metadata.
-Skip the optional metadata node at pos 0 if present."
+  "Return the Nth value-field child of NODE, skipping metadata children."
   (let ((child (treesit-node-child-by-field-name node "value"))
         (remaining n))
     (while (and child (> remaining 0))
