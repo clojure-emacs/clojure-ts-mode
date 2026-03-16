@@ -3,6 +3,7 @@
 ## main (unreleased)
 
 - Add project root detection for ClojureCLR project.
+- Improve performance for imenu, font-lock and indentation.
 
 ## 0.6.0 (2025-12-02)
 
