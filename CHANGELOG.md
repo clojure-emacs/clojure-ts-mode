@@ -3,6 +3,9 @@
 ## main (unreleased)
 
 - Add project root detection for ClojureCLR project.
+- Add missing `defstruct` semantic indentation rule.
+- Fix font-lock issues: duplicate query, missing `definline` metadata docstring.
+- Fix missing builtin symbols in font-lock regexp.
 - Improve performance for imenu, font-lock and indentation.
 
 ## 0.6.0 (2025-12-02)
