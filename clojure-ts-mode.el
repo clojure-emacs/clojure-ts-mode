@@ -1002,6 +1002,8 @@ If there is no namespace, returns nil."
 
 (defun clojure-ts--node-child-skip-metadata (node n)
   "Return the Nth value-field child of NODE, skipping metadata children."
+  ;; Walks siblings directly via C-level tree-sitter calls to avoid
+  ;; allocating intermediate lists, as this is called frequently on hot paths.
   (let ((child (treesit-node-child-by-field-name node "value"))
         (remaining n))
     (while (and child (> remaining 0))
