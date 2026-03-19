@@ -98,6 +98,16 @@ DESCRIPTION is a string with the description of the spec."
          (expect (point) :to-equal expected-cursor-pos)))))
 
 
+;;;; Resource files
+
+(defvar clojure-ts-test--resources-dir
+  (expand-file-name "samples" (file-name-directory (or load-file-name buffer-file-name)))
+  "Directory containing test resource files.")
+
+(defun clojure-ts-test--resource-file (name)
+  "Return the absolute path of resource file NAME."
+  (expand-file-name name clojure-ts-test--resources-dir))
+
 ;; https://emacs.stackexchange.com/a/55031
 (defmacro with-temp-dir (temp-dir &rest body)
   "Create a temporary directory and bind its to TEMP-DIR while evaluating BODY.
