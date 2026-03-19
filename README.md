@@ -324,22 +324,115 @@ Forms that can be aligned vertically are configured via the following variables:
 
 ### Font Locking
 
+`clojure-ts-mode` provides 4 levels of font-locking, as is the standard for
+Tree-sitter modes. The default level in Emacs is 3, and you can change it like
+this:
+
+```emacs-lisp
+;; this font-locks everything clojure-ts-mode supports
+(setq treesit-font-lock-level 4)
+```
+
+The font-lock features available at each level are:
+
+**Level 1** (minimal -- comments, definitions, and variables):
+
+- `comment` -- comments and `#_` discard expressions
+- `definition` -- `defn`, `defmacro`, `defmethod`, `defmulti`, `defonce`, `defrecord`, `deftype`, `defprotocol`, `reify`, `letfn`, anonymous functions (`#(...)`)
+- `variable` -- `def` and `defonce` bindings
+
+**Level 2** (add keywords, strings, types, symbols):
+
+- `keyword` -- Clojure keywords and their namespaces: `:foo`, `:bar/baz`
+- `string` -- string literals: `"hello"`
+- `char` -- character literals: `\a`, `\newline`
+- `symbol` -- symbol namespaces: `clojure.string` in `clojure.string/join`
+- `builtin` -- `clojure.core` built-in forms and dynamic vars: `let`, `when`, `map`, `*out*`
+- `type` -- type declarations (`defrecord`, `deftype`, `defprotocol`), type hints (`^String`), namespace names
+
+**Level 3** (default -- full-blown fontification):
+
+- `constant` -- boolean and nil literals: `true`, `false`, `nil`
+- `number` -- numeric literals: `42`, `3.14`, `0xFF`
+- `quote` -- quoting markers: `'`, `` ` ``, `~`, `~@`, `#'`
+- `metadata` -- metadata markers and keyword values: `^:dynamic`, `#^{}`
+- `doc` -- docstrings in `defn`, `def`, `defmacro`, etc.
+- `regex` -- the `#` marker on regex literals: `#"pattern"`
+
+**Level 4** (maximum detail):
+
+- `bracket` -- brackets: `()`, `[]`, `{}`, `#{}`
+- `deref` -- the `@` deref marker: `@atom`
+- `function` -- function calls: `f` in `(f x)`, `map` in `(map inc coll)`
+- `tagged-literals` -- tagged literals: `#inst`, `#uuid`, `#my/tag`
+
+#### Selecting features
+
+You don't have to use the level system. If you want fine-grained control over
+what gets highlighted, you can cherry-pick individual features using
+`treesit-font-lock-recompute-features`:
+
+```emacs-lisp
+(defun my-clojure-ts-font-lock-setup ()
+  (treesit-font-lock-recompute-features
+   ;; enable these features
+   '(comment definition variable keyword string char symbol builtin type
+     constant number quote metadata doc regex
+     deref function tagged-literals)
+   ;; disable these features
+   '(bracket)))
+
+(add-hook 'clojure-ts-mode-hook #'my-clojure-ts-font-lock-setup)
+```
+
+You can also call `M-x treesit-font-lock-recompute-features` interactively to
+toggle features in the current buffer.
+
+#### Customizing faces
+
+The faces used are standard `font-lock-*-face` faces (plus `clojure-ts-keyword-face`
+and `clojure-ts-character-face`), so any theme applies automatically. If you want
+to tweak how specific syntactic elements look, you have two options:
+
+**Buffer-local remapping** (recommended) -- changes apply only to
+`clojure-ts-mode` buffers, leaving other modes unaffected:
+
+```emacs-lisp
+;; Use a custom color for keywords in Clojure buffers only
+(add-hook 'clojure-ts-mode-hook
+  (lambda ()
+    (face-remap-add-relative 'clojure-ts-keyword-face
+                             :foreground "DarkCyan")))
+```
+
+You can remap multiple faces in the same hook. Each
+`face-remap-add-relative` call stacks on top of the face's current
+definition, so theme settings are preserved as a base. See
+[Face Remapping](https://www.gnu.org/software/emacs/manual/html_node/elisp/Face-Remapping.html)
+in the Emacs Lisp manual for details.
+
+**Global customization** -- changes apply everywhere the face is used:
+
+```emacs-lisp
+;; Change keyword face globally
+(custom-set-faces
+ '(clojure-ts-keyword-face ((t (:foreground "DarkCyan")))))
+```
+
+This is simpler but less precise -- since tree-sitter modes share the same
+`font-lock-*-face` faces, a global change will affect every tree-sitter mode
+(and traditional modes) that uses that face.
+
+#### Comment macro font-locking
+
 To highlight entire rich `comment` expression with the comment font face, set
 
-``` emacs-lisp
+```emacs-lisp
 (setopt clojure-ts-comment-macro-font-lock-body t)
 ```
 
 By default this is `nil`, so that anything within a `comment` expression is
 highlighted like regular Clojure code.
-
-> [!TIP]
->
-> You can customize the exact level of font-locking via the variables
-> `treesit-font-lock-level` (the default value is 3) and
-> `treesit-font-lock-features-list`. Check [this
-> section](https://www.gnu.org/software/emacs/manual/html_node/emacs/Parser_002dbased-Font-Lock.html)
-> of the Emacs manual for more details.
 
 #### Extending font-lock rules
 
