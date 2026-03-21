@@ -2,6 +2,7 @@
 
 ## main (unreleased)
 
+- Fix indentation of namespaced maps in `fixed` indentation style.
 - Add project root detection for ClojureCLR project.
 - Add missing `defstruct` semantic indentation rule.
 - Fix font-lock issues: duplicate query, missing `definline` metadata docstring.

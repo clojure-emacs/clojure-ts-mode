@@ -686,7 +686,12 @@ DESCRIPTION is a string with the description of the spec."
    [clojure.string :as str])
   (:import
    (java.util Date
-     UUID)))"))
+     UUID)))")
+
+  (when-indenting-fixed-it "should indent namespaced maps correctly"
+    "
+#:foo{:bar 1
+      :baz 2}"))
 
 (describe "clojure-ts-align"
   (it "should handle improperly indented content"

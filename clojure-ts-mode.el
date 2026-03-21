@@ -1219,10 +1219,11 @@ The possible values for this variable are
              (let ((first-child (treesit-node-child parent 0 t)))
                (clojure-ts--symbol-node-p first-child))))
       parent 2)
-     ((parent-is "vec_lit") parent 1)
-     ((parent-is "map_lit") parent 1)
-     ((parent-is "list_lit") parent 1)
-     ((parent-is "set_lit") parent 2))))
+     ((parent-is "^vec_lit$") parent 1)
+     ((parent-is "^map_lit$") parent 1)
+     ((parent-is "^list_lit$") parent 1)
+     ((parent-is "^set_lit$") parent 2)
+     ((parent-is "^ns_map_lit$") (nth-sibling 2) 1))))
 
 (defvar clojure-ts--semantic-indent-rules-defaults
   '(("alt!"            . ((:block 0)))
