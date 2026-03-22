@@ -251,16 +251,14 @@
 
 ;; A few examples from clojure core.
 
-;; NOTE: This one is not indented correctly, I'm keeping it here as a reminder
-;; to fix it later.
 (defonce ^:dynamic
-         ^{:private true
-           :doc "A ref to a sorted set of symbols representing loaded libs"}
-         *loaded-libs* (ref (sorted-set)))
+  ^{:private true
+    :doc "A ref to a sorted set of symbols representing loaded libs"}
+  *loaded-libs* (ref (sorted-set)))
 
 (defn index-of
   "Return index of value (string or char) in s, optionally searching
-  forward from from-index. Return nil if value not found."
+   forward from from-index. Return nil if value not found."
   {:added "1.8"}
   ([^CharSequence s value]
    (let [result ^long

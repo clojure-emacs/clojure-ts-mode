@@ -29,6 +29,22 @@
 (require 'imenu)
 (require 'test-helper "test/test-helper")
 
+(describe "integration: indentation"
+  (before-all
+    (unless (treesit-language-available-p 'clojure)
+      (signal 'buttercup-pending "tree-sitter Clojure grammar not available")))
+
+  (it "preserves correct indentation of indentation.clj after indent-region"
+    (let* ((file (clojure-ts-test--resource-file "indentation.clj"))
+           (original (with-temp-buffer
+                       (insert-file-contents file)
+                       (buffer-string))))
+      (with-temp-buffer
+        (insert original)
+        (clojure-ts-mode)
+        (indent-region (point-min) (point-max))
+        (expect (buffer-string) :to-equal original)))))
+
 (describe "integration: font-lock on sample files"
   (before-all
     (unless (treesit-language-available-p 'clojure)
