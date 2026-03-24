@@ -420,3 +420,39 @@ DESCRIPTION is the description of the spec."
               :to-equal 'font-lock-function-name-face)
       (expect (get-text-property 25 'face)
               :to-equal 'font-lock-doc-face))))
+
+;;;; Docstrings in various def forms
+
+(describe "docstring-highlighting"
+  (when-fontifying-it "should highlight docstrings in defmacro"
+    ("(defmacro my-macro\n  \"A macro docstring.\"\n  [& body] body)"
+     (22 41 font-lock-doc-face)))
+
+  (when-fontifying-it "should highlight docstrings in defmulti"
+    ("(defmulti my-multi\n  \"A multi docstring.\"\n  :type)"
+     (22 41 font-lock-doc-face)))
+
+  (when-fontifying-it "should highlight docstrings in defprotocol"
+    ("(defprotocol MyProto\n  \"A protocol docstring.\"\n  (foo [this]))"
+     (24 46 font-lock-doc-face)))
+
+  (when-fontifying-it "should highlight docstrings in ns"
+    ("(ns my.ns\n  \"A namespace docstring.\")"
+     (13 36 font-lock-doc-face)))
+
+  (when-fontifying-it "should highlight docstrings in defprotocol methods"
+    ("(defprotocol P\n  (foo [this]\n    \"Method docstring.\"))"
+     (34 52 font-lock-doc-face))))
+
+;;;; Comment macro font-locking
+
+(describe "clojure-ts-comment-macro-font-lock-body"
+  (it "should not highlight comment body by default"
+    (with-clojure-ts-buffer "(comment (+ 1 2))"
+      (font-lock-ensure)
+      ;; comment symbol itself should be comment-delimiter-face
+      (expect (get-text-property 2 'face)
+              :to-equal 'font-lock-comment-delimiter-face)
+      ;; Body should NOT be comment-face (default is nil)
+      (expect (get-text-property 10 'face)
+              :not :to-equal 'font-lock-comment-face))))
