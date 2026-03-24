@@ -248,6 +248,147 @@ DESCRIPTION is the description of the spec."
       (.setObject s i (->pgobject m))))"
      (81 93 font-lock-function-name-face))))
 
+;;;; Numbers
+
+(describe "number-highlighting"
+  (when-fontifying-it "should highlight numeric literals"
+    ("42" (1 2 font-lock-number-face))
+    ("3.14" (1 4 font-lock-number-face))
+    ("0xFF" (1 4 font-lock-number-face))
+    ("1/3" (1 3 font-lock-number-face))
+    ("1e10" (1 4 font-lock-number-face))
+    ("36rCRAZY" (1 8 font-lock-number-face))
+    ("1N" (1 2 font-lock-number-face))
+    ("1.0M" (1 4 font-lock-number-face))))
+
+;;;; Characters
+
+(describe "character-highlighting"
+  (when-fontifying-it "should highlight character literals"
+    ("\\a" (1 2 clojure-ts-character-face))
+    ("\\newline" (1 8 clojure-ts-character-face))
+    ("\\space" (1 6 clojure-ts-character-face))
+    ("\\tab" (1 4 clojure-ts-character-face))
+    ("\\u0041" (1 6 clojure-ts-character-face))))
+
+;;;; Constants
+
+(describe "constant-highlighting"
+  (when-fontifying-it "should highlight boolean and nil literals"
+    ("true" (1 4 font-lock-constant-face))
+    ("false" (1 5 font-lock-constant-face))
+    ("nil" (1 3 font-lock-constant-face))))
+
+;;;; Keywords
+
+(describe "keyword-highlighting"
+  (when-fontifying-it "should highlight keywords"
+    (":foo" (2 4 clojure-ts-keyword-face))
+    ("::foo" (2 5 clojure-ts-keyword-face))
+    (":my.ns/bar" (2 6 font-lock-type-face)
+                  (8 10 clojure-ts-keyword-face))))
+
+;;;; Strings
+
+(describe "string-highlighting"
+  (when-fontifying-it "should highlight string literals"
+    ("\"hello\"" (1 7 font-lock-string-face))
+    ("\"hello\\nworld\"" (1 14 font-lock-string-face))))
+
+;;;; Comments
+
+(describe "comment-highlighting"
+  (when-fontifying-it "should highlight comments"
+    ("; comment" (1 9 font-lock-comment-face))
+    (";; comment" (1 10 font-lock-comment-face))
+    (";;; heading" (1 11 font-lock-comment-face)))
+
+  (when-fontifying-it "should highlight discard expressions"
+    ("#_foo" (1 2 font-lock-comment-delimiter-face)
+            (3 5 font-lock-comment-face))
+    ("#_(+ 1 2)" (1 2 font-lock-comment-delimiter-face)
+                 (3 9 font-lock-comment-face)))
+
+  (it "should highlight comment macro name as delimiter"
+    (with-fontified-clojure-ts-buffer "(comment (+ 1 2))"
+      (expect (get-text-property 2 'face)
+              :to-equal 'font-lock-comment-delimiter-face))))
+
+;;;; Quote operators
+
+(describe "quote-highlighting"
+  (when-fontifying-it "should highlight quote markers"
+    ("'foo" (1 1 font-lock-delimiter-face))
+    ("`foo" (1 1 font-lock-delimiter-face))
+    ("~foo" (1 1 font-lock-delimiter-face))
+    ("~@foo" (1 2 font-lock-delimiter-face))
+    ("#'foo" (1 2 font-lock-delimiter-face))))
+
+;;;; Level 4 features (bracket, deref, function, tagged-literals)
+
+(describe "level-4-font-locking"
+  (it "should highlight brackets at level 4"
+    (with-temp-buffer
+      (insert "(foo [1 2] {:a 1} #{3})")
+      (let ((treesit-font-lock-level 4))
+        (clojure-ts-mode))
+      (font-lock-ensure)
+      ;; Opening paren
+      (expect (get-text-property 1 'face)
+              :to-equal 'font-lock-bracket-face)
+      ;; Opening bracket
+      (expect (get-text-property 6 'face)
+              :to-equal 'font-lock-bracket-face)
+      ;; Opening brace
+      (expect (get-text-property 12 'face)
+              :to-equal 'font-lock-bracket-face)))
+
+  (it "should highlight deref operator at level 4"
+    (with-temp-buffer
+      (insert "@my-atom")
+      (let ((treesit-font-lock-level 4))
+        (clojure-ts-mode))
+      (font-lock-ensure)
+      (expect (get-text-property 1 'face)
+              :to-equal 'font-lock-warning-face)))
+
+  (it "should highlight function calls at level 4"
+    (with-temp-buffer
+      (insert "(map inc [1 2 3])")
+      (let ((treesit-font-lock-level 4))
+        (clojure-ts-mode))
+      (font-lock-ensure)
+      (expect (get-text-property 2 'face)
+              :to-equal 'font-lock-function-call-face)))
+
+  (it "should highlight tagged literals at level 4"
+    (with-temp-buffer
+      (insert "#inst \"2024-01-01\"")
+      (let ((treesit-font-lock-level 4))
+        (clojure-ts-mode))
+      (font-lock-ensure)
+      ;; # marker
+      (expect (get-text-property 1 'face)
+              :to-equal 'font-lock-preprocessor-face)
+      ;; inst tag
+      (expect (get-text-property 2 'face)
+              :to-equal 'font-lock-preprocessor-face)))
+
+  (it "should highlight set literal # at level 4"
+    (with-temp-buffer
+      (insert "#{1 2 3}")
+      (let ((treesit-font-lock-level 4))
+        (clojure-ts-mode))
+      (font-lock-ensure)
+      (expect (get-text-property 1 'face)
+              :to-equal 'font-lock-bracket-face))))
+
+;;;; Regex
+
+(describe "regex-highlighting"
+  (when-fontifying-it "should highlight regex literals"
+    ("#\"pattern\"" (1 10 font-lock-regexp-face))))
+
 ;;;; Builtin macros
 
 (describe "builtin-macro-highlighting"
