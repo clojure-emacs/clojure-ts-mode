@@ -607,7 +607,7 @@ and end of the NODE, so we ignore them."
    :feature 'regex
    :language 'clojure
    :override t
-   '((regex_lit marker: _ @font-lock-property-face))
+   '((regex_lit marker: _ @font-lock-punctuation-face))
 
    :feature 'number
    :language 'clojure
@@ -689,7 +689,7 @@ and end of the NODE, so we ignore them."
                       eol))
               @font-lock-keyword-face))
      ((anon_fn_lit
-       marker: "#" @font-lock-property-face))
+       marker: "#" @font-lock-punctuation-face))
      ;; Methods implementation
      ((list_lit
        :anchor [(comment) (meta_lit) (old_meta_lit)] :*

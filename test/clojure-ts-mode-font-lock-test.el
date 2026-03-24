@@ -423,7 +423,8 @@ DESCRIPTION is the description of the spec."
 
 (describe "regex-highlighting"
   (when-fontifying-it "should highlight regex literals"
-    ("#\"pattern\"" (1 10 font-lock-regexp-face))))
+    ("#\"pattern\"" ("#" font-lock-punctuation-face)
+                    ("pattern" font-lock-regexp-face))))
 
 ;;;; Builtin macros
 
