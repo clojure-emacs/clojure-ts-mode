@@ -297,6 +297,293 @@ DESCRIPTION is a string with the description of the spec."
     [this]
     (is properly indented)))")
 
+  ;; Additional per-form tests for commonly used forms
+
+  (when-indenting-it "should support block-0 forms"
+    "
+(comment
+  (+ 1 2)
+  (println \"hello\"))"
+
+    "
+(cond
+  (even? x) \"even\"
+  (odd? x) \"odd\")"
+
+    "
+(delay
+  (expensive-computation))"
+
+    "
+(go
+  (<! ch)
+  (>! ch val))"
+
+    "
+(thread
+  (do-something)
+  (do-more))"
+
+    "
+(finally
+  (cleanup))"
+
+    "
+(with-out-str
+  (println \"hello\"))"
+
+    "
+(alt!
+  ch1 ([v] (handle v))
+  ch2 ([v] (other v)))"
+
+    "
+(alt!!
+  ch1 ([v] (handle v))
+  ch2 ([v] (other v)))")
+
+  (when-indenting-it "should support block-1 forms"
+    "
+(let [a 1
+      b 2]
+  (+ a b))"
+
+    "
+(if (pos? x)
+  (inc x)
+  (dec x))"
+
+    "
+(when (pos? x)
+  (println x)
+  (inc x))"
+
+    "
+(when-not (nil? x)
+  (println x))"
+
+    "
+(if-let [x (foo)]
+  (bar x)
+  (baz))"
+
+    "
+(when-let [x (foo)]
+  (bar x))"
+
+    "
+(if-some [x (foo)]
+  (bar x)
+  nil)"
+
+    "
+(when-some [x (foo)]
+  (bar x))"
+
+    "
+(when-first [x coll]
+  (println x))"
+
+    "
+(binding [*out* writer]
+  (println \"hello\"))"
+
+    "
+(loop [i 0]
+  (when (< i 10)
+    (recur (inc i))))"
+
+    "
+(for [x (range 10)
+      y (range 10)]
+  (* x y))"
+
+    "
+(doseq [x (range 10)]
+  (println x))"
+
+    "
+(dotimes [i 10]
+  (println i))"
+
+    "
+(doto (java.util.HashMap.)
+  (.put \"a\" 1)
+  (.put \"b\" 2))"
+
+    "
+(while (.hasNext iter)
+  (.next iter))"
+
+    "
+(with-open [r (io/reader f)]
+  (slurp r))"
+
+    "
+(with-redefs [foo bar]
+  (test-something))"
+
+    "
+(locking lock
+  (swap! state inc))"
+
+    "
+(ns my.namespace
+  (:require
+   [clojure.string :as str]))"
+
+    "
+(if-not (empty? coll)
+  (first coll)
+  nil)"
+
+    "
+(cond->> x
+  (pos? x) inc
+  (even? x) (* 2))"
+
+    "
+(go-loop [i 0]
+  (when (< i 10)
+    (recur (inc i))))"
+
+    "
+(with-local-vars [x 1]
+  (var-set x 2))"
+
+    "
+(match x
+  [1 2] \"pair\"
+  :else \"other\")")
+
+  (when-indenting-it "should support block-2 forms"
+    "
+(condp = x
+  1 \"one\"
+  2 \"two\"
+  \"other\")"
+
+    "
+(catch Exception e
+  (handle-error e))"
+
+    "
+(proxy [ActionListener] []
+  (actionPerformed [e]
+    (println e)))"
+
+    "
+(deftype MyType [field]
+  SomeProtocol
+  (some-method [this]
+    field))")
+
+  (when-indenting-it "should support inner-0 forms"
+    "
+(defn foo
+  [x]
+  (+ x 1))"
+
+    "
+(defn- private-fn
+  [x]
+  (* x 2))"
+
+    "
+(def my-var
+  42)"
+
+    "
+(defonce state
+  (atom {}))"
+
+    "
+(defmacro my-macro
+  [& body]
+  `(do ~@body))"
+
+    "
+(defmulti area
+  :shape)"
+
+    "
+(deftest my-test
+  (is (= 1 1)))"
+
+    "
+(use-fixtures :once
+  my-fixture)"
+
+    "
+(fdef ::my-fn
+  :args (s/cat :x int?)
+  :ret int?)")
+
+  (when-indenting-it "should support inner-1 forms (method nesting)"
+    "
+(defprotocol MyProto
+  (method-a [this])
+  (method-b [this x]
+    \"docstring\"))"
+
+    "
+(definterface MyInterface
+  (^void doSomething [])
+  (^String getName []))"
+
+    "
+(extend-type String
+  MyProto
+  (method-a [this]
+    (str this)))"
+
+    "
+(extend-protocol MyProto
+  String
+  (method-a [this]
+    (str this)))"
+
+    "
+(defrecord MyRecord [a b]
+  MyProto
+  (method-a [this]
+    (:a this)))"
+
+    "
+(deftype MyImpl [state]
+  MyProto
+  (method-a [this]
+    @state))"
+
+    "
+(reify MyProto
+  (method-a [this]
+    42))"
+
+    "
+(proxy [Thread] []
+  (run []
+    (println \"running\")))")
+
+  (when-indenting-it "should support inner-2 forms (letfn)"
+    "
+(letfn [(add [x y]
+          (+ x y))
+        (mul [x y]
+          (* x y))]
+  (add (mul 2 3) 4))")
+
+  (when-indenting-it "should support threading macros"
+    "
+(-> x
+    (assoc :foo 1)
+    (update :bar inc))"
+
+    "
+(->> (range 10)
+     (filter even?)
+     (map inc))")
+
   (it "should prioritize custom semantic indentation rules"
     (with-clojure-ts-buffer "
 (are [x y]
