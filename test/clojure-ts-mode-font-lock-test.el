@@ -386,7 +386,7 @@ DESCRIPTION is the description of the spec."
         (clojure-ts-mode))
       (font-lock-ensure)
       (expect (get-text-property 1 'face)
-              :to-equal 'font-lock-warning-face)))
+              :to-equal 'font-lock-punctuation-face)))
 
   (it "should highlight function calls at level 4"
     (with-temp-buffer

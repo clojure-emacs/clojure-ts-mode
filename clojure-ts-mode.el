@@ -806,10 +806,10 @@ and end of the NODE, so we ignore them."
           '(_ :* @font-lock-comment-face)))
       (:match "^\\(\\(clojure.core/\\)?comment\\)$" @font-lock-comment-delimiter-face)))
 
-   :feature 'deref ;; not part of clojure-mode, but a cool idea?
+   :feature 'deref
    :language 'clojure
    '((derefing_lit
-      marker: "@" @font-lock-warning-face))))
+      marker: "@" @font-lock-punctuation-face))))
 
 (defvar clojure-ts--clojure-extra-queries nil
   "Pre-compiled Tree-sitter queries produced from `clojure-ts-extra-def-forms'.")
