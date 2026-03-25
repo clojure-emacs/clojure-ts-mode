@@ -43,6 +43,17 @@
         (insert original)
         (clojure-ts-mode)
         (indent-region (point-min) (point-max))
+        (expect (buffer-string) :to-equal original))))
+
+  (it "preserves correct indentation of outline.clj after indent-region"
+    (let* ((file (clojure-ts-test--resource-file "outline.clj"))
+           (original (with-temp-buffer
+                       (insert-file-contents file)
+                       (buffer-string))))
+      (with-temp-buffer
+        (insert original)
+        (clojure-ts-mode)
+        (indent-region (point-min) (point-max))
         (expect (buffer-string) :to-equal original)))))
 
 (describe "integration: font-lock on sample files"
@@ -72,6 +83,34 @@
         (search-forward ";; double")
         (expect (get-text-property (match-beginning 0) 'face)
                 :to-equal 'font-lock-comment-face))))
+
+  (it "applies expected font-lock faces to docstrings.clj"
+    (let ((file (clojure-ts-test--resource-file "docstrings.clj")))
+      (with-temp-buffer
+        (insert-file-contents file)
+        (let ((treesit-font-lock-level 3))
+          (clojure-ts-mode))
+        (font-lock-ensure)
+        ;; ns docstring
+        (goto-char (point-min))
+        (search-forward "This is a namespace")
+        (expect (get-text-property (match-beginning 0) 'face)
+                :to-equal 'font-lock-doc-face)
+        ;; def with docstring before value
+        (goto-char (point-min))
+        (search-forward "I'm a docstring")
+        (expect (get-text-property (match-beginning 0) 'face)
+                :to-equal 'font-lock-doc-face)
+        ;; defmacro docstring
+        (goto-char (point-min))
+        (search-forward "Fixes most known bugs")
+        (expect (get-text-property (match-beginning 0) 'face)
+                :to-equal 'font-lock-doc-face)
+        ;; defprotocol method docstring
+        (goto-char (point-min))
+        (search-forward "Does foo")
+        (expect (get-text-property (match-beginning 0) 'face)
+                :to-equal 'font-lock-doc-face))))
 
   (it "applies expected font-lock faces to test.clj"
     (let ((file (clojure-ts-test--resource-file "test.clj")))
@@ -110,5 +149,25 @@
                (flatten-index (imenu--flatten-index-alist index t)))
           ;; Should find the namespace
           (expect (assoc "Namespace:refactoring" flatten-index) :not :to-be nil))))))
+
+(describe "integration: outline on sample files"
+  (before-all
+    (unless (treesit-language-available-p 'clojure)
+      (signal 'buttercup-pending "tree-sitter Clojure grammar not available")))
+
+  (it "navigates headings in outline.clj"
+    (let ((file (clojure-ts-test--resource-file "outline.clj")))
+      (with-temp-buffer
+        (insert-file-contents file)
+        (let ((clojure-ts-outline-variant 'comments))
+          (clojure-ts-mode))
+        (outline-minor-mode 1)
+        (goto-char (point-min))
+        (outline-next-heading)
+        (expect (looking-at ";;; First heading") :to-be-truthy)
+        (outline-next-heading)
+        (expect (looking-at ";;;; Heading level 2") :to-be-truthy)
+        (outline-next-heading)
+        (expect (looking-at ";;; Second heading") :to-be-truthy)))))
 
 ;;; clojure-ts-mode-integration-test.el ends here
