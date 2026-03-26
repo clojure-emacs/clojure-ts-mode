@@ -319,6 +319,7 @@ The prefixes are used to generate the correct namespace."
     (clojurescript-mode . clojure-ts-clojurescript-mode)
     (clojurec-mode . clojure-ts-clojurec-mode)
     (clojuredart-mode . clojure-ts-clojuredart-mode)
+    (edn-mode . clojure-ts-mode)
     (jank-mode . clojure-ts-jank-mode)
     (joker-mode . clojure-ts-joker-mode))
   "Alist of entries to `major-mode-remap-defaults'.
@@ -3351,7 +3352,7 @@ Useful if you want to switch to the `clojure-mode's mode mappings."
         ;; Regular clojure/edn files
         ;; I believe dtm is for datomic queries and datoms, which are just edn.
         (add-to-list 'auto-mode-alist
-                     '("\\.\\(clj\\|dtm\\|edn\\)\\'" . clojure-ts-mode))
+                     '("\\.\\(clj\\|dtm\\|edn\\|lpy\\)\\'" . clojure-ts-mode))
         (add-to-list 'auto-mode-alist '("\\.cljs\\'" . clojure-ts-clojurescript-mode))
         (add-to-list 'auto-mode-alist '("\\.cljc\\'" . clojure-ts-clojurec-mode))
         (add-to-list 'auto-mode-alist '("\\.cljd\\'" . clojure-ts-clojuredart-mode))
