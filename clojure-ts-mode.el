@@ -316,6 +316,7 @@ The prefixes are used to generate the correct namespace."
 
 (defvar clojure-ts-mode-remappings
   '((clojure-mode . clojure-ts-mode)
+    (edn-mode . clojure-ts-mode)
     (clojurescript-mode . clojure-ts-clojurescript-mode)
     (clojurec-mode . clojure-ts-clojurec-mode)
     (clojuredart-mode . clojure-ts-clojuredart-mode)
