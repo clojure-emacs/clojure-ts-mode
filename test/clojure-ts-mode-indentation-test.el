@@ -759,7 +759,24 @@ b |20])"
   (it "should remove extra commas"
     (with-clojure-ts-buffer-point "{|:a 2, ,:c 4}"
       (call-interactively #'clojure-ts-align)
-      (expect (buffer-string) :to-equal "{:a 2, :c 4}"))))
+      (expect (buffer-string) :to-equal "{:a 2, :c 4}")))
+
+  (it "should not fail to align a cond form without a semantic indentation rule"
+    ;; A symbol added to `clojure-ts-align-cond-forms' need not have a matching
+    ;; semantic indentation rule.  When it has none, alignment must fall back
+    ;; gracefully instead of raising `(wrong-type-argument listp :not-found)'.
+    (with-clojure-ts-buffer-point "
+(my-cond
+ |:a 1
+ :bbbb 2
+ :cc 3)"
+      (setq-local clojure-ts-align-cond-forms (cons "my-cond" clojure-ts-align-cond-forms))
+      (call-interactively #'clojure-ts-align)
+      (expect (buffer-string) :to-equal "
+(my-cond
+ :a 1
+ :bbbb 2
+ :cc 3)"))))
 
 (describe "clojure-ts-align-forms-automatically"
   ;; Copied from `clojure-mode'
