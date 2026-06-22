@@ -11,6 +11,7 @@
 - Fix font-lock issues: duplicate query, missing `definline` metadata docstring.
 - Fix missing builtin symbols in font-lock regexp.
 - Improve performance for imenu, font-lock and indentation.
+- Improve performance for `clojure-ts-align` by caching indentation rules.
 
 ## 0.6.0 (2025-12-02)
 
