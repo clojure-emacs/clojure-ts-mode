@@ -50,25 +50,24 @@
                                :to-equal (file-name-as-directory temp-dir))))))
 
   (describe "clojure-ts-project-relative-path"
-    (cl-letf (((symbol-function 'clojure-ts-project-dir) (lambda () project-dir)))
+    (it "returns the path relative to the project root"
+      (spy-on 'clojure-ts-project-dir :and-return-value project-dir)
       (expect (clojure-ts-project-relative-path clj-file-path)
               :to-equal project-relative-clj-file-path)))
 
   (describe "clojure-ts-expected-ns"
     (it "should return the namespace matching a path"
-      (cl-letf (((symbol-function 'clojure-ts-project-relative-path)
-                 (lambda (&optional _current-buffer-file-name)
-                   project-relative-clj-file-path)))
-        (expect (clojure-ts-expected-ns clj-file-path)
-                :to-equal clj-file-ns)))
+      (spy-on 'clojure-ts-project-relative-path
+              :and-return-value project-relative-clj-file-path)
+      (expect (clojure-ts-expected-ns clj-file-path)
+              :to-equal clj-file-ns))
 
     (it "should return the namespace even without a path"
-      (cl-letf (((symbol-function 'clojure-ts-project-relative-path)
-                 (lambda (&optional _current-buffer-file-name)
-                   project-relative-clj-file-path)))
-        (expect (let ((buffer-file-name clj-file-path))
-                  (clojure-ts-expected-ns))
-                :to-equal clj-file-ns)))))
+      (spy-on 'clojure-ts-project-relative-path
+              :and-return-value project-relative-clj-file-path)
+      (expect (let ((buffer-file-name clj-file-path))
+                (clojure-ts-expected-ns))
+              :to-equal clj-file-ns))))
 
 (describe "clojure-ts-find-ns"
   (it "should find common namespace declarations"
