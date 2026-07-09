@@ -926,7 +926,7 @@ b |20])"
         aa); comment
   :aa 2)")
 
-  (when-aligning-it "should work correctly when there are ignored forms"
+  (when-aligning-it "should work correctly when there are discard forms"
     "{:map  \"with\"
  :some #_\"ignored\" \"form\"}"
 
