@@ -1,5 +1,8 @@
 # Changelog
 
+<!-- Entries are one line per item, so the line-length rule doesn't fit this file. -->
+<!-- markdownlint-disable MD013 -->
+
 ## main (unreleased)
 
 - Fix indentation of namespaced maps in `fixed` indentation style.
