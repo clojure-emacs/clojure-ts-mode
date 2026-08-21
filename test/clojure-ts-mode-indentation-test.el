@@ -43,17 +43,17 @@ represents the expected position of point.
 DESCRIPTION is a string with the description of the spec."
   (declare (indent 1))
   `(it ,description
-    (let* ((after ,after)
-           (expected-cursor-pos (1+ (clojure-ts--s-index-of "|" after)))
-           (expected-state (delete ?| after)))
-      (with-clojure-ts-buffer ,before
-        (goto-char (point-min))
-        (search-forward "|")
-        (delete-char -1)
-        (font-lock-ensure)
-        (indent-according-to-mode)
-        (expect (buffer-string) :to-equal expected-state)
-        (expect (point) :to-equal expected-cursor-pos)))))
+     (let* ((after ,after)
+            (expected-cursor-pos (1+ (clojure-ts--s-index-of "|" after)))
+            (expected-state (delete ?| after)))
+       (with-clojure-ts-buffer ,before
+         (goto-char (point-min))
+         (search-forward "|")
+         (delete-char -1)
+         (font-lock-ensure)
+         (indent-according-to-mode)
+         (expect (buffer-string) :to-equal expected-state)
+         (expect (point) :to-equal expected-cursor-pos)))))
 
 
 
@@ -698,7 +698,7 @@ DESCRIPTION is a string with the description of the spec."
     (with-clojure-ts-buffer-point "
 (let [a-long-name 10
 b |20])"
-        (call-interactively #'clojure-ts-align)
+      (call-interactively #'clojure-ts-align)
       (expect (buffer-string) :to-equal "
 (let [a-long-name 10
       b           20])"))
@@ -713,7 +713,7 @@ b |20])"
                     :a    #long \"1234\"
  :b {:this \"is\"
  :nested \"map\"}}])"
-        (call-interactively #'clojure-ts-align)
+      (call-interactively #'clojure-ts-align)
       (expect (buffer-string) :to-equal "
 (let [^long my-map {:hello  \"World\" ;Hello
                     :foo
@@ -730,7 +730,7 @@ b |20])"
 |123 \"Hello\"
 99999 \"World\"
 234 nil)"
-        (call-interactively #'clojure-ts-align)
+      (call-interactively #'clojure-ts-align)
       (expect (buffer-string) :to-equal "
 (condp = 2
   123   \"Hello\"
@@ -741,7 +741,7 @@ b |20])"
     (with-clojure-ts-buffer-point "
 #?(:clj 2
    |:cljs 2)"
-        (call-interactively #'clojure-ts-align)
+      (call-interactively #'clojure-ts-align)
       (expect (buffer-string) :to-equal "
 #?(:clj 2
    :cljs 2)")))
@@ -750,7 +750,7 @@ b |20])"
     (with-clojure-ts-buffer-point "
 #?(:clj 2
    |:cljs 2)"
-        (setq-local clojure-ts-align-reader-conditionals t)
+      (setq-local clojure-ts-align-reader-conditionals t)
       (call-interactively #'clojure-ts-align)
       (expect (buffer-string) :to-equal "
 #?(:clj  2
@@ -758,8 +758,8 @@ b |20])"
 
   (it "should remove extra commas"
     (with-clojure-ts-buffer-point "{|:a 2, ,:c 4}"
-        (call-interactively #'clojure-ts-align)
-        (expect (buffer-string) :to-equal "{:a 2, :c 4}"))))
+      (call-interactively #'clojure-ts-align)
+      (expect (buffer-string) :to-equal "{:a 2, :c 4}"))))
 
 (describe "clojure-ts-align-forms-automatically"
   ;; Copied from `clojure-mode'
@@ -826,29 +826,29 @@ b |20])"
     "
 {c               d
  :this-is-a-form b}"
-  "
+    "
 {c        d
  :this-is b}"
-  "
+    "
 {c     d
  :this b}"
-  "
+    "
 {c  d
  :a b}"
 
-  "
+    "
 (let [c              d
       this-is-a-form b])"
 
-  "
+    "
 (let [c       d
       this-is b])"
 
-  "
+    "
 (let [c    d
       this b])"
 
-  "
+    "
 (let [c d
       a b])")
 

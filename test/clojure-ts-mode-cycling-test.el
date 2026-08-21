@@ -70,14 +70,14 @@
     (clojure-ts-cycle-privacy))
 
   (when-refactoring-it "should also work from the beginning of a sexp"
-     "(defn- add [a b]
+    "(defn- add [a b]
   (+ a b))"
 
-     "(defn add [a b]
+    "(defn add [a b]
   (+ a b))"
 
-     (backward-sexp)
-     (clojure-ts-cycle-privacy))
+    (backward-sexp)
+    (clojure-ts-cycle-privacy))
 
   (when-refactoring-it "should use metadata when clojure-use-metadata-for-privacy is set to true"
     "(defn add [a b]
