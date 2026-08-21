@@ -143,7 +143,7 @@
 (in-ns 'foo3)
 |
 (ns foo4)"
-        (expect (clojure-ts-find-ns) :to-equal "foo3"))
+      (expect (clojure-ts-find-ns) :to-equal "foo3"))
     (with-clojure-ts-buffer "(ns foo)
 (ns-unmap *ns* 'map)
 (ns.misleading 1 2 3)"

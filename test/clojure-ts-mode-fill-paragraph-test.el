@@ -34,11 +34,11 @@
   \"This is a very long docstring that should be reformatted using fill-paragraph function.\"
   []
   (pringln \"Hello world\"))"
-                            (goto-char 40)
-                            (prog-fill-reindent-defun)
-                            (expect (buffer-substring-no-properties (point-min) (point-max))
-                                    :to-equal
-                                    "(ns foo)
+      (goto-char 40)
+      (prog-fill-reindent-defun)
+      (expect (buffer-substring-no-properties (point-min) (point-max))
+              :to-equal
+              "(ns foo)
 
 (defn hello-world
   \"This is a very long docstring that should be reformatted using
@@ -50,11 +50,11 @@
     (with-clojure-ts-buffer "(ns foo)
 
 ;; This is a very long comment that should be reformatted using fill-paragraph function."
-                              (goto-char 20)
-                              (prog-fill-reindent-defun)
-                              (expect (buffer-substring-no-properties (point-min) (point-max))
-                                      :to-equal
-                                      "(ns foo)
+      (goto-char 20)
+      (prog-fill-reindent-defun)
+      (expect (buffer-substring-no-properties (point-min) (point-max))
+              :to-equal
+              "(ns foo)
 
 ;; This is a very long comment that should be reformatted using
 ;; fill-paragraph function."))))

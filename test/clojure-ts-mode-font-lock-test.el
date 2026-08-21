@@ -43,7 +43,7 @@
 Assumes the current buffer is already fontified."
   (let ((start-face (get-text-property start 'face))
         (all-faces (cl-loop for i from start to end collect (get-text-property
-                                                              i 'face))))
+                                                             i 'face))))
     (if (cl-every (lambda (face) (equal face start-face)) all-faces)
         start-face
       'various-faces)))
@@ -152,14 +152,14 @@ DESCRIPTION is the description of the spec."
     ("(deftest a (is (= 1 1)))" ("deftest" font-lock-keyword-face))
 
 
-  ;; TODO: copied from clojure-mode, but failing
-  ;; ("(defne [x y])" (2 6 font-lock-keyword-face))
-  ;; ("(defnm a b)" (2 6 font-lock-keyword-face))
-  ;; ("(defnu)" (2 6 font-lock-keyword-face))
-  ;; ("(defnc [a])" (2 6 font-lock-keyword-face))
-  ;; ("(defna)" (2 6 font-lock-keyword-face))
-  ;; ("(deftask a)" (2 8 font-lock-keyword-face))
-  ;; ("(defstate a :start \"b\" :stop \"c\")" (2 9 font-lock-keyword-face))
+    ;; TODO: copied from clojure-mode, but failing
+    ;; ("(defne [x y])" (2 6 font-lock-keyword-face))
+    ;; ("(defnm a b)" (2 6 font-lock-keyword-face))
+    ;; ("(defnu)" (2 6 font-lock-keyword-face))
+    ;; ("(defnc [a])" (2 6 font-lock-keyword-face))
+    ;; ("(defna)" (2 6 font-lock-keyword-face))
+    ;; ("(deftask a)" (2 8 font-lock-keyword-face))
+    ;; ("(defstate a :start \"b\" :stop \"c\")" (2 9 font-lock-keyword-face))
 
     )
 
@@ -351,8 +351,9 @@ DESCRIPTION is the description of the spec."
   (when-fontifying-it "should highlight keywords"
     (":foo" ("foo" clojure-ts-keyword-face))
     ("::foo" ("foo" clojure-ts-keyword-face))
-    (":my.ns/bar" ("my.ns" font-lock-type-face)
-                  ("bar" clojure-ts-keyword-face))))
+    (":my.ns/bar"
+     ("my.ns" font-lock-type-face)
+     ("bar" clojure-ts-keyword-face))))
 
 ;;;; Strings
 
@@ -370,10 +371,12 @@ DESCRIPTION is the description of the spec."
     (";;; heading" (";;; heading" font-lock-comment-face)))
 
   (when-fontifying-it "should highlight discard expressions"
-    ("#_foo" ("#_" font-lock-comment-delimiter-face)
-            ("foo" font-lock-comment-face))
-    ("#_(+ 1 2)" ("#_" font-lock-comment-delimiter-face)
-                 ("(+ 1 2)" font-lock-comment-face)))
+    ("#_foo"
+     ("#_" font-lock-comment-delimiter-face)
+     ("foo" font-lock-comment-face))
+    ("#_(+ 1 2)"
+     ("#_" font-lock-comment-delimiter-face)
+     ("(+ 1 2)" font-lock-comment-face)))
 
   (it "should highlight comment macro name as delimiter"
     (with-fontified-clojure-ts-buffer "(comment (+ 1 2))"
@@ -453,8 +456,9 @@ DESCRIPTION is the description of the spec."
 
 (describe "regex-highlighting"
   (when-fontifying-it "should highlight regex literals"
-    ("#\"pattern\"" ("#" font-lock-punctuation-face)
-                    ("pattern" font-lock-regexp-face))))
+    ("#\"pattern\""
+     ("#" font-lock-punctuation-face)
+     ("pattern" font-lock-regexp-face))))
 
 ;;;; Builtin macros
 
