@@ -34,3 +34,30 @@
       `(:or ,eldev-standard-excludes "./clojure-mode-tests/*"))
 (setf eldev-lint-ignored-fileset
       `(:or ,eldev-lint-ignored-fileset "./clojure-mode-tests/*"))
+
+(defvar clojure-ts-mode-indent-check-fix nil
+  "Whether `eldev indent' should rewrite the misindented files.")
+
+(eldev-defcommand clojure-ts-mode-indent-check-command (&rest parameters)
+  "Check that every Emacs Lisp source file of the project is indented the way
+Emacs would indent it.  Pass `--fix' to reindent the offenders in place
+instead of only reporting them."
+  :command indent
+  :category testing
+  (when parameters
+    (signal 'eldev-wrong-command-usage `(t "Unexpected command parameters")))
+  (eldev-load-project-dependencies 'test)
+  (load (expand-file-name "test/indent-check.el" eldev-project-dir) nil t)
+  (unless (zerop (clojure-ts-mode-indent-check clojure-ts-mode-indent-check-fix))
+    (unless clojure-ts-mode-indent-check-fix
+      (signal 'eldev-error `("Some files are misindented; run `eldev indent --fix'")))))
+
+(eldev-defbooloptions clojure-ts-mode-indent-check-do-fix
+  clojure-ts-mode-indent-check-just-check
+  clojure-ts-mode-indent-check-fix
+  ("Reindent the misindented files in place"
+   :options (--fix))
+  ("Only report the misindented lines"
+   :options (--check)
+   :hidden-if :default)
+  :for-command indent)
