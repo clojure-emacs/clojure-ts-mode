@@ -53,6 +53,9 @@ jobs:
     - name: Lint the project
       run: make lint
 
+    - name: Check the indentation
+      run: make indent
+
   test:
     runs-on: ubuntu-latest
     # continue-on-error: ${{matrix.emacs_version == 'snapshot'}}
