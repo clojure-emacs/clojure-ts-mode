@@ -136,7 +136,7 @@ double quotes on the third column."
   :package-version '(clojure-ts-mode . "0.5"))
 
 (defcustom clojure-ts-jank-use-cpp-parser t
-  "When non-nil, use C++ grammar to highlight syntax in native/raw forms."
+  "When non-nil, use C++ grammar to highlight syntax in cpp/raw forms."
   :type 'boolean
   :safe #'booleanp
   :package-version '(clojure-ts-mode . "0.5"))
@@ -570,7 +570,7 @@ When USE-REGEX is non-nil, include range settings for regex parser."
 
 In order to support embedded syntax highlighting for JS in ClojureScript
 and C++ in Jank we need to avoid fontifying string content in some
-special forms, such as native/raw in Jank and js* in ClojureScript,
+special forms, such as cpp/raw in Jank and js* in ClojureScript,
 otherwise string face will interfere with embedded parser's faces.
 
 This function respects OVERRIDE argument by passing it to
@@ -579,18 +579,15 @@ This function respects OVERRIDE argument by passing it to
 START and END arguments that are passed to this function are not start
 and end of the NODE, so we ignore them."
   (let* ((prev (treesit-node-prev-sibling (treesit-node-parent node)))
-         ;; TODO: Seems jank has removed this syntax, so we might drop this
-         ;; after jank 1.0 gets released
-         ;; See https://github.com/jank-lang/jank/issues/24#issuecomment-2924460595
-         (jank-native-p (and (derived-mode-p 'clojure-ts-jank-mode)
-                             clojure-ts-jank-use-cpp-parser
-                             (clojure-ts--symbol-node-p prev)
-                             (string= (treesit-node-text prev) "native/raw")))
+         (jank-cpp-raw-p (and (derived-mode-p 'clojure-ts-jank-mode)
+                              clojure-ts-jank-use-cpp-parser
+                              (clojure-ts--symbol-node-p prev)
+                              (string= (treesit-node-text prev) "cpp/raw")))
          (js-interop-p (and (derived-mode-p 'clojure-ts-clojurescript-mode)
                             clojure-ts-clojurescript-use-js-parser
                             (clojure-ts--symbol-node-p prev)
                             (string= (treesit-node-text prev) "js*"))))
-    (when (not (or jank-native-p js-interop-p))
+    (when (not (or jank-cpp-raw-p js-interop-p))
       (treesit-fontify-with-override (treesit-node-start node)
                                      (treesit-node-end node)
                                      'font-lock-string-face
@@ -3340,7 +3337,7 @@ REGEX-AVAILABLE."
                          :local t
                          '(((list_lit (sym_lit) @_sym-name
                                       :anchor (str_lit (str_content) @capture))
-                            (:equal @_sym-name "native/raw"))))))
+                            (:equal @_sym-name "cpp/raw"))))))
     (clojure-ts--add-config-for-mode 'c++-ts-mode)
     (treesit-major-mode-setup)))
 

@@ -134,7 +134,7 @@ to highlight JS syntax in `js*` forms.  This is enabled by default and can be
 turned off by setting `clojure-ts-clojurescript-use-js-parser` to `nil`.
 
 `clojure-ts-jank-mode` can optionally use `tree-sitter-cpp` grammar to highlight C++
-syntax in `native/raw` forms.  This is enabled by default and can be turned off by
+syntax in `cpp/raw` forms.  This is enabled by default and can be turned off by
 setting `clojure-ts-jank-use-cpp-parser` to `nil`.
 
 If you have `git` and a C compiler (`cc`) available on your system's `PATH`,
