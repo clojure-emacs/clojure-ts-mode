@@ -1,10 +1,6 @@
 name: CI
 
-on:
-  push:
-    paths: ['**.el']
-  pull_request:
-    paths: ['**.el']
+on: [push, pull_request]
 
 jobs:
   compile:
