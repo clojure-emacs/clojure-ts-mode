@@ -1026,6 +1026,14 @@ names are meta and value.  This function skips any unnamed, anonymous,
 and metadata nodes and returns the first value node."
   (treesit-node-child-by-field-name node "value"))
 
+(defun clojure-ts--last-value-child (node)
+  "Return the last value child of the given NODE.
+See `clojure-ts--first-value-child'."
+  (let ((child (treesit-node-child node -1 t)))
+    (while (and child (not (equal "value" (treesit-node-field-name child))))
+      (setq child (treesit-node-prev-sibling child t)))
+    child))
+
 (defun clojure-ts--symbol-matches-p (symbol-regexp node)
   "Return non-nil if NODE is a symbol that matches SYMBOL-REGEXP."
   (and (clojure-ts--symbol-node-p node)
@@ -2074,6 +2082,74 @@ functional literal node."
             (insert "\n"))
           (insert " " contents))))))
 
+(defun clojure-ts--threading-unsupported-p (node beg end)
+  "Return non-nil if the threading commands would garble NODE's children.
+Only the children between BEG and END are checked, as those are the
+ones a command moves forms around.  The commands split metadata and
+discarded forms from the forms they belong to, and take a reader
+conditional for a single form, while it can stand for several forms, or
+none."
+  (clojure-ts--node-child
+   node
+   (lambda (child)
+     (and (<= beg (treesit-node-start child))
+          (<= (treesit-node-end child) end)
+          (or (clojure-ts--metadata-node-p child)
+              (clojure-ts--reader-conditional-node-p child)
+              (string-equal "dis_expr" (treesit-node-type child)))))))
+
+(defun clojure-ts--threaded-arg (node thread-last)
+  "Return the argument threading takes out of NODE.
+That's the first one, or the last one when THREAD-LAST is non-nil."
+  (if thread-last
+      (clojure-ts--last-value-child node)
+    (clojure-ts--node-child-skip-metadata node 1)))
+
+(defun clojure-ts--threading-step-unsupported-p (node thread-last)
+  "Return non-nil if threading would garble NODE, the form it splits.
+Threading takes the first argument out of NODE, or the last one when
+THREAD-LAST is non-nil."
+  (let ((arg (clojure-ts--threaded-arg node thread-last)))
+    (if thread-last
+        (and arg
+             (clojure-ts--threading-unsupported-p
+              node (clojure-ts--node-start-with-metadata arg) (treesit-node-end node)))
+      (clojure-ts--threading-unsupported-p
+       node (treesit-node-start node) (treesit-node-end (or arg node))))))
+
+(defun clojure-ts--threading-chain-unsupported-p (node thread-last)
+  "Return non-nil if fully threading NODE would garble any form on the way.
+Fully threading splits NODE, then the argument it took out of NODE, and
+so on.  That's the first argument each time, or the last one when
+THREAD-LAST is non-nil."
+  (and node
+       (clojure-ts--list-node-p node)
+       (or (clojure-ts--threading-step-unsupported-p node thread-last)
+           (clojure-ts--threading-chain-unsupported-p
+            (clojure-ts--threaded-arg node thread-last) thread-last))))
+
+(defun clojure-ts--unwinding-unsupported-p (node thread-last n)
+  "Return non-nil if unwinding NODE by N levels would garble it.
+NODE is a threading form.  Unwinding moves the threaded form into the
+next step, to its end when THREAD-LAST is non-nil, and right after its
+head otherwise."
+  (let* ((values (seq-filter (lambda (child)
+                               (equal "value" (treesit-node-field-name child)))
+                             (treesit-node-children node t)))
+         ;; The threading symbol and the threaded form come first.
+         (steps (seq-take (nthcdr 2 values) n)))
+    (or (clojure-ts--threading-unsupported-p
+         node (treesit-node-start node) (treesit-node-end (or (nth (1+ n) values) node)))
+        (and (not thread-last)
+             (seq-some (lambda (step)
+                         (and (clojure-ts--list-node-p step)
+                              (clojure-ts--threading-unsupported-p
+                               step
+                               (treesit-node-start step)
+                               (treesit-node-end
+                                (or (clojure-ts--first-value-child step) step)))))
+                       steps)))))
+
 (defun clojure-ts--node-threading-p (node)
   "Return non-nil if NODE is a threading macro s-expression."
   (and (or (clojure-ts--list-node-p node)
@@ -2165,12 +2241,15 @@ With universal argument \\[universal-argument], fully unwinds thread."
   (if-let* ((threading-sexp (clojure-ts--threading-sexp-node))
             (sym (clojure-ts--list-node-sym-text threading-sexp t)))
       (save-excursion
-        (let ((beg (thread-first threading-sexp
+        (let ((thread-last (string-match-p (rx bol (* "some") "->>" eol) sym))
+              (beg (thread-first threading-sexp
                                  (treesit-node-start)
                                  (copy-marker)))
               (end (thread-first threading-sexp
                                  (treesit-node-end)
                                  (copy-marker))))
+          (when (clojure-ts--unwinding-unsupported-p threading-sexp thread-last n)
+            (user-error "Can't unwind around metadata, #_ or reader conditionals"))
           ;; If it's the last expression, just raise it out of the threading
           ;; macro.
           (if (clojure-ts--nothing-more-to-unwind)
@@ -2178,11 +2257,9 @@ With universal argument \\[universal-argument], fully unwinds thread."
                 (clojure-ts--pop-out-of-threading)
                 (clojure-ts--fix-sexp-whitespace))
             (while (> n 0)
-              (cond
-               ((string-match-p (rx bol (* "some") "->" eol) sym)
+              (if thread-last
+                  (clojure-ts--unwind-thread-last)
                 (clojure-ts--unwind-thread-first))
-               ((string-match-p (rx bol (* "some") "->>" eol) sym)
-                (clojure-ts--unwind-thread-last)))
               (setq n (1- n))
               ;; After unwinding we check if it is the last expression and maybe
               ;; splice it.
@@ -2256,20 +2333,23 @@ cannot be found."
   (if-let* ((threading-sexp (clojure-ts--threading-sexp-node))
             ((clojure-ts--threadable-p threading-sexp))
             (sym (clojure-ts--list-node-sym-text threading-sexp t)))
-      (let ((beg (thread-first threading-sexp
-                               (treesit-node-start)
-                               (copy-marker)))
-            (end (thread-first threading-sexp
-                               (treesit-node-end)
-                               (copy-marker))))
-        (cond
-         ((string-match-p (rx bol (* "some") "->" eol) sym)
-          (clojure-ts--thread-first))
-         ((string-match-p (rx bol (* "some") "->>" eol) sym)
-          (clojure-ts--thread-last)))
-        (indent-region (marker-position beg) (marker-position end))
-        (delete-trailing-whitespace beg end)
-        t)
+      (let ((thread-last (string-match-p (rx bol (* "some") "->>" eol) sym)))
+        (if (clojure-ts--threading-step-unsupported-p
+             (treesit-node-child threading-sexp 1 t) thread-last)
+            (when called-by-user-p
+              (user-error "Can't thread around metadata, #_ or reader conditionals"))
+          (let ((beg (thread-first threading-sexp
+                                   (treesit-node-start)
+                                   (copy-marker)))
+                (end (thread-first threading-sexp
+                                   (treesit-node-end)
+                                   (copy-marker))))
+            (if thread-last
+                (clojure-ts--thread-last)
+              (clojure-ts--thread-first))
+            (indent-region (marker-position beg) (marker-position end))
+            (delete-trailing-whitespace beg end)
+            t)))
     (when called-by-user-p
       (user-error "No threading form at point"))))
 
@@ -2280,8 +2360,14 @@ FIRST-OR-LAST-THREAD is either \"->\" or \"->>\".
 
 When BUT-LAST is non-nil, the last expression is not threaded. Default
 value is `clojure-ts-thread-all-but-last.'"
-  (if-let* ((list-at-point (treesit-thing-at-point 'list 'nested)))
+  ;; Not the `list' thing: Emacs 30 takes that symbol for the function `list',
+  ;; which matches any node.
+  (if-let* ((list-at-point (treesit-thing-at-point (regexp-opt clojure-ts--list-nodes)
+                                                   'nested)))
       (save-excursion
+        (when (clojure-ts--threading-chain-unsupported-p
+               list-at-point (string-prefix-p "->>" first-or-last-thread))
+          (user-error "Can't thread around metadata, #_ or reader conditionals"))
         (goto-char (treesit-node-start list-at-point))
         (insert-parentheses 1)
         (insert first-or-last-thread)

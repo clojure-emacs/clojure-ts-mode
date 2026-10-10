@@ -446,5 +446,99 @@
   ;;   (clojure-ts-unwind-all))
   )
 
+(describe "threading around metadata, #_ and reader conditionals"
+
+  (when-refactoring-with-point-it "should refuse to unwind past a discarded form"
+    "(-> |x #_(foo) (inc) (str))"
+    "(-> |x #_(foo) (inc) (str))"
+
+    (expect (clojure-ts-unwind) :to-throw 'user-error))
+
+  (when-refactoring-with-point-it "should refuse to unwind past metadata"
+    "(-> |x ^String (inc) (str))"
+    "(-> |x ^String (inc) (str))"
+
+    (expect (clojure-ts-unwind-all) :to-throw 'user-error))
+
+  (when-refactoring-with-point-it "should refuse to unwind into a reader conditional"
+    "(-> |x #?(:clj (inc)) (str))"
+    "(-> |x #?(:clj (inc)) (str))"
+
+    (expect (clojure-ts-unwind-all) :to-throw 'user-error))
+
+  (when-refactoring-with-point-it "should refuse to thread a form with metadata"
+    "(-> |(foo ^String a b))"
+    "(-> |(foo ^String a b))"
+
+    (expect (clojure-ts-thread t) :to-throw 'user-error))
+
+  (when-refactoring-with-point-it "should refuse to fully thread a form with a discarded form"
+    "|(foo #_(dbg) (bar x) 1)"
+    "|(foo #_(dbg) (bar x) 1)"
+
+    (expect (clojure-ts-thread-first-all nil) :to-throw 'user-error))
+
+  (when-refactoring-with-point-it "should refuse to fully thread when a nested form has metadata"
+    "|(foo (bar ^String x) 1)"
+    "|(foo (bar ^String x) 1)"
+
+    (expect (clojure-ts-thread-first-all nil) :to-throw 'user-error))
+
+  (when-refactoring-with-point-it "should refuse to thread a splicing reader conditional"
+    "|(baz (bar #?@(:clj [x y]) 1))"
+    "|(baz (bar #?@(:clj [x y]) 1))"
+
+    (expect (clojure-ts-thread-first-all nil) :to-throw 'user-error))
+
+  (when-refactoring-with-point-it "should refuse to thread a reader conditional it couldn't unwind again"
+    "|(baz (bar #?(:clj x :cljs y) 1))"
+    "|(baz (bar #?(:clj x :cljs y) 1))"
+
+    (expect (clojure-ts-thread-first-all t) :to-throw 'user-error))
+
+  (when-refactoring-with-point-it "should refuse to fully thread a form it could only partly thread"
+    "|(baz (bar #_x (qux y) 1))"
+    "|(baz (bar #_x (qux y) 1))"
+
+    (expect (clojure-ts-thread-first-all t) :to-throw 'user-error))
+
+  (when-refactoring-with-point-it "should refuse to unwind into a step whose head has metadata"
+    "(-> |x (^String foo bar))"
+    "(-> |x (^String foo bar))"
+
+    (expect (clojure-ts-unwind) :to-throw 'user-error))
+
+  (when-refactoring-it "should thread first when an argument it doesn't move has metadata"
+    "(-> (foo (bar x) ^String y))"
+
+    "(-> (bar x)
+    (foo ^String y))"
+
+    (clojure-ts-thread))
+
+  (when-refactoring-it "should thread last when an argument it doesn't move has metadata"
+    "(->> (foo ^String y (bar x)))"
+
+    "(->> (bar x)
+     (foo ^String y))"
+
+    (clojure-ts-thread))
+
+  (when-refactoring-it "should fully thread when an argument it doesn't move has metadata"
+    "(foo (bar) ^String baz)"
+
+    "(-> (bar)
+    (foo ^String baz))"
+
+    (beginning-of-buffer)
+    (clojure-ts-thread-first-all nil))
+
+  (when-refactoring-it "should unwind a step when a later step is discarded"
+    "(-> x (foo) #_(bar) (baz))"
+
+    "(-> (foo x) #_(bar) (baz))"
+
+    (clojure-ts-unwind)))
+
 (provide 'clojure-ts-mode-refactor-threading-test)
 ;;; clojure-ts-mode-refactor-threading-test.el ends here
