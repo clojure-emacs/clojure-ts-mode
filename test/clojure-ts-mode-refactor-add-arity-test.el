@@ -209,6 +209,29 @@
 
     (clojure-ts-add-arity))
 
+  (when-refactoring-with-point-it "should handle a defmethod with a vector dispatch value"
+    "(defmethod foo [:a :b] [arg]
+  body|)"
+
+    "(defmethod foo [:a :b]
+  ([|])
+  ([arg]
+   body))"
+
+    (clojure-ts-add-arity))
+
+  (when-refactoring-with-point-it "should handle a multi-arity defmethod with a vector dispatch value"
+    "(defmethod foo [:a :b]
+  ([a|rg]
+   body))"
+
+    "(defmethod foo [:a :b]
+  ([|])
+  ([arg]
+   body))"
+
+    (clojure-ts-add-arity))
+
   (when-refactoring-with-point-it "should handle a multi-arity defmethod"
     "(defmethod foo :bar
   ([x y]
