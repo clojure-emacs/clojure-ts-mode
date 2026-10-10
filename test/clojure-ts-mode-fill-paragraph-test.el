@@ -57,6 +57,21 @@
               "(ns foo)
 
 ;; This is a very long comment that should be reformatted using
-;; fill-paragraph function."))))
+;; fill-paragraph function.")))
+
+  (it "should reindent the whole top-level form in code"
+    (with-clojure-ts-buffer "(defn foo [x]
+(let [y 1]
+(+ x
+y)))"
+      (goto-char (point-min))
+      (search-forward "(+ x")
+      (prog-fill-reindent-defun)
+      (expect (buffer-substring-no-properties (point-min) (point-max))
+              :to-equal
+              "(defn foo [x]
+  (let [y 1]
+    (+ x
+       y)))"))))
 
 ;;; clojure-ts-mode-fill-paragraph-test.el ends here

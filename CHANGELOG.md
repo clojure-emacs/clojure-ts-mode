@@ -15,6 +15,7 @@
 - [#161](https://github.com/clojure-emacs/clojure-ts-mode/pull/161): Fix `clojure-ts-clojurescript-mode` asking to install the jsdoc grammar on Emacs 31, and failing to start without it.
 - [#161](https://github.com/clojure-emacs/clojure-ts-mode/pull/161): Stop running the hooks of `js-ts-mode` and `c++-ts-mode` (and `prog-mode-hook`) in a hidden buffer when `clojure-ts-clojurescript-mode` or `clojure-ts-jank-mode` starts.
 - [#147](https://github.com/clojure-emacs/clojure-ts-mode/issues/147): Fix `clojure-ts-align-forms-automatically` having no effect in `clojure-ts-clojurescript-mode` and `clojure-ts-jank-mode`.
+- [#161](https://github.com/clojure-emacs/clojure-ts-mode/pull/161): Make `M-q` (`prog-fill-reindent-defun`) reindent the whole top-level form again on Emacs 31, instead of just the innermost one.
 
 ## 0.6.0 (2025-12-02)
 
