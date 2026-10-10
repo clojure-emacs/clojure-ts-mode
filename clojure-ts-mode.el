@@ -2641,14 +2641,25 @@ DELIM-OPEN and its matching paren.  If PREFIX is non-nil it's inserted
 before DELIM-OPEN."
   (if-let* ((coll-node (clojure-ts--collection-node-at-point)))
       (save-excursion
-        (goto-char (treesit-node-start coll-node))
-        (when (string-match-p (rx (or "set_lit" "quoting_lit"))
-                              (treesit-node-type coll-node))
-          (delete-char 1))
-        (let ((parens-require-spaces nil)
-              (delete-pair-blink-delay 0))
+        (let* ((value-node (if (string= (treesit-node-type coll-node) "quoting_lit")
+                               ;; Metadata can sit between the quote and the list.
+                               (treesit-node-child-by-field-name coll-node "value")
+                             coll-node))
+               (meta-start (copy-marker
+                            (clojure-ts--node-start-with-metadata value-node)))
+               (coll-start (copy-marker (treesit-node-start value-node) t))
+               (parens-require-spaces nil)
+               (delete-pair-blink-delay 0))
+          (goto-char (treesit-node-start coll-node))
+          (when (string-match-p (rx (or "set_lit" "quoting_lit"))
+                                (treesit-node-type coll-node))
+            (delete-char 1))
           (when prefix
+            ;; The metadata belongs to the quoted form, so the quote goes in
+            ;; front of it.
+            (goto-char (if (eq prefix ?') meta-start coll-start))
             (insert-char prefix))
+          (goto-char coll-start)
           (insert-pair 1 delim-open (matching-paren delim-open))
           (delete-pair 1)))
     (user-error "No collection at point to convert")))
