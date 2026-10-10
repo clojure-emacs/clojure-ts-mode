@@ -23,6 +23,7 @@
 - [#161](https://github.com/clojure-emacs/clojure-ts-mode/pull/161): Make the threading and unwinding commands refuse to work around metadata, `#_` forms and reader conditionals, which they used to garble.
 - [#161](https://github.com/clojure-emacs/clojure-ts-mode/pull/161): Fix `clojure-ts-add-arity` wrapping the dispatch value of a `defmethod` when it's a vector.
 - [#161](https://github.com/clojure-emacs/clojure-ts-mode/pull/161): Stop the refactoring commands from changing a nearby form when point is on a blank line before, between or after forms.
+- [#161](https://github.com/clojure-emacs/clojure-ts-mode/pull/161): Fix converting collections with metadata: a quoted list with metadata after the quote (`'^:foo (1 2)`) failed to convert, and converting to a quoted list put the quote after the metadata.
 
 ## 0.6.0 (2025-12-02)
 

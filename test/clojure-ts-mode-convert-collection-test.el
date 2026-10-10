@@ -51,6 +51,12 @@
     (down-list)
     (clojure-ts-convert-collection-to-vector))
 
+  (when-refactoring-with-point-it "should convert a quoted list with metadata after the quote"
+    "'^:foo (1 |2)"
+    "^:foo [1 |2]"
+
+    (clojure-ts-convert-collection-to-vector))
+
   (it "should signal a user error when there is no collection at point"
     (with-clojure-ts-buffer "false"
       (backward-sexp)
@@ -99,6 +105,26 @@
               '("No collection at point to convert")))))
 
 (describe "clojure-ts-convert-collection-to-quoted-list"
+  (when-refactoring-with-point-it "should keep metadata inside the quote"
+    "^:foo [1 |2]"
+    "'^:foo (1 |2)"
+
+    (clojure-ts-convert-collection-to-quoted-list))
+
+  (when-refactoring-with-point-it "should keep metadata separated by a comment inside the quote"
+    "^:foo ;; comment
+[1 |2]"
+    "'^:foo ;; comment
+(1 |2)"
+
+    (clojure-ts-convert-collection-to-quoted-list))
+
+  (when-refactoring-with-point-it "should leave a quoted list with metadata after the quote as it is"
+    "'^:foo (1 |2)"
+    "'^:foo (1 |2)"
+
+    (clojure-ts-convert-collection-to-quoted-list))
+
   (when-refactoring-it "should convert a set to a quoted list"
     "#{1 2 3}"
     "'(1 2 3)"
