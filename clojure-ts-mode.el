@@ -2438,7 +2438,18 @@ too, as the reader skips them."
 
 (defun clojure-ts--add-arity-internal (fn-node)
   "Add an arity to a function defined by FN-NODE."
-  (let* ((first-coll (clojure-ts--node-child fn-node (rx bol (or "vec_lit" "list_lit") eol)))
+  (let* ((args-start
+          (if-let* (((string= (clojure-ts--list-node-sym-text fn-node) "defmethod"))
+                    (dispatch-value (clojure-ts--node-child-skip-metadata fn-node 2)))
+              ;; The dispatch value can be a vector too.
+              (treesit-node-end dispatch-value)
+            (treesit-node-start fn-node)))
+         (first-coll (clojure-ts--node-child
+                      fn-node
+                      (lambda (child)
+                        (and (>= (treesit-node-start child) args-start)
+                             (treesit-node-match-p
+                              child (rx bol (or "vec_lit" "list_lit") eol) t)))))
          (coll-start (treesit-node-start first-coll))
          (line-parent (thread-first fn-node
                                     (clojure-ts--first-value-child)
