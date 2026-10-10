@@ -251,6 +251,50 @@
     (then AAA)
     (else BBB)))"
 
+    (clojure-ts-cycle-conditional))
+
+  (when-refactoring-with-point-it "should cycle a namespace-qualified if"
+    "(clojure.core/if-not |a b c)"
+    "(clojure.core/if |a c b)"
+
+    (clojure-ts-cycle-conditional))
+
+  (when-refactoring-with-point-it "should swap the branches around a discarded form"
+    "(if |a #_x b c)"
+    "(if-not |a #_x c b)"
+
+    (clojure-ts-cycle-conditional))
+
+  (when-refactoring-with-point-it "should move metadata along with its branch"
+    "(if |a ^String b c)"
+    "(if-not |a c ^String b)"
+
+    (clojure-ts-cycle-conditional))
+
+  (when-refactoring-with-point-it "should move metadata along with its branch past a comment"
+    "(if |a ^String ;; comment
+  b c)"
+    "(if-not |a c ^String ;; comment
+  b)"
+
+    (clojure-ts-cycle-conditional))
+
+  (when-refactoring-with-point-it "should refuse to swap the branches around a reader conditional"
+    "(if |a b #?(:clj c))"
+    "(if |a b #?(:clj c))"
+
+    (expect (clojure-ts-cycle-conditional) :to-throw 'user-error))
+
+  (when-refactoring-with-point-it "should make a missing else branch explicit"
+    "(if |a b)"
+    "(if-not |a nil b)"
+
+    (clojure-ts-cycle-conditional))
+
+  (when-refactoring-with-point-it "should cycle an if in a function literal"
+    "#(if |% 1 2)"
+    "#(if-not |% 2 1)"
+
     (clojure-ts-cycle-conditional)))
 
 (describe "clojure-cycle-when"
@@ -282,6 +326,18 @@
     (aaa)
     (bbb))
   (ccc))"
+
+    (clojure-ts-cycle-conditional))
+
+  (when-refactoring-with-point-it "should cycle a namespace-qualified when"
+    "(clojure.core/when |a b)"
+    "(clojure.core/when-not |a b)"
+
+    (clojure-ts-cycle-conditional))
+
+  (when-refactoring-with-point-it "should cycle a when around a reader conditional"
+    "(when |a #?(:clj b))"
+    "(when-not |a #?(:clj b))"
 
     (clojure-ts-cycle-conditional)))
 

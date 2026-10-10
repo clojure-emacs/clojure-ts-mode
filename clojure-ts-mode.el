@@ -976,6 +976,11 @@ literals with regex grammar."
   (or (string-equal "meta_lit" (treesit-node-type node))
       (string-equal "old_meta_lit" (treesit-node-type node))))
 
+(defun clojure-ts--reader-conditional-node-p (node)
+  "Return non-nil if NODE is a reader conditional, splicing or not."
+  (or (string-equal "read_cond_lit" (treesit-node-type node))
+      (string-equal "splicing_read_cond_lit" (treesit-node-type node))))
+
 (defun clojure-ts--var-node-p (node)
   "Return non-nil if NODE is a var (eg.  #\\'foo)."
   (string-equal "var_quoting_lit" (treesit-node-type node)))
@@ -2332,6 +2337,19 @@ type, etc.  See `treesit-thing-settings' for more details."
                (seq-find (lambda (child)
                            (treesit-node-match-p child predicate t)))))
 
+(defun clojure-ts--node-start-with-metadata (node)
+  "Return the start of NODE, including the metadata in front of it.
+Comments and discarded forms between the metadata and NODE are included
+too, as the reader skips them."
+  (let ((start (treesit-node-start node))
+        (prev (treesit-node-prev-sibling node t)))
+    (while (and prev (or (clojure-ts--metadata-node-p prev)
+                         (member (treesit-node-type prev) '("comment" "dis_expr"))))
+      (when (clojure-ts--metadata-node-p prev)
+        (setq start (treesit-node-start prev)))
+      (setq prev (treesit-node-prev-sibling prev t)))
+    start))
+
 (defun clojure-ts--node-start-skip-metadata (node)
   "Return NODE start position optionally skipping metadata."
   (if (clojure-ts--metadata-node-p (treesit-node-child node 0 t))
@@ -2560,22 +2578,41 @@ before DELIM-OPEN."
                            (or "if" "if-not" "when" "when-not")
                            eol))
             (cond-node (clojure-ts--search-list-form-at-point sym-regex t))
-            (cond-sym (clojure-ts--list-node-sym-text cond-node)))
-      (let ((beg (treesit-node-start cond-node))
-            (end-marker (copy-marker (treesit-node-end cond-node)))
-            (new-sym (pcase cond-sym
-                       ("if" "if-not")
-                       ("if-not" "if")
-                       ("when" "when-not")
-                       ("when-not" "when"))))
+            (cond-sym (clojure-ts--list-node-sym-text cond-node t)))
+      (let* ((beg (treesit-node-start cond-node))
+             (end-marker (copy-marker (treesit-node-end cond-node)))
+             (name-node (treesit-node-child-by-field-name
+                         (clojure-ts--first-value-child cond-node) "name"))
+             (name-start (treesit-node-start name-node))
+             (name-end (treesit-node-end name-node))
+             (new-sym (pcase cond-sym
+                        ("if" "if-not")
+                        ("if-not" "if")
+                        ("when" "when-not")
+                        ("when-not" "when")))
+             (if-p (member cond-sym '("if" "if-not")))
+             (then-node (clojure-ts--node-child-skip-metadata cond-node 2))
+             (else-node (clojure-ts--node-child-skip-metadata cond-node 3)))
+        ;; A reader conditional can stand for several forms, or none, so
+        ;; there's no telling which branch it is.
+        (when (and if-p
+                   (clojure-ts--node-child cond-node #'clojure-ts--reader-conditional-node-p))
+          (user-error "Can't swap the branches of an if around reader conditionals"))
         (save-excursion
-          (goto-char (treesit-node-start cond-node))
-          (down-list 1)
-          (delete-char (length cond-sym))
+          ;; Edit from right to left, so that the positions of the parts that
+          ;; are still to be edited stay valid.
+          (when (and if-p then-node)
+            (if else-node
+                (transpose-regions (clojure-ts--node-start-with-metadata then-node)
+                                   (treesit-node-end then-node)
+                                   (clojure-ts--node-start-with-metadata else-node)
+                                   (treesit-node-end else-node))
+              ;; A missing else branch is nil, which now comes first.
+              (goto-char (clojure-ts--node-start-with-metadata then-node))
+              (insert "nil ")))
+          (goto-char name-start)
+          (delete-region name-start name-end)
           (insert new-sym)
-          (when (member cond-sym '("if" "if-not"))
-            (forward-sexp 2)
-            (transpose-sexps 1))
           (indent-region beg (marker-position end-marker))))
     (user-error "No conditional expression found")))
 
