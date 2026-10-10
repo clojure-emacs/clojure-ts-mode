@@ -170,3 +170,24 @@
       (expect (clojure-ts-find-ns) :to-equal "foo"))
     (with-clojure-ts-buffer "(ns 'foo)(ns bar)"
       (expect (clojure-ts-find-ns) :to-equal "bar"))))
+
+(describe "clojure-ts-update-ns"
+  (when-refactoring-it "should replace the name in the ns form"
+    "(ns old.name)\n(defn foo [] \"bar\")"
+    "(ns new.name)\n(defn foo [] \"bar\")"
+
+    (setq-local clojure-ts-expected-ns-function (lambda () "new.name"))
+    (clojure-ts-update-ns))
+
+  (when-refactoring-it "should replace the name in the ns form when the ns is cached"
+    "(ns old.name)\n(defn foo [] \"bar\")"
+    "(ns new.name)\n(defn foo [] \"bar\")"
+
+    (setq-local clojure-ts-cache-ns t)
+    (setq-local clojure-ts-expected-ns-function (lambda () "new.name"))
+    (clojure-ts-find-ns)
+    ;; Leave match data around that has nothing to do with the ns form.
+    (goto-char (point-min))
+    (search-forward "bar")
+    (clojure-ts-update-ns)
+    (expect (clojure-ts-find-ns) :to-equal "new.name")))
