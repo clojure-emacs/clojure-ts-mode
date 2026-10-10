@@ -79,4 +79,27 @@ installed, and then fails to load that grammar."
                                :font-lock))
             :to-equal '(clojure))))
 
+(describe "clojure-ts-clojurescript-mode"
+  (before-all
+    (unless (treesit-language-available-p 'clojure)
+      (signal 'buttercup-pending "tree-sitter Clojure grammar is not available")))
+
+  (before-each
+    ;; Take the path that embeds the JavaScript parser, which reruns the
+    ;; tree-sitter setup, even where its grammar isn't installed.
+    (let ((ready-p (symbol-function 'treesit-ready-p)))
+      (spy-on 'treesit-ready-p :and-call-fake
+              (lambda (language &rest args)
+                (or (eq language 'javascript)
+                    (apply ready-p language args))))))
+
+  (it "aligns forms on indent-region when asked to"
+    (let ((clojure-ts-align-forms-automatically t))
+      (with-temp-buffer
+        (insert "(def my-map\n  {:a-key 1\n   :other-key 2})")
+        (clojure-ts-clojurescript-mode)
+        (indent-region (point-min) (point-max))
+        (expect (buffer-string)
+                :to-equal "(def my-map\n  {:a-key     1\n   :other-key 2})")))))
+
 ;;; clojure-ts-mode-derived-modes-test.el ends here
