@@ -2872,19 +2872,20 @@ other packages to provide a more complex version.")
       (:equal @in-ns "in-ns"))))
   "Compiled Tree-sitter query to capture Clojure ns node.")
 
+(defun clojure-ts--ns-name-node ()
+  "Return the node with the name of the current namespace."
+  (thread-last (treesit-query-capture 'clojure clojure-ts--find-ns-query)
+               (assoc 'ns-name)
+               (cdr)))
+
 (defun clojure-ts-find-ns ()
   "Return the name of the current namespace."
   (if (and clojure-ts-cache-ns clojure-ts-cached-ns)
       clojure-ts-cached-ns
-    (when-let* ((nodes (treesit-query-capture 'clojure clojure-ts--find-ns-query))
-                (ns-name-node (cdr (assoc 'ns-name nodes)))
+    (when-let* ((ns-name-node (clojure-ts--ns-name-node))
                 (ns-name (treesit-node-text ns-name-node t)))
       (when clojure-ts-cache-ns
         (setq-local clojure-ts-cached-ns ns-name))
-      ;; Set the match data, so the namespace could be easily replaced.
-      (let ((start (treesit-node-start ns-name-node))
-            (end (treesit-node-end ns-name-node)))
-        (set-match-data (list start end)))
       ns-name)))
 
 (defun clojure-ts-update-ns ()
@@ -2893,17 +2894,15 @@ other packages to provide a more complex version.")
 Useful if a file has been renamed."
   (interactive)
   (when-let* ((ns-name (funcall clojure-ts-expected-ns-function)))
-    (save-excursion
-      (save-match-data
-        (if (clojure-ts-find-ns)
-            (progn
-              ;; This relies on the match data, set by `clojure-ts-find-ns'
-              ;; function.
-              (replace-match ns-name nil nil nil 0)
-              (message "ns form updated to `%s'" ns-name)
-              (when clojure-ts-cache-ns
-                (setq-local clojure-ts-cached-ns ns-name)))
-          (user-error "Can't find ns form"))))))
+    (if-let* ((ns-name-node (clojure-ts--ns-name-node)))
+        (save-excursion
+          (goto-char (treesit-node-start ns-name-node))
+          (delete-region (point) (treesit-node-end ns-name-node))
+          (insert ns-name)
+          (message "ns form updated to `%s'" ns-name)
+          (when clojure-ts-cache-ns
+            (setq-local clojure-ts-cached-ns ns-name)))
+      (user-error "Can't find ns form"))))
 
 ;;; Completion
 
