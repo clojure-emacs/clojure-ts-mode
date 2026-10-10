@@ -130,6 +130,37 @@
 
     (clojure-ts-cycle-privacy))
 
+  (when-refactoring-it "should work with a namespace-qualified def form"
+    "(clojure.core/defn add [a b]
+  (+ a b))"
+
+    "(clojure.core/defn- add [a b]
+  (+ a b))"
+
+    (clojure-ts-cycle-privacy))
+
+  (when-refactoring-with-point-it "should leave the next definition alone when point isn't in one"
+    "(ns |foo)
+
+(defn bar [] 1)"
+    "(ns |foo)
+
+(defn bar [] 1)"
+
+    (expect (clojure-ts-cycle-privacy) :to-throw 'user-error))
+
+  (when-refactoring-with-point-it "should not mistake a name starting with def for a def form"
+    "(ns my.|default)"
+    "(ns my.|default)"
+
+    (expect (clojure-ts-cycle-privacy) :to-throw 'user-error))
+
+  (when-refactoring-with-point-it "should leave a spec definition alone"
+    "(s/def ::f|oo int?)"
+    "(s/def ::f|oo int?)"
+
+    (expect (clojure-ts-cycle-privacy) :to-throw 'user-error))
+
   (when-refactoring-it "should turn a public defmulti into a private defmulti"
     "(defmulti service-charge (juxt account-level :tag))"
 

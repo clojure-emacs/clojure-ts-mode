@@ -2305,10 +2305,14 @@ value is `clojure-ts-thread-all-but-last'."
   "Make a definition at point public or private."
   (interactive)
   (if-let* ((node-at-point (treesit-node-at (point) 'clojure t))
-            (defun-node (treesit-parent-until node-at-point 'defun t)))
+            (defun-node (treesit-parent-until node-at-point 'defun t))
+            ((clojure-ts--definition-node-match-p (rx bol "def") defun-node))
+            (head-name (thread-first defun-node
+                                     (clojure-ts--first-value-child)
+                                     (treesit-node-child-by-field-name "name"))))
       (save-excursion
-        (goto-char (treesit-node-start defun-node))
-        (search-forward-regexp (rx "def" (* letter) (? (group (or "-" " ^:private")))))
+        (goto-char (treesit-node-start head-name))
+        (looking-at (rx "def" (* letter) (? (group (or "-" " ^:private")))))
         (if (match-string 1)
             (replace-match "" nil nil nil 1)
           (goto-char (match-end 0))
@@ -2316,7 +2320,7 @@ value is `clojure-ts-thread-all-but-last'."
                           (not (string= (match-string 0) "defn")))
                       " ^:private"
                     "-"))))
-    (user-error "No defun at point")))
+    (user-error "No definition at point")))
 
 (defun clojure-ts--node-child (node predicate)
   "Return the first child of the NODE that matches the PREDICATE.
