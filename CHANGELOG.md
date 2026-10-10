@@ -17,6 +17,7 @@
 - [#147](https://github.com/clojure-emacs/clojure-ts-mode/issues/147): Fix `clojure-ts-align-forms-automatically` having no effect in `clojure-ts-clojurescript-mode` and `clojure-ts-jank-mode`.
 - [#161](https://github.com/clojure-emacs/clojure-ts-mode/pull/161): Make `M-q` (`prog-fill-reindent-defun`) reindent the whole top-level form again on Emacs 31, instead of just the innermost one.
 - [#161](https://github.com/clojure-emacs/clojure-ts-mode/pull/161): Fix `clojure-ts-update-ns` replacing unrelated text instead of the ns name when `clojure-ts-cache-ns` is enabled.
+- [#161](https://github.com/clojure-emacs/clojure-ts-mode/pull/161): Fix `clojure-ts-cycle-privacy` changing the next definition, or a name that merely starts with `def`, when point isn't in a definition.
 
 ## 0.6.0 (2025-12-02)
 
