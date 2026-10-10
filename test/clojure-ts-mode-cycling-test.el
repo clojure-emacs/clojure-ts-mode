@@ -353,6 +353,44 @@
     "(not (ala bala| portokala))"
     "(ala bala| portokala)"
 
+    (clojure-ts-cycle-not))
+
+  (when-refactoring-with-point-it "should put the metadata of the form inside a new not"
+    "(when ^:x (foo |a) b)"
+    "(when (not ^:x (foo |a)) b)"
+
+    (clojure-ts-cycle-not))
+
+  (when-refactoring-with-point-it "should keep the metadata of the form when removing a not"
+    "(when (not ^:x (foo |a)) b)"
+    "(when ^:x (foo |a) b)"
+
+    (clojure-ts-cycle-not))
+
+  (when-refactoring-with-point-it "should keep metadata separated from the form by a comment"
+    "(when (not ^:x ;; comment
+            (foo |a)) b)"
+    "(when ^:x ;; comment
+  (foo |a) b)"
+
+    (clojure-ts-cycle-not))
+
+  (when-refactoring-with-point-it "should add a not around a form whose head has metadata"
+    "(^String fo|o a)"
+    "(not (^String fo|o a))"
+
+    (clojure-ts-cycle-not))
+
+  (when-refactoring-with-point-it "should remove a not around a form whose head has metadata"
+    "(not (^String fo|o a))"
+    "(^String fo|o a)"
+
+    (clojure-ts-cycle-not))
+
+  (when-refactoring-with-point-it "should remove a namespace-qualified not"
+    "(when (clojure.core/not (foo |a)) b)"
+    "(when (foo |a) b)"
+
     (clojure-ts-cycle-not)))
 
 (provide 'clojure-ts-mode-cycling-test)

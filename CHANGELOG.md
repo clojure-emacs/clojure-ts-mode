@@ -19,6 +19,7 @@
 - [#161](https://github.com/clojure-emacs/clojure-ts-mode/pull/161): Fix `clojure-ts-update-ns` replacing unrelated text instead of the ns name when `clojure-ts-cache-ns` is enabled.
 - [#161](https://github.com/clojure-emacs/clojure-ts-mode/pull/161): Fix `clojure-ts-cycle-privacy` changing the next definition, or a name that merely starts with `def`, when point isn't in a definition.
 - [#161](https://github.com/clojure-emacs/clojure-ts-mode/pull/161): Fix `clojure-ts-cycle-conditional` mangling namespace-qualified forms, swapping the wrong parts of an `if` with discarded forms, metadata or no else branch, and not working in function literals.
+- [#161](https://github.com/clojure-emacs/clojure-ts-mode/pull/161): Fix `clojure-ts-cycle-not` around metadata: it dropped the metadata of the form it unwrapped, left a new `not` inside it, garbled forms whose head symbol has metadata, and could signal `args-out-of-range`.
 
 ## 0.6.0 (2025-12-02)
 
