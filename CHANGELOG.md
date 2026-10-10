@@ -12,6 +12,7 @@
 - Fix missing builtin symbols in font-lock regexp.
 - Improve performance for imenu, font-lock and indentation.
 - Improve performance for `clojure-ts-align` by caching indentation rules.
+- [#161](https://github.com/clojure-emacs/clojure-ts-mode/pull/161): Fix `clojure-ts-clojurescript-mode` asking to install the jsdoc grammar on Emacs 31, and failing to start without it.
 
 ## 0.6.0 (2025-12-02)
 

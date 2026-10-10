@@ -3149,15 +3149,37 @@ function can also be used to upgrade the grammars if they are outdated."
       (let ((treesit-language-source-alist clojure-ts-grammar-recipes))
         (treesit-install-language-grammar grammar)))))
 
+(defvar treesit-auto-install-grammar) ; Emacs 31+
+
 (defun clojure-ts--harvest-treesit-configs (mode)
   "Harvest tree-sitter configs from MODE.
 Return a plist with the following keys and values:
 
     :font-lock (from `treesit-font-lock-settings')
-    :simple-indent (from `treesit-simple-indent-rules')"
+    :simple-indent (from `treesit-simple-indent-rules')
+
+MODE doesn't get to install grammars, and font-lock rules for languages
+whose grammar isn't available are left out."
   (with-temp-buffer
-    (funcall mode)
-    (list :font-lock treesit-font-lock-settings
+    ;; On Emacs 31 `js-ts-mode' asks to install the jsdoc grammar, and
+    ;; without it signals from `treesit-major-mode-setup'.  By then the
+    ;; settings we're after are already in place.
+    (let ((treesit-auto-install-grammar 'never))
+      (ignore-error treesit-load-language-error
+        (funcall mode)))
+    (list :font-lock (if (fboundp 'treesit-font-lock-setting-language) ; Emacs 31+
+                         ;; Loading a grammar to check for it isn't cheap, so
+                         ;; check each language once.
+                         (let ((available (seq-filter
+                                           #'treesit-language-available-p
+                                           (delete-dups
+                                            (mapcar #'treesit-font-lock-setting-language
+                                                    treesit-font-lock-settings)))))
+                           (seq-filter (lambda (setting)
+                                         (memq (treesit-font-lock-setting-language setting)
+                                               available))
+                                       treesit-font-lock-settings))
+                       treesit-font-lock-settings)
           :simple-indent treesit-simple-indent-rules)))
 
 (defun clojure-ts--add-config-for-mode (mode)
