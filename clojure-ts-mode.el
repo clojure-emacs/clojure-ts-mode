@@ -2103,7 +2103,7 @@ nodes (function literals, expressions with metadata etc.), it loses some
 parenthesis."
   (when-let* ((sexp-node (treesit-thing-at (point) 'sexp))
               (beg (thread-first sexp-node
-                                 (clojure-ts--node-start-skip-metadata)
+                                 (clojure-ts--node-start-with-metadata)
                                  (copy-marker)))
               (end (thread-first sexp-node
                                  (treesit-node-end)
@@ -2111,7 +2111,7 @@ parenthesis."
     (when-let* ((parent (treesit-node-parent sexp-node))
                 ((not (string= (treesit-node-type parent) "source")))
                 (parent-beg (thread-first parent
-                                          (clojure-ts--node-start-skip-metadata)
+                                          (treesit-node-start)
                                           (copy-marker)))
                 (parent-end (thread-first parent
                                           (treesit-node-end)
@@ -2349,12 +2349,6 @@ too, as the reader skips them."
         (setq start (treesit-node-start prev)))
       (setq prev (treesit-node-prev-sibling prev t)))
     start))
-
-(defun clojure-ts--node-start-skip-metadata (node)
-  "Return NODE start position optionally skipping metadata."
-  (if (clojure-ts--metadata-node-p (treesit-node-child node 0 t))
-      (treesit-node-start (treesit-node-child node 1))
-    (treesit-node-start node)))
 
 (defun clojure-ts--add-arity-internal (fn-node)
   "Add an arity to a function defined by FN-NODE."
@@ -2620,16 +2614,19 @@ before DELIM-OPEN."
   "Add or remove a not form around the current form."
   (interactive)
   (if-let* ((list-node (clojure-ts--parent-until (rx bol "list_lit" eol))))
-      (let ((beg (treesit-node-start list-node))
+      (let ((beg-marker (copy-marker (clojure-ts--node-start-with-metadata list-node)))
             (end-marker (copy-marker (treesit-node-end list-node)))
             (pos (copy-marker (point) t)))
-        (goto-char (clojure-ts--node-start-skip-metadata list-node))
+        (goto-char (treesit-node-start list-node))
         (if-let* ((list-parent (treesit-node-parent list-node))
                   ((clojure-ts--list-node-sym-match-p list-parent (rx bol "not" eol))))
             (clojure-ts--raise-sexp)
-          (insert-pair 1 ?\( ?\))
-          (insert "not "))
-        (indent-region beg (marker-position end-marker))
+          ;; The metadata of the form goes inside the not, along with it.
+          (goto-char end-marker)
+          (insert ")")
+          (goto-char beg-marker)
+          (insert "(not "))
+        (indent-region (marker-position beg-marker) (marker-position end-marker))
         ;; `save-excursion' doesn't work well when point is at the opening
         ;; paren.
         (goto-char pos))
