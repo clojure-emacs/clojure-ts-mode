@@ -1994,9 +1994,26 @@ Forms between BEG and END are aligned according to
 
 ;;; Refactoring
 
+(defun clojure-ts--node-at-point (&optional named)
+  "Return the Clojure node at point, or nil if point isn't on a form.
+NAMED is passed on to `treesit-node-at', which returns the next node
+when point is between forms, or the last one when point is past them.
+Only a node whose top-level form spans point counts here."
+  (when-let* ((node (treesit-node-at (point) 'clojure named))
+              (top-level (treesit-parent-until
+                          node
+                          (lambda (n)
+                            (equal (treesit-node-type (treesit-node-parent n))
+                                   "source"))
+                          t))
+              ((<= (treesit-node-start top-level)
+                   (point)
+                   (treesit-node-end top-level))))
+    node))
+
 (defun clojure-ts--parent-until (pred)
   "Return the closest parent of node at point that satisfies PRED."
-  (when-let* ((node-at-point (treesit-node-at (point) 'clojure t)))
+  (when-let* ((node-at-point (clojure-ts--node-at-point t)))
     (treesit-parent-until node-at-point pred t)))
 
 (defun clojure-ts--search-list-form-at-point (sym-regex &optional include-anon-fn-lit)
@@ -2395,7 +2412,7 @@ value is `clojure-ts-thread-all-but-last'."
 (defun clojure-ts-cycle-privacy ()
   "Make a definition at point public or private."
   (interactive)
-  (if-let* ((node-at-point (treesit-node-at (point) 'clojure t))
+  (if-let* ((node-at-point (clojure-ts--node-at-point t))
             (defun-node (treesit-parent-until node-at-point 'defun t))
             ((clojure-ts--definition-node-match-p (rx bol "def") defun-node))
             (head-name (thread-first defun-node
@@ -2593,8 +2610,7 @@ too, as the reader skips them."
 
 (defun clojure-ts--collection-node-at-point ()
   "Return node at point that represents a collection."
-  (when-let* ((node (thread-first (point)
-                                  (treesit-node-at 'clojure)
+  (when-let* ((node (thread-first (clojure-ts--node-at-point)
                                   (treesit-parent-until (rx bol
                                                             (or "map_lit"
                                                                 "vec_lit"
