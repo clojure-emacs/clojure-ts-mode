@@ -446,6 +446,26 @@
   ;;   (clojure-ts-unwind-all))
   )
 
+(describe "threading with point between forms"
+
+  (when-refactoring-with-point-it "should not unwind the next form from a blank line before it"
+    "(-> x (foo y))\n|\n(-> a (b))"
+    "(-> x (foo y))\n|\n(-> a (b))"
+
+    (expect (clojure-ts-unwind) :to-throw 'user-error))
+
+  (when-refactoring-with-point-it "should not unwind the last form from a blank line after it"
+    "(-> x (inc) (str))\n\n|"
+    "(-> x (inc) (str))\n\n|"
+
+    (expect (clojure-ts-unwind) :to-throw 'user-error))
+
+  (when-refactoring-with-point-it "should not thread the last form from a blank line after it"
+    "(foo (bar x))\n\n|"
+    "(foo (bar x))\n\n|"
+
+    (expect (clojure-ts-thread-first-all nil) :to-throw 'user-error)))
+
 (describe "threading around metadata, #_ and reader conditionals"
 
   (when-refactoring-with-point-it "should refuse to unwind past a discarded form"

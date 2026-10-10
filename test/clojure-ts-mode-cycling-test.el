@@ -393,5 +393,31 @@
 
     (clojure-ts-cycle-not)))
 
+(describe "cycling with point between forms"
+
+  (when-refactoring-with-point-it "should not make the next definition private"
+    "(defn f [x] x)\n|\n(defn g [x] x)"
+    "(defn f [x] x)\n|\n(defn g [x] x)"
+
+    (expect (clojure-ts-cycle-privacy) :to-throw 'user-error))
+
+  (when-refactoring-with-point-it "should not turn the last string into a keyword"
+    "\"foo\"\n\n|"
+    "\"foo\"\n\n|"
+
+    (expect (clojure-ts-cycle-keyword-string) :to-throw 'user-error))
+
+  (when-refactoring-with-point-it "should not make the last definition private"
+    "(defn f [x] x)\n\n|"
+    "(defn f [x] x)\n\n|"
+
+    (expect (clojure-ts-cycle-privacy) :to-throw 'user-error))
+
+  (when-refactoring-with-point-it "should not add a not to the last form"
+    "(foo a)\n\n|"
+    "(foo a)\n\n|"
+
+    (expect (clojure-ts-cycle-not) :to-throw 'user-error)))
+
 (provide 'clojure-ts-mode-cycling-test)
 ;;; clojure-ts-mode-cycling-test.el ends here

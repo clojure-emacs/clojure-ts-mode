@@ -397,7 +397,13 @@
       (expect (clojure-ts-add-arity)
               :to-throw
               'user-error
-              '("No suitable form to add an arity at point")))))
+              '("No suitable form to add an arity at point"))))
+
+  (when-refactoring-with-point-it "should not add an arity to the last function from a blank line after it"
+    "(defn f [x] x)\n\n|"
+    "(defn f [x] x)\n\n|"
+
+    (expect (clojure-ts-add-arity) :to-throw 'user-error)))
 
 (provide 'clojure-ts-mode-refactor-add-arity-test)
 ;;; clojure-ts-mode-refactor-add-arity-test.el ends here

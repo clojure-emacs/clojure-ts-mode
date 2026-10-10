@@ -112,7 +112,13 @@
       (expect (clojure-ts-convert-collection-to-quoted-list)
               :to-throw
               'user-error
-              '("No collection at point to convert")))))
+              '("No collection at point to convert"))))
+
+  (when-refactoring-with-point-it "should not convert the last collection from a blank line after it"
+    "(1 2)\n\n|"
+    "(1 2)\n\n|"
+
+    (expect (clojure-ts-convert-collection-to-quoted-list) :to-throw 'user-error)))
 
 
 (provide 'clojure-ts-mode-convert-collection-test)
