@@ -3158,15 +3158,17 @@ Return a plist with the following keys and values:
     :font-lock (from `treesit-font-lock-settings')
     :simple-indent (from `treesit-simple-indent-rules')
 
-MODE doesn't get to install grammars, and font-lock rules for languages
-whose grammar isn't available are left out."
+MODE doesn't get to install grammars or run its hooks, and font-lock
+rules for languages whose grammar isn't available are left out."
   (with-temp-buffer
     ;; On Emacs 31 `js-ts-mode' asks to install the jsdoc grammar, and
     ;; without it signals from `treesit-major-mode-setup'.  By then the
     ;; settings we're after are already in place.
     (let ((treesit-auto-install-grammar 'never))
       (ignore-error treesit-load-language-error
-        (funcall mode)))
+        ;; The hooks are meant for buffers that really are in MODE.
+        (delay-mode-hooks
+          (funcall mode))))
     (list :font-lock (if (fboundp 'treesit-font-lock-setting-language) ; Emacs 31+
                          ;; Loading a grammar to check for it isn't cheap, so
                          ;; check each language once.

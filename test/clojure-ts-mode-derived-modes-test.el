@@ -30,6 +30,9 @@
 (defvar clojure-ts-test--harvested-install-setting nil
   "The value of `treesit-auto-install-grammar' the harvested mode saw.")
 
+(defvar clojure-ts-test--harvested-mode-fails t
+  "Whether the harvested mode fails to load a grammar.")
+
 (define-derived-mode clojure-ts-test-harvested-mode prog-mode "Harvested"
   "Stand-in for `js-ts-mode' on Emacs 31 without the jsdoc grammar.
 It sets up its font-lock rules, one of them for a grammar that isn't
@@ -41,7 +44,8 @@ installed, and then fails to load that grammar."
                           t 'symbol nil nil 'clojure)
                     (list '((tag) @font-lock-doc-face)
                           t 'tag nil nil 'clojure-ts-test-missing)))
-  (signal 'treesit-load-language-error '(not-found "clojure-ts-test-missing")))
+  (when clojure-ts-test--harvested-mode-fails
+    (signal 'treesit-load-language-error '(not-found "clojure-ts-test-missing"))))
 
 (describe "clojure-ts--harvest-treesit-configs"
   (before-all
@@ -51,6 +55,14 @@ installed, and then fails to load that grammar."
   (it "doesn't let the mode install grammars"
     (clojure-ts--harvest-treesit-configs 'clojure-ts-test-harvested-mode)
     (expect clojure-ts-test--harvested-install-setting :to-be 'never))
+
+  (it "doesn't run the mode's hooks"
+    (let ((clojure-ts-test--harvested-mode-fails nil)
+          (hook-ran nil))
+      (let ((clojure-ts-test-harvested-mode-hook (list (lambda () (setq hook-ran t))))
+            (prog-mode-hook (list (lambda () (setq hook-ran t)))))
+        (clojure-ts--harvest-treesit-configs 'clojure-ts-test-harvested-mode))
+      (expect hook-ran :to-be nil)))
 
   (it "keeps the settings of a mode that fails to load a grammar"
     (expect (plist-get (clojure-ts--harvest-treesit-configs
