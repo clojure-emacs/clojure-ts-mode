@@ -27,6 +27,7 @@
 - [#153](https://github.com/clojure-emacs/clojure-ts-mode/pull/153): Align threading macro arguments with the first argument instead of the previous one, which went wrong after a line with several forms or a trailing comment.
 - [#154](https://github.com/clojure-emacs/clojure-ts-mode/pull/154): Fix semantic indentation of forms with metadata or a comment before an argument or the body, like `(doto ^Foo`, `(let ;; bindings` or `(comment ;; scratch`.
 - [#155](https://github.com/clojure-emacs/clojure-ts-mode/pull/155): Fix indentation of a form on the line after its reader prefix (`'`, `` ` ``, `~`, `~@`, `@`, `#'`, `#=`), which no rule matched.
+- [#156](https://github.com/clojure-emacs/clojure-ts-mode/pull/156): Align `clojure.test/are` like `are`: `clojure-ts-align-cond-forms` listed the nonexistent `clojure.core/are` instead.
 
 ## 0.6.0 (2025-12-02)
 
