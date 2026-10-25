@@ -660,6 +660,39 @@ DESCRIPTION is a string with the description of the spec."
         1
         2)])")
 
+  (when-indenting-it "should not count metadata as an argument of block forms"
+    ;; Each form indents the same with and without the type hint.
+    "
+(doto ^java.util.ArrayList
+ (java.util.ArrayList.)
+  (.add 1))"
+
+    "
+(doto
+ (java.util.ArrayList.)
+  (.add 1))"
+
+    "
+(condp = ^String
+       (str x)
+  \"a\" 1)"
+
+    "
+(let ^:no-check
+ [a 1]
+  a)")
+
+  (when-indenting-it "should not count comments as arguments of block forms"
+    "
+(let ;; bindings
+ [a 1]
+  a)"
+
+    "
+(condp = ;; compare
+       (str x)
+  \"a\" 1)")
+
   (it "should pick up dynamic indentation rules from clojure-ts-get-indent-function"
     (with-clojure-ts-buffer "
 (defmacro my-with-in-str
