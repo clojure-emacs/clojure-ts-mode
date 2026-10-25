@@ -604,7 +604,7 @@ DESCRIPTION is a string with the description of the spec."
         ;; original value.
         (setopt clojure-ts-semantic-indent-rules nil))))
 
-  (it "should indent collections elements with metadata correctly"
+  (when-indenting-it "should indent collections elements with metadata correctly"
     "
 (def x
   [a b [c ^:foo
@@ -622,7 +622,7 @@ DESCRIPTION is a string with the description of the spec."
  :foo
  \"bar\"}")
 
-  (it "should indent body of special forms correctly considering metadata"
+  (when-indenting-it "should indent body of special forms correctly considering metadata"
     "
 (let [result ^long
       (if true
