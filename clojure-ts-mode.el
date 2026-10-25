@@ -1876,7 +1876,25 @@ BOUND bounds the whitespace search."
                                        sexp-end
                                        t)))
 
-(defvar clojure-ts--align-query
+(defvar clojure-ts--align-query-cache nil
+  "The last query `clojure-ts--align-query' compiled, as (FORMS . QUERY).
+FORMS is the list of the align form options the query was compiled from.")
+
+(defun clojure-ts--align-query ()
+  "Return the query that captures the nodes to align.
+
+It is compiled from the current values of `clojure-ts-align-binding-forms'
+and `clojure-ts-align-cond-forms', so changing them after the package has
+loaded, or buffer-locally in .dir-locals.el, takes effect.  The query is
+recompiled only when they change."
+  (let ((forms (list clojure-ts-align-binding-forms clojure-ts-align-cond-forms)))
+    (unless (equal forms (car clojure-ts--align-query-cache))
+      (setq clojure-ts--align-query-cache
+            (cons forms (clojure-ts--compile-align-query))))
+    (cdr clojure-ts--align-query-cache)))
+
+(defun clojure-ts--compile-align-query ()
+  "Compile the query that captures the nodes to align."
   (treesit-query-compile 'clojure
                          `(((map_lit) @map)
                            ((ns_map_lit) @ns-map)
@@ -1925,7 +1943,7 @@ have changed."
   ;; By default `treesit-query-capture' captures all nodes that cross the range.
   ;; We need to restrict it to only nodes inside of the range.
   (let* ((region-node (clojure-ts--region-node beg end))
-         (nodes (append (treesit-query-capture region-node clojure-ts--align-query beg end)
+         (nodes (append (treesit-query-capture region-node (clojure-ts--align-query) beg end)
                         (when clojure-ts-align-reader-conditionals
                           (treesit-query-capture region-node clojure-ts--align-reader-conditionals-query beg end)))))
     (thread-last nodes
