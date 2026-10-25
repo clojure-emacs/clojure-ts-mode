@@ -1377,6 +1377,21 @@ If there is no body, check that BOL is not at the same line."
     (< (line-number-at-pos (treesit-node-start first-child))
        (line-number-at-pos body-pos))))
 
+(defun clojure-ts--value-position (node)
+  "Return how many value children of NODE's parent come before NODE.
+
+Only children in the value field count, so metadata, comments and the
+parens don't: in (when ^boolean x y), y is at position 2, after the
+symbol (0) and x (1).  For a metadata node this is the position of the
+value it belongs to."
+  (let ((pos 0)
+        (sibling (treesit-node-prev-sibling node)))
+    (while sibling
+      (when (equal "value" (treesit-node-field-name sibling))
+        (setq pos (1+ pos)))
+      (setq sibling (treesit-node-prev-sibling sibling)))
+    pos))
+
 (defun clojure-ts--node-pos-match-block (node parent bol block)
   "Return non-nil if NODE index in the PARENT matches requested BLOCK.
 
@@ -1384,16 +1399,12 @@ NODE might be nil (when we insert an empty line for example), in this
 case we look for next available child node in the PARENT after BOL
 position.
 
-The first node in the expression is usually an opening paren, the last
-node is usually a closing paren (unless some automatic parens mode is
-not enabled).  If requested BLOCK is 1, the NODE index should be at
-least 3 (first node is opening paren, second node is matched symbol,
-third node is first argument, and the rest is body which should be
-indented.)"
-  (if node
-      (> (treesit-node-index node) (1+ block))
-    (when-let* ((node-after-bol (treesit-node-first-child-for-pos parent bol)))
-      (> (treesit-node-index node-after-bol) (1+ block)))))
+The first value in the expression is the matched symbol, and the next
+BLOCK values are its special arguments, so NODE is in the body when
+more than BLOCK values come before it.  Metadata and comments are not
+counted (see `clojure-ts--value-position')."
+  (when-let* ((node (or node (treesit-node-first-child-for-pos parent bol))))
+    (> (clojure-ts--value-position node) block)))
 
 (defvar clojure-ts-get-indent-function nil
   "Function to get the indent spec of a symbol.

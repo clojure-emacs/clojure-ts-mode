@@ -371,7 +371,7 @@
     "(when (not ^:x ;; comment
             (foo |a)) b)"
     "(when ^:x ;; comment
-  (foo |a) b)"
+ (foo |a) b)"
 
     (clojure-ts-cycle-not))
 
