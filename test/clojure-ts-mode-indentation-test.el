@@ -1077,6 +1077,19 @@ b |20])"
  :multiple \"ignored\"
  #_#_:forms \"foo\"}")
 
+  (when-aligning-it "should align are, unqualified or from clojure.test"
+    "
+(are [x y]
+     (= x y)
+  1     1
+  22222 3)"
+
+    "
+(clojure.test/are [x y]
+                  (= x y)
+  1     1
+  22222 3)")
+
   (when-aligning-it "should support namespaced maps"
     "#:hello {:world          true
          :foo            \"bar\"

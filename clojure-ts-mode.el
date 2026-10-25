@@ -239,7 +239,7 @@ If t, it will use (defn ^:private f [])."
     "clojure.core/cond->"
     "clojure.core/cond->>"
     "clojure.core/case"
-    "clojure.core/are")
+    "clojure.test/are")
   "List of strings identifying cond-like forms."
   :package-version '(clojure-ts-mode . "0.4")
   :safe #'listp
