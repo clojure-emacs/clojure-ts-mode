@@ -1214,6 +1214,31 @@ The possible values for this variable are
            (const :tag "Simple fixed indentation rules." fixed))
   :package-version '(clojure-ts-mode . "0.2.0"))
 
+(defconst clojure-ts--reader-prefix-node-regexp
+  (rx bol (or "quoting_lit" "syn_quoting_lit" "unquoting_lit" "unquote_splicing_lit"
+              "derefing_lit" "var_quoting_lit" "evaling_lit")
+      eol)
+  "Node types of a form behind a reader prefix.
+These are quote, syntax quote, unquote, unquote-splicing, deref, var
+quote and read-eval.")
+
+(defun clojure-ts--prefixed-form-indent (prefixed)
+  "Return (ANCHOR . OFFSET) for PREFIXED as if it started a line.
+
+PREFIXED is a node like @form.  When the form itself starts
+on the line after the prefix, it is indented the way PREFIXED would be."
+  (treesit-simple-indent prefixed
+                         (treesit-node-parent prefixed)
+                         (treesit-node-start prefixed)))
+
+(defun clojure-ts--anchor-prefixed-form (_node parent _bol)
+  "Return the anchor of PARENT, a prefixed form, as if it started a line."
+  (car (clojure-ts--prefixed-form-indent parent)))
+
+(defun clojure-ts--offset-prefixed-form (_node parent _bol)
+  "Return the offset of PARENT, a prefixed form, as if it started a line."
+  (or (cdr (clojure-ts--prefixed-form-indent parent)) 0))
+
 (defvar clojure-ts--fixed-indent-rules
   ;; This is in contrast to semantic
   ;; fixed-indent-rules come from https://tonsky.me/blog/clojurefmt/
@@ -1234,7 +1259,11 @@ The possible values for this variable are
      ((parent-is "^map_lit$") parent 1)
      ((parent-is "^list_lit$") parent 1)
      ((parent-is "^set_lit$") parent 2)
-     ((parent-is "^ns_map_lit$") (nth-sibling 2) 1))))
+     ((parent-is "^ns_map_lit$") (nth-sibling 2) 1)
+     ;; A form on the line after its reader prefix, e.g. @ at the end of a line.
+     ((parent-is ,clojure-ts--reader-prefix-node-regexp)
+      clojure-ts--anchor-prefixed-form
+      clojure-ts--offset-prefixed-form))))
 
 (defvar clojure-ts--semantic-indent-rules-defaults
   '(("alt!"            . ((:block 0)))
@@ -1623,6 +1652,10 @@ used."
      ((parent-is "^read_cond_lit$") parent 3)
      ((parent-is "^tagged_or_ctor_lit$") parent 0)
      ((parent-is "^ns_map_lit$") (nth-sibling 2) 1)
+     ;; A form on the line after its reader prefix, e.g. @ at the end of a line.
+     ((parent-is ,clojure-ts--reader-prefix-node-regexp)
+      clojure-ts--anchor-prefixed-form
+      clojure-ts--offset-prefixed-form)
      ;; https://guide.clojure.style/#body-indentation
      (clojure-ts--match-form-body clojure-ts--anchor-parent-opening-paren 2)
      ;; https://guide.clojure.style/#vertically-align-fn-args
