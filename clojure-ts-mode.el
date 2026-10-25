@@ -2042,10 +2042,16 @@ between BEG and END."
 
 Forms between BEG and END are aligned according to
 `clojure-ts-align-forms-automatically'."
-  (prog1 (let ((indent-region-function #'treesit-indent-region))
-           (indent-region beg end))
-    (when clojure-ts-align-forms-automatically
-      (clojure-ts-align beg end))))
+  ;; Indenting adds whitespace, which moves END: align up to where the region
+  ;; ends afterwards.  Treesit functions take only integer positions in
+  ;; Emacs 30.1, so the marker is turned back into one.
+  (let ((end-marker (copy-marker end)))
+    (unwind-protect
+        (prog1 (let ((indent-region-function #'treesit-indent-region))
+                 (indent-region beg end))
+          (when clojure-ts-align-forms-automatically
+            (clojure-ts-align beg (marker-position end-marker))))
+      (set-marker end-marker nil))))
 
 ;;; Refactoring
 
