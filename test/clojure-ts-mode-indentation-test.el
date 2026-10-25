@@ -887,6 +887,37 @@ b |20])"
       (call-interactively #'clojure-ts-align)
       (expect (buffer-string) :to-equal "{:a 2, :c 4}")))
 
+  (it "should align binding forms added to clojure-ts-align-binding-forms after loading"
+    ;; As in .dir-locals.el: the query used to be compiled once, when the
+    ;; package loaded, so later changes had no effect.
+    (with-clojure-ts-buffer-point "
+(my-let [|a 1
+         bbbb 2])"
+      (setq-local clojure-ts-align-binding-forms
+                  (cons "my-let" clojure-ts-align-binding-forms))
+      (call-interactively #'clojure-ts-align)
+      (expect (buffer-string) :to-equal "
+(my-let [a    1
+         bbbb 2])")))
+
+  (it "should align cond forms added to clojure-ts-align-cond-forms after loading"
+    (with-clojure-ts-buffer-point "
+(cond
+  |(= a 1) :one
+  (= bbbbbb 22222) :two)"
+      (setq-local clojure-ts-align-cond-forms nil)
+      (call-interactively #'clojure-ts-align)
+      (expect (buffer-string) :to-equal "
+(cond
+  (= a 1) :one
+  (= bbbbbb 22222) :two)")
+      (setq-local clojure-ts-align-cond-forms '("cond"))
+      (call-interactively #'clojure-ts-align)
+      (expect (buffer-string) :to-equal "
+(cond
+  (= a 1)          :one
+  (= bbbbbb 22222) :two)")))
+
   (it "should not fail to align a cond form without a semantic indentation rule"
     ;; A symbol added to `clojure-ts-align-cond-forms' need not have a matching
     ;; semantic indentation rule.  When it has none, alignment must fall back
@@ -900,9 +931,9 @@ b |20])"
       (call-interactively #'clojure-ts-align)
       (expect (buffer-string) :to-equal "
 (my-cond
- :a 1
+ :a    1
  :bbbb 2
- :cc 3)"))))
+ :cc   3)"))))
 
 (describe "clojure-ts-align-forms-automatically"
   ;; Copied from `clojure-mode'
