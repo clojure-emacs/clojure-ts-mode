@@ -584,6 +584,37 @@ DESCRIPTION is a string with the description of the spec."
      (filter even?)
      (map inc))")
 
+  (when-indenting-it "should align threading macro args with the first arg"
+    ;; Not with the previous sibling, which can be the last of several forms
+    ;; on the line above, a trailing comment, or the start of a multi-line form.
+    "
+(->> app
+     (http/get-router)
+     (first) (last) :interceptors
+     (mapv :name))"
+
+    "
+(->> tx-data
+     (group-by :e) ; group by entity
+     (map summarize))"
+
+    "
+(some-> request
+        (assoc :user user) (assoc :roles roles)
+        (handler))"
+
+    "
+(-> s
+    (str/replace #\"-\"
+                 \"\")
+    (str/upper-case))"
+
+    "
+(->>
+ xs
+ (map inc) (filter odd?)
+ (reduce +))")
+
   (it "should prioritize custom semantic indentation rules"
     (with-clojure-ts-buffer "
 (are [x y]
