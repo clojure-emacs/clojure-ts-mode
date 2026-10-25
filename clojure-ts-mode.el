@@ -1560,17 +1560,6 @@ according to the rule.  If NODE is nil, use next node after BOL."
     (rx (and "->" (? ">") line-end)))
   "A regular expression matching a threading macro.")
 
-(defun clojure-ts--match-threading-macro-arg (_node parent _)
-  "Match NODE if it is an argument to a PARENT threading macro."
-  ;; We want threading macros to indent 2 only if the ->> is on it's own line.
-  ;; If not, then align function arg.
-  (and (or (clojure-ts--list-node-p parent)
-           (clojure-ts--anon-fn-node-p parent))
-       (let ((first-child (clojure-ts--first-value-child parent)))
-         (clojure-ts--symbol-matches-p
-          clojure-ts--threading-macro
-          first-child))))
-
 (defun clojure-ts--match-docstring (_node parent _bol)
   "Match PARENT when it is a docstring node."
   (when-let* ((top-level-node (treesit-parent-until parent 'defun t))
@@ -1623,9 +1612,11 @@ used."
      ((parent-is "^ns_map_lit$") (nth-sibling 2) 1)
      ;; https://guide.clojure.style/#body-indentation
      (clojure-ts--match-form-body clojure-ts--anchor-parent-opening-paren 2)
-     ;; https://guide.clojure.style/#threading-macros-alignment
-     (clojure-ts--match-threading-macro-arg prev-sibling 0)
      ;; https://guide.clojure.style/#vertically-align-fn-args
+     ;; https://guide.clojure.style/#threading-macros-alignment
+     ;; Threading macro args are aligned like any other args: with the first
+     ;; one, not with the previous sibling, which can be the last of several
+     ;; forms on the line above or a trailing comment.
      (clojure-ts--match-function-call-arg ,(clojure-ts--anchor-nth-sibling 1) 0)
      ;; https://guide.clojure.style/#one-space-indent
      ((parent-is "^list_lit$") parent 1)
