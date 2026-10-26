@@ -827,6 +827,7 @@ updated indentation rules are always precalculated."
     (treesit-font-lock-rules
      :feature 'definition
      :language 'clojure
+     :override t
      `(((list_lit :anchor [(comment) (meta_lit) (old_meta_lit)] :*
                   :anchor (sym_lit (sym_name) @font-lock-keyword-face)
                   :anchor [(comment) (meta_lit) (old_meta_lit)] :*

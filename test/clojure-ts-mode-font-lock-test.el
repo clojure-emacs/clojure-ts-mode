@@ -510,7 +510,18 @@ https://github.com/tree-sitter/tree-sitter/issues/5759."
       (expect (get-text-property 10 'face)
               :to-equal 'font-lock-function-name-face)
       (expect (get-text-property 25 'face)
-              :to-equal 'font-lock-doc-face))))
+              :to-equal 'font-lock-doc-face)))
+
+  (it "should highlight extra def forms as keywords at font-lock level 4"
+    (with-clojure-ts-buffer "(defelem file-upload [name] name)"
+      (setopt clojure-ts-extra-def-forms '("defelem"))
+      (let ((treesit-font-lock-level 4))
+        (clojure-ts-mode))
+      (font-lock-ensure)
+      (expect (get-text-property 2 'face)
+              :to-equal 'font-lock-keyword-face)
+      (expect (get-text-property 10 'face)
+              :to-equal 'font-lock-function-name-face))))
 
 ;;;; Docstrings in various def forms
 
