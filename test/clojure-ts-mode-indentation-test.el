@@ -693,6 +693,29 @@ DESCRIPTION is a string with the description of the spec."
        (str x)
   \"a\" 1)")
 
+  (when-indenting-it "should not take metadata or a comment for the body of block 0 forms"
+    "
+(comment ;; scratch
+  (start-server)
+  (stop-server))"
+
+    "
+(do ^:foo
+  (a))")
+
+  (when-indenting-it "should not count metadata and comments for inner rules with an index"
+    "
+(letfn ;; local fns
+ [(f [x]
+    x)]
+  (f 1))"
+
+    "
+(letfn ^:foo
+ [(f [x]
+    x)]
+  (f 1))")
+
   (it "should pick up dynamic indentation rules from clojure-ts-get-indent-function"
     (with-clojure-ts-buffer "
 (defmacro my-with-in-str

@@ -1370,8 +1370,10 @@ Default set of rules is defined in
 (defun clojure-ts--match-block-0-body (bol first-child)
   "Match if expression body is not at the same line as FIRST-CHILD.
 
-If there is no body, check that BOL is not at the same line."
-  (let* ((body-pos (if-let* ((body (treesit-node-next-sibling first-child)))
+If there is no body, check that BOL is not at the same line.  Metadata
+and comments after FIRST-CHILD are not the body."
+  (let* ((body-pos (if-let* ((body (clojure-ts--node-child-skip-metadata
+                                    (treesit-node-parent first-child) 1)))
                        (treesit-node-start body)
                      bol)))
     (< (line-number-at-pos (treesit-node-start first-child))
@@ -1504,7 +1506,7 @@ syntax tree and recursively attempts to find a rule, incrementally
 increasing the CURRENT-DEPTH.  If a rule is not found upon reaching the
 root of the syntax tree, it returns nil.  A rule is considered a match
 only if the CURRENT-DEPTH matches the rule's required depth."
-  (let* ((idx (- (treesit-node-index node) 2)))
+  (let* ((idx (1- (clojure-ts--value-position node))))
     (if-let* ((rule-set (clojure-ts--find-semantic-rules-for-node parent))
               ((not (equal rule-set :not-found))))
         (if (zerop current-depth)
