@@ -268,10 +268,6 @@ For example:
 - `defn` and `fn` have a rule `((:inner 0))`.
 - `letfn` has a rule `((:block 1) (:inner 2 0))`.
 
-Note that `clojure-ts-semantic-indent-rules` should be set using the
-customization interface or `setopt`; otherwise, it will not be applied
-correctly.
-
 #### Project-specific indentation
 
 Custom indentation rules can be set for individual projects. To achieve this,

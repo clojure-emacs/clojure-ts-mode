@@ -143,4 +143,116 @@
       (expect (buffer-string)
               :to-equal "(-> (merge {} {:a 1})\n    (assoc :b 2))"))))
 
+;;;; Options that the mode setup depends on
+
+(defconst clojure-ts-test--options-source
+  "(defelem file-upload [name] name)
+(comment (foo))
+(foo
+bar)
+(my-block x
+y)
+{:a 1
+:bbb 2}"
+  "Clojure code that shows the effect of the options set up with the mode.")
+
+(defun clojure-ts-test--face-at (text)
+  "Return the face at the start of the first occurrence of TEXT."
+  (save-excursion
+    (goto-char (point-min))
+    (search-forward text)
+    (get-text-property (match-beginning 0) 'face)))
+
+(describe "options set in .dir-locals.el"
+  (it "should apply to the buffers in the directory, and only to those"
+    (with-temp-dir temp-dir
+      (let ((enable-local-variables :all)
+            (project-dir (expand-file-name "project" temp-dir))
+            (other-dir (expand-file-name "other" temp-dir)))
+        (make-directory project-dir)
+        (make-directory other-dir)
+        (write-region "((clojure-ts-mode . ((clojure-ts-indent-style . fixed)
+                     (clojure-ts-align-forms-automatically . t)
+                     (clojure-ts-extra-def-forms . (\"defelem\"))
+                     (clojure-ts-comment-macro-font-lock-body . t))))"
+                      nil (expand-file-name ".dir-locals.el" project-dir))
+        (dolist (dir (list project-dir other-dir))
+          (write-region clojure-ts-test--options-source nil
+                        (expand-file-name "a.clj" dir)))
+        (let ((project-buffer (find-file-noselect (expand-file-name "a.clj" project-dir)))
+              (other-buffer (find-file-noselect (expand-file-name "a.clj" other-dir))))
+          (unwind-protect
+              (progn
+                (with-current-buffer project-buffer
+                  (font-lock-ensure)
+                  (expect (clojure-ts-test--face-at "defelem")
+                          :to-equal 'font-lock-keyword-face)
+                  (expect (clojure-ts-test--face-at "(foo)")
+                          :to-equal 'font-lock-comment-face)
+                  (indent-region (point-min) (point-max))
+                  ;; Fixed indentation and aligned map values.
+                  (expect (buffer-string) :to-match "(foo\n  bar)")
+                  (expect (buffer-string) :to-match "(my-block x\n  y)")
+                  (expect (buffer-string) :to-match "{:a   1\n :bbb 2}"))
+                (with-current-buffer other-buffer
+                  (font-lock-ensure)
+                  (expect (clojure-ts-test--face-at "defelem")
+                          :not :to-equal 'font-lock-keyword-face)
+                  (expect (clojure-ts-test--face-at "(foo)")
+                          :not :to-equal 'font-lock-comment-face)
+                  (indent-region (point-min) (point-max))
+                  (expect (buffer-string) :to-match "(foo\n bar)")
+                  (expect (buffer-string) :to-match "(my-block x\n          y)")
+                  (expect (buffer-string) :to-match "{:a 1\n :bbb 2}")))
+            (kill-buffer project-buffer)
+            (kill-buffer other-buffer)))))))
+
+(describe "options set with setopt"
+  (it "should apply to the open buffers, even when set from another buffer"
+    (with-clojure-ts-buffer clojure-ts-test--options-source
+      (let ((clojure-buffer (current-buffer)))
+        (font-lock-ensure)
+        (unwind-protect
+            (progn
+              (with-temp-buffer
+                (setopt clojure-ts-extra-def-forms '("defelem")
+                        clojure-ts-comment-macro-font-lock-body t
+                        clojure-ts-indent-style 'fixed))
+              (with-current-buffer clojure-buffer
+                (font-lock-ensure)
+                (expect (clojure-ts-test--face-at "defelem")
+                        :to-equal 'font-lock-keyword-face)
+                (expect (clojure-ts-test--face-at "(foo)")
+                        :to-equal 'font-lock-comment-face)
+                (indent-region (point-min) (point-max))
+                (expect (buffer-string) :to-match "(foo\n  bar)")))
+          (setopt clojure-ts-extra-def-forms nil
+                  clojure-ts-comment-macro-font-lock-body nil
+                  clojure-ts-indent-style 'semantic)))))
+
+  (it "should keep the font lock features turned off in a buffer"
+    (with-clojure-ts-buffer "(defelem file-upload
+  \"Creates a file upload input.\"
+  [name])"
+      (treesit-font-lock-recompute-features nil '(doc))
+      (unwind-protect
+          (progn
+            (setopt clojure-ts-extra-def-forms '("defelem"))
+            (font-lock-ensure)
+            (expect (clojure-ts-test--face-at "defelem")
+                    :to-equal 'font-lock-keyword-face)
+            (expect (clojure-ts-test--face-at "Creates")
+                    :not :to-equal 'font-lock-doc-face))
+        (setopt clojure-ts-extra-def-forms nil)))))
+
+(describe "clojure-ts-semantic-indent-rules"
+  (it "should apply however it's set"
+    (with-clojure-ts-buffer "(my-block x\ny)"
+      (setq-local clojure-ts-semantic-indent-rules '(("my-block" . ((:block 1)))))
+      (indent-region (point-min) (point-max))
+      (expect (buffer-string) :to-equal "(my-block x\n  y)")
+      (let ((clojure-ts-semantic-indent-rules nil))
+        (indent-region (point-min) (point-max))
+        (expect (buffer-string) :to-equal "(my-block x\n          y)")))))
+
 ;;; clojure-ts-mode-config-test.el ends here

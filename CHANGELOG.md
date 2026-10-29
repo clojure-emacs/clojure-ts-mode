@@ -31,6 +31,9 @@
 - [#157](https://github.com/clojure-emacs/clojure-ts-mode/pull/157): Respect changes to `clojure-ts-align-binding-forms` and `clojure-ts-align-cond-forms` made after the package loads, including buffer-local ones from `.dir-locals.el`.
 - [#159](https://github.com/clojure-emacs/clojure-ts-mode/pull/159): Fix `indent-region` leaving the forms at the end of the region unaligned when indenting makes the text longer.
 - [#160](https://github.com/clojure-emacs/clojure-ts-mode/pull/160): Highlight forms in `clojure-ts-extra-def-forms` as keywords at `treesit-font-lock-level` 4, where they were colored as function calls.
+- [#165](https://github.com/clojure-emacs/clojure-ts-mode/pull/165): Fix `clojure-ts-semantic-indent-rules` not reaching open buffers when set with `setopt` from a non-Clojure buffer, and being ignored when set with `setq-local` or `let`.
+- [#165](https://github.com/clojure-emacs/clojure-ts-mode/pull/165): Fix `clojure-ts-comment-macro-font-lock-body` and `clojure-ts-extra-def-forms` being ignored in `.dir-locals.el` and when set after the package loads, and a directory-local `clojure-ts-extra-def-forms` applying to other buffers instead.
+- [#165](https://github.com/clojure-emacs/clojure-ts-mode/pull/165): Fix `clojure-ts-indent-style` and `clojure-ts-align-forms-automatically` being ignored in `.dir-locals.el`, and `setopt` of `clojure-ts-indent-style` not reaching open buffers.
 
 ## 0.6.0 (2025-12-02)
 

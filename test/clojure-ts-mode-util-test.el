@@ -42,12 +42,12 @@
   (describe "clojure-ts-project-root-path"
     (it "nbb subdir"
       (with-temp-dir temp-dir
-                     (let* ((bb-edn (expand-file-name "nbb.edn" temp-dir))
-                            (bb-edn-src (expand-file-name "src" temp-dir)))
-                       (write-region "{}" nil bb-edn)
-                       (make-directory bb-edn-src)
-                       (expect (expand-file-name (clojure-ts-project-dir bb-edn-src))
-                               :to-equal (file-name-as-directory temp-dir))))))
+        (let* ((bb-edn (expand-file-name "nbb.edn" temp-dir))
+               (bb-edn-src (expand-file-name "src" temp-dir)))
+          (write-region "{}" nil bb-edn)
+          (make-directory bb-edn-src)
+          (expect (expand-file-name (clojure-ts-project-dir bb-edn-src))
+                  :to-equal (file-name-as-directory temp-dir))))))
 
   (describe "clojure-ts-project-relative-path"
     (it "returns the path relative to the project root"

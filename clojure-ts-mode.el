@@ -88,7 +88,9 @@ rules for whatever expressions are in the body, except for the comment symbol
 itself."
   :safe #'booleanp
   :type 'boolean
-  :package-version '(clojure-ts-mode . "0.1.3"))
+  :package-version '(clojure-ts-mode . "0.1.3")
+  :initialize #'custom-initialize-default
+  :set #'clojure-ts--set-font-lock-option)
 
 (defcustom clojure-ts-ensure-grammars t
   "When non-nil, ensure required Tree-sitter grammars are installed."
@@ -593,6 +595,20 @@ and end of the NODE, so we ignore them."
                                      'font-lock-string-face
                                      override))))
 
+(defun clojure-ts--fontify-comment-body (node override start end &rest _)
+  "Fontify the body of the comment macro NODE as a comment.
+
+That's only if `clojure-ts-comment-macro-font-lock-body' is non-nil.
+OVERRIDE, START and END are passed to `treesit-fontify-with-override'."
+  (when clojure-ts-comment-macro-font-lock-body
+    (let ((child (treesit-node-next-sibling (treesit-node-child node 0 t))))
+      (while child
+        (treesit-fontify-with-override (treesit-node-start child)
+                                       (treesit-node-end child)
+                                       'font-lock-comment-face
+                                       override start end)
+        (setq child (treesit-node-next-sibling child))))))
+
 (defconst clojure-ts--clojure-font-lock-queries
   (treesit-font-lock-rules
    :feature 'string
@@ -798,10 +814,8 @@ and end of the NODE, so we ignore them."
       marker: "#_" @font-lock-comment-delimiter-face
       meta: (meta_lit) :* @font-lock-comment-face
       value: _ @font-lock-comment-face)
-     (,(append
-        '(list_lit :anchor (sym_lit) @font-lock-comment-delimiter-face)
-        (when clojure-ts-comment-macro-font-lock-body
-          '(_ :* @font-lock-comment-face)))
+     ((list_lit :anchor (sym_lit) @font-lock-comment-delimiter-face)
+      @clojure-ts--fontify-comment-body
       (:match "^\\(\\(clojure.core/\\)?comment\\)$" @font-lock-comment-delimiter-face)))
 
    :feature 'deref
@@ -809,69 +823,77 @@ and end of the NODE, so we ignore them."
    '((derefing_lit
       marker: "@" @font-lock-punctuation-face))))
 
-(defvar clojure-ts--clojure-extra-queries nil
-  "Pre-compiled Tree-sitter queries produced from `clojure-ts-extra-def-forms'.")
+(defvar clojure-ts-extra-def-forms)
 
-(defun clojure-ts--compute-extra-def-queries (syms)
-  "Compute font lock rules for extra def forms.
+(defun clojure-ts--extra-def-form-p (node)
+  "Return non-nil if NODE is named like a form in `clojure-ts-extra-def-forms'."
+  (and clojure-ts-extra-def-forms
+       (member (treesit-node-text node t) clojure-ts-extra-def-forms)))
 
-If SYMS are not provided, return nil.  If SYMS are provided, this
-function returns compiled font lock rules that should be assigned to
-`clojure-ts--clojure-extra-queries' variable.
+(defconst clojure-ts--extra-def-font-lock-queries
+  (treesit-font-lock-rules
+   :feature 'definition
+   :language 'clojure
+   :override t
+   '(((list_lit :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+                :anchor (sym_lit (sym_name) @font-lock-keyword-face)
+                :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+                :anchor (sym_lit (sym_name) @font-lock-function-name-face))
+      (:pred clojure-ts--extra-def-form-p @font-lock-keyword-face)))
 
-This function is called when the `clojure-ts-extra-def-forms' variable
-is customized using setopt or the Emacs customization interface.  It is
-also called when file-local variables are updated.  This ensures that
-updated indentation rules are always precalculated."
-  (when syms
-    (treesit-font-lock-rules
-     :feature 'definition
-     :language 'clojure
-     :override t
-     `(((list_lit :anchor [(comment) (meta_lit) (old_meta_lit)] :*
-                  :anchor (sym_lit (sym_name) @font-lock-keyword-face)
-                  :anchor [(comment) (meta_lit) (old_meta_lit)] :*
-                  :anchor (sym_lit (sym_name) @font-lock-function-name-face))
-        (:match ,(clojure-ts-symbol-regexp syms)
-                @font-lock-keyword-face)))
+   ;; NOTE: Here we also define queries to fontify docstrings in custom extra
+   ;; defn forms, but Markdown syntax won't work here, because it's not a part
+   ;; of range settings.
+   :feature 'doc
+   :language 'clojure
+   :override t
+   '(((list_lit :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+                :anchor (sym_lit) @_def_symbol
+                :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+                ;; Function_name
+                :anchor (sym_lit)
+                :anchor [(comment) (meta_lit) (old_meta_lit)] :*
+                :anchor (str_lit) @font-lock-doc-face)
+      (:pred clojure-ts--extra-def-form-p @_def_symbol))))
+  "Font lock rules for the forms in `clojure-ts-extra-def-forms'.")
 
-     ;; NOTE: Here we also define queries to fontify docstrings in custom extra
-     ;; defn forms, but Markdown syntax won't work here, because it's not a part
-     ;; of range settings.
-     :feature 'doc
-     :language 'clojure
-     :override t
-     `(((list_lit :anchor [(comment) (meta_lit) (old_meta_lit)] :*
-                  :anchor (sym_lit) @_def_symbol
-                  :anchor [(comment) (meta_lit) (old_meta_lit)] :*
-                  ;; Function_name
-                  :anchor (sym_lit)
-                  :anchor [(comment) (meta_lit) (old_meta_lit)] :*
-                  :anchor (str_lit) @font-lock-doc-face)
-        (:match ,(clojure-ts-symbol-regexp syms)
-                @_def_symbol))))))
+(defvar-local clojure-ts--extra-def-font-lock-p nil
+  "Non-nil if the font lock rules for extra def forms are in use.")
 
-(defun clojure-ts--set-extra-def-queries (symbol value)
-  "Setter function for `clojure-ts-extra-def-forms' variable.
+(defun clojure-ts--add-extra-def-font-lock ()
+  "Use the font lock rules for `clojure-ts-extra-def-forms', if there are any.
+They're left out until then, as they slow down font lock."
+  (when (and clojure-ts-extra-def-forms
+             (not clojure-ts--extra-def-font-lock-p))
+    (setq clojure-ts--extra-def-font-lock-p t)
+    (let ((disabled (seq-remove (lambda (feature)
+                                  (seq-some (lambda (setting)
+                                              (and (eq (nth 2 setting) feature)
+                                                   (nth 1 setting)))
+                                            treesit-font-lock-settings))
+                                '(definition doc))))
+      (treesit-add-font-lock-rules clojure-ts--extra-def-font-lock-queries)
+      ;; The rules are added enabled.
+      (when disabled
+        (treesit-font-lock-recompute-features nil disabled)))))
 
-Sets SYMBOL's top-level default value to VALUE and updates the
-`clojure-ts--clojure-extra-queries' in all `clojure-ts-mode'
-buffers, if any exist.
+(defun clojure-ts--set-font-lock-option (symbol value)
+  "Set the default value of SYMBOL to VALUE and refontify Clojure buffers.
 
 NOTE: This function is not meant to be called directly."
   (set-default-toplevel-value symbol value)
-  ;; Update value in every `clojure-ts-mode' buffer.
-  (let ((new-value (clojure-ts--compute-extra-def-queries value)))
-    (dolist (buf (buffer-list))
-      (when (buffer-local-boundp 'clojure-ts--clojure-extra-queries buf)
-        (setq clojure-ts--clojure-extra-queries new-value)))))
+  (dolist (buf (match-buffers '(derived-mode . clojure-ts-mode)))
+    (with-current-buffer buf
+      (clojure-ts--add-extra-def-font-lock)
+      (font-lock-flush))))
 
 (defcustom clojure-ts-extra-def-forms nil
   "List of forms that should be fontified the same way as defn."
   :package-version '(clojure-ts-mode . "0.5")
   :safe #'listp
   :type '(repeat string)
-  :set #'clojure-ts--set-extra-def-queries)
+  :initialize #'custom-initialize-default
+  :set #'clojure-ts--set-font-lock-option)
 
 (defconst clojure-ts--markdown-font-lock-queries
   (treesit-font-lock-rules
@@ -936,7 +958,6 @@ with the markdown-inline grammar.
 When REGEX-AVAILABLE is non-nil, includes rules for highlighting regex
 literals with regex grammar."
   (append clojure-ts--clojure-font-lock-queries
-          clojure-ts--clojure-extra-queries
           (when markdown-available
             clojure-ts--markdown-font-lock-queries)
           (when regex-available
@@ -1194,6 +1215,18 @@ See `clojure-ts--standard-definition-node-name' for the implementation used.")
     (string-match ";;\\(;+\\) " node-text)
     (- (match-end 1) (match-beginning 1))))
 
+(defun clojure-ts--set-indent-style (symbol value)
+  "Set the default value of SYMBOL to VALUE and reconfigure Clojure buffers.
+A buffer with its own indentation style keeps it.
+
+NOTE: This function is not meant to be called directly."
+  (set-default-toplevel-value symbol value)
+  (dolist (buf (match-buffers '(derived-mode . clojure-ts-mode)))
+    (with-current-buffer buf
+      (unless (local-variable-p 'clojure-ts-indent-style)
+        (setq-local treesit-simple-indent-rules
+                    (clojure-ts--configured-indent-rules))))))
+
 (defcustom clojure-ts-indent-style 'semantic
   "Automatic indentation style to use when mode `clojure-ts-mode' is run.
 
@@ -1213,7 +1246,9 @@ The possible values for this variable are
   :type
   '(choice (const :tag "Semantic indentation rules." semantic)
            (const :tag "Simple fixed indentation rules." fixed))
-  :package-version '(clojure-ts-mode . "0.2.0"))
+  :package-version '(clojure-ts-mode . "0.2.0")
+  :initialize #'custom-initialize-default
+  :set #'clojure-ts--set-indent-style)
 
 (defconst clojure-ts--reader-prefix-node-regexp
   (rx bol (or "quoting_lit" "syn_quoting_lit" "unquoting_lit" "unquote_splicing_lit"
@@ -1342,7 +1377,10 @@ The format reflects cljfmt indentation rules.  All the default rules are
 aligned with
 https://github.com/weavejester/cljfmt/blob/0.13.0/cljfmt/resources/cljfmt/indents/clojure.clj")
 
-(defvar-local clojure-ts--semantic-indent-rules-cache nil)
+(defvar-local clojure-ts--semantic-indent-rules-cache nil
+  "The combined semantic indentation rules, as (RULES . COMBINED-RULES).
+RULES is the value of `clojure-ts-semantic-indent-rules' they're
+combined from.")
 
 (defun clojure-ts--compute-semantic-indentation-rules-cache (rules)
   "Compute the combined semantic indentation rules cache.
@@ -1353,28 +1391,10 @@ If RULES are not provided, this function computes the union of
 rules.  If RULES are provided, this function uses them instead of
 `clojure-ts-semantic-indent-rules'.
 
-This function is called when the `clojure-ts-semantic-indent-rules'
-variable is customized using setopt or the Emacs customization
-interface.  It is also called when file-local variables are updated.
-This ensures that updated indentation rules are always precalculated."
+See `clojure-ts--combined-semantic-indent-rules'."
   (seq-union rules
              clojure-ts--semantic-indent-rules-defaults
              (lambda (e1 e2) (equal (car e1) (car e2)))))
-
-(defun clojure-ts--set-semantic-indent-rules (symbol value)
-  "Setter function for `clojure-ts-semantic-indent-rules' variable.
-
-Sets SYMBOL's top-level default value to VALUE and updates the
-`clojure-ts--semantic-indent-rules-cache' in all `clojure-ts-mode'
-buffers, if any exist.
-
-NOTE: This function is not meant to be called directly."
-  (set-default-toplevel-value symbol value)
-  ;; Update cache in every `clojure-ts-mode' buffer.
-  (let ((new-cache (clojure-ts--compute-semantic-indentation-rules-cache value)))
-    (dolist (buf (buffer-list))
-      (when (buffer-local-boundp 'clojure-ts--semantic-indent-rules-cache buf)
-        (setq clojure-ts--semantic-indent-rules-cache new-cache)))))
 
 (defcustom clojure-ts-semantic-indent-rules nil
   "Custom rules to extend default indentation rules for `semantic' style.
@@ -1394,8 +1414,20 @@ Default set of rules is defined in
                                             (list (const :tag "Inner indentation rule" :inner)
                                                   integer
                                                   integer))))
-  :package-version '(clojure-ts-mode . "0.3")
-  :set #'clojure-ts--set-semantic-indent-rules)
+  :package-version '(clojure-ts-mode . "0.3"))
+
+(defun clojure-ts--combined-semantic-indent-rules ()
+  "Return the combined semantic indentation rules for the current buffer.
+They're combined again only when `clojure-ts-semantic-indent-rules'
+changes."
+  (unless (and clojure-ts--semantic-indent-rules-cache
+               (equal clojure-ts-semantic-indent-rules
+                      (car clojure-ts--semantic-indent-rules-cache)))
+    (setq clojure-ts--semantic-indent-rules-cache
+          (cons clojure-ts-semantic-indent-rules
+                (clojure-ts--compute-semantic-indentation-rules-cache
+                 clojure-ts-semantic-indent-rules))))
+  (cdr clojure-ts--semantic-indent-rules-cache))
 
 (defun clojure-ts--match-block-0-body (bol first-child)
   "Match if expression body is not at the same line as FIRST-CHILD.
@@ -1508,7 +1540,7 @@ If rules are not found return :not-found symbol."
         (symbol-namespace (clojure-ts--node-namespace-text node)))
     (or (clojure-ts--dynamic-indent-for-symbol symbol-name symbol-namespace)
         (alist-get symbol-name
-                   clojure-ts--semantic-indent-rules-cache
+                   (clojure-ts--combined-semantic-indent-rules)
                    nil
                    nil
                    #'equal))))
@@ -2046,13 +2078,13 @@ Forms between BEG and END are aligned according to
   ;; Indenting adds whitespace, which moves END: align up to where the region
   ;; ends afterwards.  Treesit functions take only integer positions in
   ;; Emacs 30.1, so the marker is turned back into one.
-  (let ((end-marker (copy-marker end)))
-    (unwind-protect
-        (prog1 (let ((indent-region-function #'treesit-indent-region))
-                 (indent-region beg end))
-          (when clojure-ts-align-forms-automatically
-            (clojure-ts-align beg (marker-position end-marker))))
-      (set-marker end-marker nil))))
+  (if (not clojure-ts-align-forms-automatically)
+      (treesit-indent-region beg end)
+    (let ((end-marker (copy-marker end)))
+      (unwind-protect
+          (prog1 (treesit-indent-region beg end)
+            (clojure-ts-align beg (marker-position end-marker)))
+        (set-marker end-marker nil)))))
 
 ;;; Refactoring
 
@@ -3478,13 +3510,21 @@ REGEX-AVAILABLE."
     (add-hook 'completion-at-point-functions
               #'clojure-ts-completion-at-point-function nil 'local)))
 
+(defun clojure-ts--apply-local-variables ()
+  "Redo the parts of the setup that depend on file or directory-local variables.
+Those are set after the major mode."
+  (clojure-ts--add-extra-def-font-lock)
+  (when (local-variable-p 'clojure-ts-indent-style)
+    (setq-local treesit-simple-indent-rules (clojure-ts--configured-indent-rules))))
+
 (defun clojure-ts--major-mode-setup ()
   "Run `treesit-major-mode-setup', then override some of its settings.
 The modes that embed another language run the setup again once they've
 added its parser, so this is used for every run."
   (treesit-major-mode-setup)
-  (when clojure-ts-align-forms-automatically
-    (setq-local indent-region-function #'clojure-ts-indent-region))
+  ;; It checks `clojure-ts-align-forms-automatically' when it runs, so that
+  ;; a directory-local value works.
+  (setq-local indent-region-function #'clojure-ts-indent-region)
   ;; Emacs 31 makes `prog-fill-reindent-defun' reindent the innermost defun,
   ;; and every form is a defun to us.  The default reindents the top-level
   ;; form, just like Emacs 30 does.
@@ -3524,22 +3564,8 @@ added its parser, so this is used for every run."
         (treesit-inspect-mode))
 
       (clojure-ts--major-mode-setup)
-
-      ;; Initial indentation rules cache calculation.
-      (setq clojure-ts--semantic-indent-rules-cache
-            (clojure-ts--compute-semantic-indentation-rules-cache clojure-ts-semantic-indent-rules))
-
-      ;; If indentation rules or extra def forms are set in `.dir-locals.el', it
-      ;; is advisable to recalculate the buffer-local value whenever the value
-      ;; changes.
-      (add-hook 'hack-local-variables-hook
-                (lambda ()
-                  (setq clojure-ts--semantic-indent-rules-cache
-                        (clojure-ts--compute-semantic-indentation-rules-cache clojure-ts-semantic-indent-rules)
-                        clojure-ts--clojure-extra-queries
-                        (clojure-ts--compute-extra-def-queries clojure-ts-extra-def-forms)))
-                0
-                t))))
+      (clojure-ts--apply-local-variables)
+      (add-hook 'hack-local-variables-hook #'clojure-ts--apply-local-variables 0 t))))
 
 ;; For Emacs 30+, so that `clojure-ts-mode' is treated as deriving from
 ;; `clojure-mode' in the context of `derived-mode-p'
