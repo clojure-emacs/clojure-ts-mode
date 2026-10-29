@@ -148,7 +148,11 @@ DESCRIPTION is a string with the description of the spec."
   (when (stringp symbol-name)
     (cond
      ((string-equal symbol-name "my-with-in-str") 1)
-     ((string-equal symbol-name "my.alias/my-letfn") '(1 ((:defn)) :form)))))
+     ((string-equal symbol-name "my.alias/my-letfn") '(1 ((:defn)) :form))
+     ((string-equal symbol-name "my-defn") :defn)
+     ((string-equal symbol-name "my-extend") '(1 :defn))
+     ((string-equal symbol-name "my-reify") '(:defn (1)))
+     ((string-equal symbol-name "my-when") '((:block 1))))))
 
 
 (describe "indentation"
@@ -792,6 +796,48 @@ DESCRIPTION is a string with the description of the spec."
   (println \"Twice 15 =\" (twice 15))
   (println \"Six times 15 =\" (six-times 15)))")))
 
+  (it "should read dynamic indentation specs the way clojure-mode does"
+    (dolist (expected '("
+(my-defn foo [x]
+  x)"
+                        "
+(my-extend Proto
+  String
+  (foo [x]
+    x))"
+                        "
+(my-reify Proto
+  (foo [x]
+    x))"
+                        "
+(my.alias/my-letfn [(f [x]
+                      x)]
+  (g (h
+      x)))"
+                        "
+(my-when true
+  (foo))"))
+      (with-clojure-ts-buffer (replace-regexp-in-string "\n +" "\n" expected)
+        (setq-local clojure-ts-get-indent-function #'cider--get-symbol-indent-mock)
+        (indent-region (point-min) (point-max))
+        (expect (buffer-string) :to-equal expected))))
+
+  (it "should find the rule for the form itself anywhere in the rule list"
+    (with-clojure-ts-buffer "
+(my-proto Foo
+(bar [x]
+x))"
+      (unwind-protect
+          (progn
+            (setopt clojure-ts-semantic-indent-rules
+                    '(("my-proto" . ((:inner 1) (:block 1)))))
+            (indent-region (point-min) (point-max))
+            (expect (buffer-string) :to-equal "
+(my-proto Foo
+  (bar [x]
+    x))"))
+        (setopt clojure-ts-semantic-indent-rules nil))))
+
   (when-indenting-fixed-it "should indent children of a list with 2 spaces if first node is a symbol"
     "(ns indentation
   (:require
@@ -933,7 +979,25 @@ b |20])"
 (my-cond
  :a    1
  :bbbb 2
- :cc   3)"))))
+ :cc   3)")))
+
+  (it "should skip the special arguments of a cond form whose block rule isn't first"
+    (with-clojure-ts-buffer-point "
+(my-condp = x
+  |1 :one
+  22222 :two)"
+      (unwind-protect
+          (progn
+            (setopt clojure-ts-semantic-indent-rules
+                    '(("my-condp" . ((:inner 1) (:block 2)))))
+            (setq-local clojure-ts-align-cond-forms
+                        (cons "my-condp" clojure-ts-align-cond-forms))
+            (call-interactively #'clojure-ts-align)
+            (expect (buffer-string) :to-equal "
+(my-condp = x
+  1     :one
+  22222 :two)"))
+        (setopt clojure-ts-semantic-indent-rules nil)))))
 
 (describe "clojure-ts-align-forms-automatically"
   ;; Copied from `clojure-mode'
