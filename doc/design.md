@@ -328,10 +328,9 @@ match.  In addition to `clojure-ts--semantic-indent-rules-defaults` and
 if it is not `nil`.  This function provides an API for dynamic indentation and
 must return a value compatible with `cider-nrepl`.  Searching for an indentation
 rule across all these variables is slow; therefore,
-`clojure-ts--semantic-indent-rules-cache` was introduced.  It is set when
-`clojure-ts-mode` is activated in a Clojure source buffer and refreshed every time
-`clojure-ts-semantic-indent-rules` is updated (using setopt or the customization
-interface) or when a `.dir-locals.el` file is updated.
+`clojure-ts--semantic-indent-rules-cache` was introduced.  It holds the
+combined rules of the buffer, and they're combined again whenever the value of
+`clojure-ts-semantic-indent-rules` changes, however it's set.
 
 ### Additional information
 

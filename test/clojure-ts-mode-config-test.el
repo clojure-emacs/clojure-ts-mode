@@ -143,4 +143,16 @@
       (expect (buffer-string)
               :to-equal "(-> (merge {} {:a 1})\n    (assoc :b 2))"))))
 
+;;;; clojure-ts-semantic-indent-rules
+
+(describe "clojure-ts-semantic-indent-rules"
+  (it "should apply however it's set"
+    (with-clojure-ts-buffer "(my-block x\ny)"
+      (setq-local clojure-ts-semantic-indent-rules '(("my-block" . ((:block 1)))))
+      (indent-region (point-min) (point-max))
+      (expect (buffer-string) :to-equal "(my-block x\n  y)")
+      (let ((clojure-ts-semantic-indent-rules nil))
+        (indent-region (point-min) (point-max))
+        (expect (buffer-string) :to-equal "(my-block x\n          y)")))))
+
 ;;; clojure-ts-mode-config-test.el ends here

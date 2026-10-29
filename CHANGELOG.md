@@ -34,6 +34,7 @@
 - [#162](https://github.com/clojure-emacs/clojure-ts-mode/pull/162): Fix the conversion of indent specs from `clojure-ts-get-indent-function` (CIDER's `:style/indent`), which misindented forms indented like `defn`, `reify`, `extend-protocol` or `letfn`.
 - [#162](https://github.com/clojure-emacs/clojure-ts-mode/pull/162): Stop ignoring a `:block` rule that isn't the first rule in its list, in both indentation and cond alignment.
 - [#163](https://github.com/clojure-emacs/clojure-ts-mode/pull/163): Align function call arguments with the first argument even when there's metadata, a comment or a `#_` form before it, instead of leaving a type-hinted first argument and the ones after it unindented.
+- [#165](https://github.com/clojure-emacs/clojure-ts-mode/pull/165): Fix `clojure-ts-semantic-indent-rules` not reaching open buffers when set with `setopt` from a non-Clojure buffer, and being ignored when set with `setq-local` or `let`.
 
 ## 0.6.0 (2025-12-02)
 
