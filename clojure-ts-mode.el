@@ -1215,6 +1215,18 @@ See `clojure-ts--standard-definition-node-name' for the implementation used.")
     (string-match ";;\\(;+\\) " node-text)
     (- (match-end 1) (match-beginning 1))))
 
+(defun clojure-ts--set-indent-style (symbol value)
+  "Set the default value of SYMBOL to VALUE and reconfigure Clojure buffers.
+A buffer with its own indentation style keeps it.
+
+NOTE: This function is not meant to be called directly."
+  (set-default-toplevel-value symbol value)
+  (dolist (buf (match-buffers '(derived-mode . clojure-ts-mode)))
+    (with-current-buffer buf
+      (unless (local-variable-p 'clojure-ts-indent-style)
+        (setq-local treesit-simple-indent-rules
+                    (clojure-ts--configured-indent-rules))))))
+
 (defcustom clojure-ts-indent-style 'semantic
   "Automatic indentation style to use when mode `clojure-ts-mode' is run.
 
@@ -1234,7 +1246,9 @@ The possible values for this variable are
   :type
   '(choice (const :tag "Semantic indentation rules." semantic)
            (const :tag "Simple fixed indentation rules." fixed))
-  :package-version '(clojure-ts-mode . "0.2.0"))
+  :package-version '(clojure-ts-mode . "0.2.0")
+  :initialize #'custom-initialize-default
+  :set #'clojure-ts--set-indent-style)
 
 (defconst clojure-ts--reader-prefix-node-regexp
   (rx bol (or "quoting_lit" "syn_quoting_lit" "unquoting_lit" "unquote_splicing_lit"
@@ -2064,13 +2078,13 @@ Forms between BEG and END are aligned according to
   ;; Indenting adds whitespace, which moves END: align up to where the region
   ;; ends afterwards.  Treesit functions take only integer positions in
   ;; Emacs 30.1, so the marker is turned back into one.
-  (let ((end-marker (copy-marker end)))
-    (unwind-protect
-        (prog1 (let ((indent-region-function #'treesit-indent-region))
-                 (indent-region beg end))
-          (when clojure-ts-align-forms-automatically
-            (clojure-ts-align beg (marker-position end-marker))))
-      (set-marker end-marker nil))))
+  (if (not clojure-ts-align-forms-automatically)
+      (treesit-indent-region beg end)
+    (let ((end-marker (copy-marker end)))
+      (unwind-protect
+          (prog1 (treesit-indent-region beg end)
+            (clojure-ts-align beg (marker-position end-marker)))
+        (set-marker end-marker nil)))))
 
 ;;; Refactoring
 
@@ -3499,15 +3513,18 @@ REGEX-AVAILABLE."
 (defun clojure-ts--apply-local-variables ()
   "Redo the parts of the setup that depend on file or directory-local variables.
 Those are set after the major mode."
-  (clojure-ts--add-extra-def-font-lock))
+  (clojure-ts--add-extra-def-font-lock)
+  (when (local-variable-p 'clojure-ts-indent-style)
+    (setq-local treesit-simple-indent-rules (clojure-ts--configured-indent-rules))))
 
 (defun clojure-ts--major-mode-setup ()
   "Run `treesit-major-mode-setup', then override some of its settings.
 The modes that embed another language run the setup again once they've
 added its parser, so this is used for every run."
   (treesit-major-mode-setup)
-  (when clojure-ts-align-forms-automatically
-    (setq-local indent-region-function #'clojure-ts-indent-region))
+  ;; It checks `clojure-ts-align-forms-automatically' when it runs, so that
+  ;; a directory-local value works.
+  (setq-local indent-region-function #'clojure-ts-indent-region)
   ;; Emacs 31 makes `prog-fill-reindent-defun' reindent the innermost defun,
   ;; and every form is a defun to us.  The default reindents the top-level
   ;; form, just like Emacs 30 does.
