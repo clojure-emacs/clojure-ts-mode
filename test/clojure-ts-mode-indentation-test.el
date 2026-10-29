@@ -822,6 +822,22 @@ DESCRIPTION is a string with the description of the spec."
         (indent-region (point-min) (point-max))
         (expect (buffer-string) :to-equal expected))))
 
+  (it "should find the rule for the form itself anywhere in the rule list"
+    (with-clojure-ts-buffer "
+(my-proto Foo
+(bar [x]
+x))"
+      (unwind-protect
+          (progn
+            (setopt clojure-ts-semantic-indent-rules
+                    '(("my-proto" . ((:inner 1) (:block 1)))))
+            (indent-region (point-min) (point-max))
+            (expect (buffer-string) :to-equal "
+(my-proto Foo
+  (bar [x]
+    x))"))
+        (setopt clojure-ts-semantic-indent-rules nil))))
+
   (when-indenting-fixed-it "should indent children of a list with 2 spaces if first node is a symbol"
     "(ns indentation
   (:require
@@ -963,7 +979,25 @@ b |20])"
 (my-cond
  :a    1
  :bbbb 2
- :cc   3)"))))
+ :cc   3)")))
+
+  (it "should skip the special arguments of a cond form whose block rule isn't first"
+    (with-clojure-ts-buffer-point "
+(my-condp = x
+  |1 :one
+  22222 :two)"
+      (unwind-protect
+          (progn
+            (setopt clojure-ts-semantic-indent-rules
+                    '(("my-condp" . ((:inner 1) (:block 2)))))
+            (setq-local clojure-ts-align-cond-forms
+                        (cons "my-condp" clojure-ts-align-cond-forms))
+            (call-interactively #'clojure-ts-align)
+            (expect (buffer-string) :to-equal "
+(my-condp = x
+  1     :one
+  22222 :two)"))
+        (setopt clojure-ts-semantic-indent-rules nil)))))
 
 (describe "clojure-ts-align-forms-automatically"
   ;; Copied from `clojure-mode'
