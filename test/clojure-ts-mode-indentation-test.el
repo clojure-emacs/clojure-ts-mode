@@ -741,6 +741,63 @@ DESCRIPTION is a string with the description of the spec."
         (indent-region (point-min) (point-max))
         (expect (buffer-string) :to-equal expected))))
 
+  (it "should align call arguments with the first one, past comments and metadata"
+    ;; Start from no indentation at all, as some of these lines used to keep
+    ;; whatever indentation they had.
+    (dolist (expected '("
+(str
+ ^String (.toUpperCase s)
+ \"!\")"
+                        "
+(^:private foo a
+               b)"
+                        "
+(foo ;; why
+ a
+ b)"
+                        "
+(foo
+ ;; why
+ a
+ b)"
+                        "
+(foo #_x
+     a
+     b)"
+                        "
+(foo
+ #_x a
+ b)"
+                        "
+(
+ foo a
+     b)"))
+      (with-clojure-ts-buffer (replace-regexp-in-string "\n +" "\n" expected)
+        (indent-region (point-min) (point-max))
+        (expect (buffer-string) :to-equal expected))))
+
+  (when-indenting-with-point-it "should align a blank line with the first argument"
+    "
+(foo a
+|
+ b)"
+
+    "
+(foo a
+     |
+ b)")
+
+  (when-indenting-with-point-it "should not align a blank line with a comment after the head"
+    "
+(foo ;; why
+|
+ a)"
+
+    "
+(foo ;; why
+ |
+ a)")
+
   (it "should pick up dynamic indentation rules from clojure-ts-get-indent-function"
     (with-clojure-ts-buffer "
 (defmacro my-with-in-str

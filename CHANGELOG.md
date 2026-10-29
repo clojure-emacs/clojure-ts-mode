@@ -31,6 +31,7 @@
 - [#157](https://github.com/clojure-emacs/clojure-ts-mode/pull/157): Respect changes to `clojure-ts-align-binding-forms` and `clojure-ts-align-cond-forms` made after the package loads, including buffer-local ones from `.dir-locals.el`.
 - [#159](https://github.com/clojure-emacs/clojure-ts-mode/pull/159): Fix `indent-region` leaving the forms at the end of the region unaligned when indenting makes the text longer.
 - [#160](https://github.com/clojure-emacs/clojure-ts-mode/pull/160): Highlight forms in `clojure-ts-extra-def-forms` as keywords at `treesit-font-lock-level` 4, where they were colored as function calls.
+- [#163](https://github.com/clojure-emacs/clojure-ts-mode/pull/163): Align function call arguments with the first argument even when there's metadata, a comment or a `#_` form before it, instead of leaving a type-hinted first argument and the ones after it unindented.
 
 ## 0.6.0 (2025-12-02)
 

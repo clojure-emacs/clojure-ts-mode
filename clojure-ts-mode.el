@@ -1584,19 +1584,31 @@ according to the rule.  If NODE is nil, use next node after BOL."
                ;; Return true for any inner rule.
                t))))))
 
-(defun clojure-ts--match-function-call-arg (node parent _bol)
-  "Match NODE if PARENT is a list expressing a function or macro call."
-  (and (or (clojure-ts--list-node-p parent)
-           (clojure-ts--anon-fn-node-p parent))
-       (let ((first-child (clojure-ts--first-value-child parent))
-             (second-child (clojure-ts--node-child-skip-metadata parent 1)))
-         (and first-child
-              ;; Does the second child exist, and is it not equal to the current node?
-              second-child
-              (not (treesit-node-eq second-child node))
-              (or (clojure-ts--symbol-node-p first-child)
-                  (clojure-ts--keyword-node-p first-child)
-                  (clojure-ts--var-node-p first-child))))))
+(defun clojure-ts--first-call-arg (node)
+  "Return the first argument of the call NODE.
+
+If the argument has metadata, return that.  A form discarded with #_
+counts as an argument, like in cljfmt, but a comment doesn't."
+  (let ((arg (treesit-node-next-sibling (clojure-ts--first-value-child node) t)))
+    (while (and arg (string= (treesit-node-type arg) "comment"))
+      (setq arg (treesit-node-next-sibling arg t)))
+    arg))
+
+(defun clojure-ts--match-function-call-arg (node parent bol)
+  "Match NODE if PARENT is a list expressing a function or macro call.
+
+Only NODE after the first argument matches, as that's where it aligns.
+A form whose metadata starts the first argument is the first argument
+too.  If NODE is nil, use BOL instead."
+  (when-let* (((or (clojure-ts--list-node-p parent)
+                   (clojure-ts--anon-fn-node-p parent)))
+              (first-child (clojure-ts--first-value-child parent))
+              ((or (clojure-ts--symbol-node-p first-child)
+                   (clojure-ts--keyword-node-p first-child)
+                   (clojure-ts--var-node-p first-child)))
+              (first-arg (clojure-ts--first-call-arg parent)))
+    (< (treesit-node-start first-arg)
+       (if node (clojure-ts--node-start-with-metadata node) bol))))
 
 (defvar clojure-ts--threading-macro
   (eval-and-compile
@@ -1630,10 +1642,9 @@ for forms with type hints."
                 (treesit-search-subtree #'clojure-ts--opening-paren-node-p nil t 1)
                 (treesit-node-start)))
 
-(defun clojure-ts--anchor-nth-sibling (n)
-  "Return the start of the Nth named child of PARENT."
-  (lambda (_n parent &rest _)
-    (treesit-node-start (treesit-node-child parent n t))))
+(defun clojure-ts--anchor-first-call-arg (_node parent _bol)
+  "Return the start of the first argument of the call PARENT."
+  (treesit-node-start (clojure-ts--first-call-arg parent)))
 
 (defun clojure-ts--semantic-indent-rules ()
   "Return a list of indentation rules for `treesit-simple-indent-rules'.
@@ -1664,7 +1675,7 @@ used."
      ;; Threading macro args are aligned like any other args: with the first
      ;; one, not with the previous sibling, which can be the last of several
      ;; forms on the line above or a trailing comment.
-     (clojure-ts--match-function-call-arg ,(clojure-ts--anchor-nth-sibling 1) 0)
+     (clojure-ts--match-function-call-arg clojure-ts--anchor-first-call-arg 0)
      ;; https://guide.clojure.style/#one-space-indent
      ((parent-is "^list_lit$") parent 1)
      ((parent-is "^anon_fn_lit$") parent 2)
