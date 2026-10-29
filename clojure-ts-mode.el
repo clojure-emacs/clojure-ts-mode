@@ -1342,7 +1342,10 @@ The format reflects cljfmt indentation rules.  All the default rules are
 aligned with
 https://github.com/weavejester/cljfmt/blob/0.13.0/cljfmt/resources/cljfmt/indents/clojure.clj")
 
-(defvar-local clojure-ts--semantic-indent-rules-cache nil)
+(defvar-local clojure-ts--semantic-indent-rules-cache nil
+  "The combined semantic indentation rules, as (RULES . COMBINED-RULES).
+RULES is the value of `clojure-ts-semantic-indent-rules' they're
+combined from.")
 
 (defun clojure-ts--compute-semantic-indentation-rules-cache (rules)
   "Compute the combined semantic indentation rules cache.
@@ -1353,28 +1356,10 @@ If RULES are not provided, this function computes the union of
 rules.  If RULES are provided, this function uses them instead of
 `clojure-ts-semantic-indent-rules'.
 
-This function is called when the `clojure-ts-semantic-indent-rules'
-variable is customized using setopt or the Emacs customization
-interface.  It is also called when file-local variables are updated.
-This ensures that updated indentation rules are always precalculated."
+See `clojure-ts--combined-semantic-indent-rules'."
   (seq-union rules
              clojure-ts--semantic-indent-rules-defaults
              (lambda (e1 e2) (equal (car e1) (car e2)))))
-
-(defun clojure-ts--set-semantic-indent-rules (symbol value)
-  "Setter function for `clojure-ts-semantic-indent-rules' variable.
-
-Sets SYMBOL's top-level default value to VALUE and updates the
-`clojure-ts--semantic-indent-rules-cache' in all `clojure-ts-mode'
-buffers, if any exist.
-
-NOTE: This function is not meant to be called directly."
-  (set-default-toplevel-value symbol value)
-  ;; Update cache in every `clojure-ts-mode' buffer.
-  (let ((new-cache (clojure-ts--compute-semantic-indentation-rules-cache value)))
-    (dolist (buf (buffer-list))
-      (when (buffer-local-boundp 'clojure-ts--semantic-indent-rules-cache buf)
-        (setq clojure-ts--semantic-indent-rules-cache new-cache)))))
 
 (defcustom clojure-ts-semantic-indent-rules nil
   "Custom rules to extend default indentation rules for `semantic' style.
@@ -1394,8 +1379,20 @@ Default set of rules is defined in
                                             (list (const :tag "Inner indentation rule" :inner)
                                                   integer
                                                   integer))))
-  :package-version '(clojure-ts-mode . "0.3")
-  :set #'clojure-ts--set-semantic-indent-rules)
+  :package-version '(clojure-ts-mode . "0.3"))
+
+(defun clojure-ts--combined-semantic-indent-rules ()
+  "Return the combined semantic indentation rules for the current buffer.
+They're combined again only when `clojure-ts-semantic-indent-rules'
+changes."
+  (unless (and clojure-ts--semantic-indent-rules-cache
+               (equal clojure-ts-semantic-indent-rules
+                      (car clojure-ts--semantic-indent-rules-cache)))
+    (setq clojure-ts--semantic-indent-rules-cache
+          (cons clojure-ts-semantic-indent-rules
+                (clojure-ts--compute-semantic-indentation-rules-cache
+                 clojure-ts-semantic-indent-rules))))
+  (cdr clojure-ts--semantic-indent-rules-cache))
 
 (defun clojure-ts--match-block-0-body (bol first-child)
   "Match if expression body is not at the same line as FIRST-CHILD.
@@ -1508,7 +1505,7 @@ If rules are not found return :not-found symbol."
         (symbol-namespace (clojure-ts--node-namespace-text node)))
     (or (clojure-ts--dynamic-indent-for-symbol symbol-name symbol-namespace)
         (alist-get symbol-name
-                   clojure-ts--semantic-indent-rules-cache
+                   (clojure-ts--combined-semantic-indent-rules)
                    nil
                    nil
                    #'equal))))
@@ -3525,18 +3522,11 @@ added its parser, so this is used for every run."
 
       (clojure-ts--major-mode-setup)
 
-      ;; Initial indentation rules cache calculation.
-      (setq clojure-ts--semantic-indent-rules-cache
-            (clojure-ts--compute-semantic-indentation-rules-cache clojure-ts-semantic-indent-rules))
-
-      ;; If indentation rules or extra def forms are set in `.dir-locals.el', it
-      ;; is advisable to recalculate the buffer-local value whenever the value
-      ;; changes.
+      ;; If extra def forms are set in `.dir-locals.el', it is advisable to
+      ;; recalculate the buffer-local value whenever the value changes.
       (add-hook 'hack-local-variables-hook
                 (lambda ()
-                  (setq clojure-ts--semantic-indent-rules-cache
-                        (clojure-ts--compute-semantic-indentation-rules-cache clojure-ts-semantic-indent-rules)
-                        clojure-ts--clojure-extra-queries
+                  (setq clojure-ts--clojure-extra-queries
                         (clojure-ts--compute-extra-def-queries clojure-ts-extra-def-forms)))
                 0
                 t))))
