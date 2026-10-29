@@ -1802,6 +1802,30 @@ function literal."
   "Return non-nil if NODE is a function or a var definition."
   (clojure-ts--list-node-sym-match-p node clojure-ts--defun-symbols-regex))
 
+(defun clojure-ts--top-level-node-p (node)
+  "Return non-nil if NODE is a top-level form.
+
+When `clojure-ts-toplevel-inside-comment-form' is non-nil all direct
+children of the rich comment form are also considered as top-level."
+  (let* ((parent-node (treesit-node-parent node))
+         (parent-source-p (string= "source" (treesit-node-type parent-node)))
+         (node-comment-p (string= "comment"
+                                  (clojure-ts--list-node-sym-text node))))
+    (if clojure-ts-toplevel-inside-comment-form
+        ;; Tree-sitter keep climbing up the tree, so we should explicitly
+        ;; exclude the comment form itself.
+        (and (not node-comment-p)
+             (or (string= "comment"
+                          (clojure-ts--list-node-sym-text parent-node))
+                 parent-source-p))
+      parent-source-p)))
+
+(defconst clojure-ts--markdown-inline-sexp-nodes
+  '("inline_link" "full_reference_link" "collapsed_reference_link"
+    "uri_autolink" "email_autolink" "shortcut_link" "image"
+    "code_span")
+  "Nodes representing s-expressions in the `markdown-inline' parser.")
+
 (defun clojure-ts--default-sexp-node-p (node)
   "Return non-nil if point is after the # marker of set or function literal NODE."
   (and (eq (char-before) ?\#)
@@ -3862,9 +3886,7 @@ REGEX-AVAILABLE."
                ;; consider all clojure sexps as valid top level forms...
                (regexp-opt clojure-ts--sexp-nodes)
                ;; ...except `comment' forms if `clojure-ts-toplevel-inside-comment-form' is set
-               (lambda (node)
-                 (or (not clojure-ts-toplevel-inside-comment-form)
-                     (not (clojure-ts--definition-node-p "comment" node))))))
+               #'clojure-ts--top-level-node-p))
   (setq-local treesit-defun-name-function
               #'clojure-ts--standard-definition-node-name)
 
@@ -3883,6 +3905,8 @@ REGEX-AVAILABLE."
 (defun clojure-ts--apply-local-variables ()
   "Redo the parts of the setup that depend on file or directory-local variables.
 Those are set after the major mode."
+  (when (local-variable-p 'clojure-ts-align-forms-automatically)
+    (setq-local indent-region-function #'clojure-ts-indent-region))
   (when (local-variable-p 'clojure-ts-indent-style)
     (setq-local treesit-simple-indent-rules (clojure-ts--configured-indent-rules)))
   (when (local-variable-p 'clojure-ts-outline-variant)
@@ -3895,15 +3919,8 @@ Those are set after the major mode."
 The modes that embed another language run the setup again once they've
 added its parser, so this is used for every run."
   (treesit-major-mode-setup)
-  ;; It checks `clojure-ts-align-forms-automatically' when it runs, so that
-  ;; a directory-local value works.
-  (setq-local indent-region-function #'clojure-ts-indent-region)
-  ;; Emacs 31 makes `prog-fill-reindent-defun' reindent the innermost defun,
-  ;; and every form is a defun to us.  The default reindents the top-level
-  ;; form, just like Emacs 30 does.
-  (when (fboundp 'prog-fill-reindent-defun-default)
-    (setq-local prog-fill-reindent-defun-function
-                #'prog-fill-reindent-defun-default))
+  (when clojure-ts-align-forms-automatically
+    (setq-local indent-region-function #'clojure-ts-indent-region))
   ;; Workaround for treesit-transpose-sexps not correctly working with
   ;; treesit-thing-settings on Emacs 30.
   ;; Once treesit-transpose-sexps is working again this can be removed
