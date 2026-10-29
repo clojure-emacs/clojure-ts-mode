@@ -112,6 +112,7 @@ DESCRIPTION is a string with the description of the spec."
 (defmacro with-temp-dir (temp-dir &rest body)
   "Create a temporary directory and bind its to TEMP-DIR while evaluating BODY.
 Removes the temp directory at the end of evaluation."
+  (declare (indent 1))
   `(let ((,temp-dir (make-temp-file "" t)))
      (unwind-protect
          (progn
