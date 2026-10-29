@@ -31,6 +31,7 @@
 - [#157](https://github.com/clojure-emacs/clojure-ts-mode/pull/157): Respect changes to `clojure-ts-align-binding-forms` and `clojure-ts-align-cond-forms` made after the package loads, including buffer-local ones from `.dir-locals.el`.
 - [#159](https://github.com/clojure-emacs/clojure-ts-mode/pull/159): Fix `indent-region` leaving the forms at the end of the region unaligned when indenting makes the text longer.
 - [#160](https://github.com/clojure-emacs/clojure-ts-mode/pull/160): Highlight forms in `clojure-ts-extra-def-forms` as keywords at `treesit-font-lock-level` 4, where they were colored as function calls.
+- [#166](https://github.com/clojure-emacs/clojure-ts-mode/pull/166): Indent function literals, reader conditionals and tagged literals in the `fixed` indentation style, and lists whose head symbol has metadata, which got 1 space instead of 2.
 
 ## 0.6.0 (2025-12-02)
 
