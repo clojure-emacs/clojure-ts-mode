@@ -814,6 +814,38 @@ DESCRIPTION is a string with the description of the spec."
           (indent-region (point-min) (point-max))
           (expect (buffer-string) :to-equal expected)))))
 
+  (it "should indent function literals, reader conditionals and tagged literals in fixed style"
+    ;; No rule used to match these lines, so they kept whatever indentation
+    ;; they had.  Start from no indentation at all.
+    (dolist (expected '("
+#(foo %
+  bar)"
+                        "
+#?(:clj 1
+   :cljs 2)"
+                        "
+[#?@(:clj [1 2]
+     :cljs [3 4])]"
+                        "
+(foo #js
+     {:a 1})"))
+      (with-temp-buffer
+        (let ((clojure-ts-indent-style 'fixed))
+          (clojure-ts-mode)
+          (insert (replace-regexp-in-string "\n +" "\n" expected))
+          (indent-region (point-min) (point-max))
+          (expect (buffer-string) :to-equal expected)))))
+
+  (when-indenting-fixed-it "should find the head symbol of a list past metadata and comments"
+    "
+(^:private foo a
+  bar)"
+
+    "
+(;; why
+  foo a
+  bar)")
+
   (when-indenting-fixed-it "should indent namespaced maps correctly"
     "
 #:foo{:bar 1

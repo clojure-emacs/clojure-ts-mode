@@ -1253,13 +1253,16 @@ on the line after the prefix, it is indented the way PREFIXED would be."
      ((lambda (node parent _)
         (and (clojure-ts--list-node-p parent)
              ;; Should we also check for keyword first child, as in (:k map) calls?
-             (let ((first-child (treesit-node-child parent 0 t)))
-               (clojure-ts--symbol-node-p first-child))))
+             (clojure-ts--symbol-node-p (clojure-ts--first-value-child parent))))
       parent 2)
      ((parent-is "^vec_lit$") parent 1)
      ((parent-is "^map_lit$") parent 1)
      ((parent-is "^list_lit$") parent 1)
+     ((parent-is "^anon_fn_lit$") parent 2)
      ((parent-is "^set_lit$") parent 2)
+     ((parent-is "^read_cond_lit$") parent 3)
+     ((parent-is "^splicing_read_cond_lit$") parent 4)
+     ((parent-is "^tagged_or_ctor_lit$") parent 0)
      ((parent-is "^ns_map_lit$") (nth-sibling 2) 1)
      ;; A form on the line after its reader prefix, e.g. @ at the end of a line.
      ((parent-is ,clojure-ts--reader-prefix-node-regexp)
