@@ -1447,19 +1447,54 @@ might start with a namespace alias.
 
 The returned value is expected to be the same as
 `clojure-get-indent-function' from `clojure-mode' for compatibility
-reasons.")
+reasons: an indent spec in the format of `clojure-mode', or a list of
+rules in the format of `clojure-ts-semantic-indent-rules'.")
 
-(defun clojure-ts--unwrap-dynamic-spec (spec current-depth)
-  "Recursively unwrap SPEC, incrementally increasing the CURRENT-DEPTH.
+(defun clojure-ts--semantic-rules-p (spec)
+  "Return non-nil if SPEC is a list of :block and :inner rules."
+  (and (consp spec)
+       (seq-every-p (lambda (rule)
+                      (and (memq (car-safe rule) '(:block :inner))
+                           (cdr rule)
+                           (seq-every-p #'natnump (cdr rule))))
+                    spec)))
 
-This function accepts a list SPEC, like ((:defn)) and produce a proper
-indent rule.  For example, ((:defn)) is converted to (:inner 2),
-and (:defn) is converted to (:inner 1)."
-  (if (consp spec)
-      (clojure-ts--unwrap-dynamic-spec (car spec) (1+ current-depth))
-    (cond
-     ((equal spec :defn) (list :inner current-depth))
-     (t nil))))
+(defun clojure-ts--convert-dynamic-spec (spec depth idx)
+  "Return the semantic rules for a form with the `clojure-mode' indent SPEC.
+
+DEPTH is how many levels the form is below the form whose head has the
+spec, and IDX is the position of the argument of that form it is in, or
+nil for any argument.
+
+An integer or :defn is the spec of the form itself.  In a list, the
+first element is the spec of the form itself and the rest are the specs
+of its arguments in order, the last one also covering any arguments
+after it.  A list holding just another list applies that to every
+argument.
+
+The rules can't express everything these specs can.  The spec of the
+last argument applies to all the arguments, a position inside an
+argument counts for nothing, and an integer below the form itself means
+body indentation."
+  (let ((inner (if idx (list :inner depth idx) (list :inner depth))))
+    (pcase spec
+      ((pred integerp)
+       (list (if (zerop depth) (list :block spec) inner)))
+      ((or :defn 'defun) (list inner))
+      (`(,(and arg-spec (pred consp)))
+       (clojure-ts--convert-dynamic-spec arg-spec (1+ depth) idx))
+      (`(,own-spec . ,arg-specs)
+       (let ((last-pos (1- (length arg-specs))))
+         (apply #'append
+                (unless (consp own-spec)
+                  (clojure-ts--convert-dynamic-spec own-spec depth idx))
+                (seq-map-indexed (lambda (arg-spec pos)
+                                   (clojure-ts--convert-dynamic-spec
+                                    arg-spec
+                                    (1+ depth)
+                                    (cond ((> depth 0) idx)
+                                          ((< pos last-pos) pos))))
+                                 arg-specs)))))))
 
 (defun clojure-ts--dynamic-indent-for-symbol (sym &optional ns)
   "Return the dynamic indentation specification for SYM, if found.
@@ -1469,9 +1504,10 @@ produce a valid indentation specification from its return value.
 
 The `clojure-ts-get-indent-function' should return an indentation
 specification compatible with `clojure-mode', which will then be
-converted to a suitable `clojure-ts-mode' specification.
+converted to a suitable `clojure-ts-mode' specification the way
+`clojure-mode' reads it.
 
-For example, (1 ((:defn)) nil) is converted to ((:block 1) (:inner 2)).
+For example, (1 ((:defn)) nil) is converted to ((:block 1) (:inner 2 0)).
 
 If NS is defined, then the fully qualified symbol is passed to
 `clojure-ts-get-indent-function'."
@@ -1480,20 +1516,10 @@ If NS is defined, then the fully qualified symbol is passed to
                             (concat ns "/" sym)
                           sym))
            (spec (funcall clojure-ts-get-indent-function full-symbol)))
-      (if (integerp spec)
-          (list (list :block spec))
-        (when (sequencep spec)
-          (thread-last spec
-                       (seq-map (lambda (el)
-                                  (cond
-                                   ((integerp el) (list :block el))
-                                   ((equal el :defn) (list :inner 0))
-                                   ((consp el) (clojure-ts--unwrap-dynamic-spec el 0))
-                                   (t nil))))
-                       (seq-remove #'null)
-                       ;; Always put `:block' to the beginning.
-                       (seq-sort (lambda (spec1 _spec2)
-                                   (equal (car spec1) :block)))))))))
+      (cond
+       ((clojure-ts--semantic-rules-p spec) spec)
+       ((functionp spec) nil)
+       (t (clojure-ts--convert-dynamic-spec spec 0 nil))))))
 
 (defvar-local clojure-ts--dynamic-indent-for-symbol-cache (make-hash-table :test 'equal))
 

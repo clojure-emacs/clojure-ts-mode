@@ -148,7 +148,11 @@ DESCRIPTION is a string with the description of the spec."
   (when (stringp symbol-name)
     (cond
      ((string-equal symbol-name "my-with-in-str") 1)
-     ((string-equal symbol-name "my.alias/my-letfn") '(1 ((:defn)) :form)))))
+     ((string-equal symbol-name "my.alias/my-letfn") '(1 ((:defn)) :form))
+     ((string-equal symbol-name "my-defn") :defn)
+     ((string-equal symbol-name "my-extend") '(1 :defn))
+     ((string-equal symbol-name "my-reify") '(:defn (1)))
+     ((string-equal symbol-name "my-when") '((:block 1))))))
 
 
 (describe "indentation"
@@ -791,6 +795,32 @@ DESCRIPTION is a string with the description of the spec."
                       (* (twice y) 3))]
   (println \"Twice 15 =\" (twice 15))
   (println \"Six times 15 =\" (six-times 15)))")))
+
+  (it "should read dynamic indentation specs the way clojure-mode does"
+    (dolist (expected '("
+(my-defn foo [x]
+  x)"
+                        "
+(my-extend Proto
+  String
+  (foo [x]
+    x))"
+                        "
+(my-reify Proto
+  (foo [x]
+    x))"
+                        "
+(my.alias/my-letfn [(f [x]
+                      x)]
+  (g (h
+      x)))"
+                        "
+(my-when true
+  (foo))"))
+      (with-clojure-ts-buffer (replace-regexp-in-string "\n +" "\n" expected)
+        (setq-local clojure-ts-get-indent-function #'cider--get-symbol-indent-mock)
+        (indent-region (point-min) (point-max))
+        (expect (buffer-string) :to-equal expected))))
 
   (when-indenting-fixed-it "should indent children of a list with 2 spaces if first node is a symbol"
     "(ns indentation
