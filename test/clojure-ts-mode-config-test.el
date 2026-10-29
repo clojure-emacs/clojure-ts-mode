@@ -171,7 +171,9 @@ y)
             (other-dir (expand-file-name "other" temp-dir)))
         (make-directory project-dir)
         (make-directory other-dir)
-        (write-region "((clojure-ts-mode . ((clojure-ts-extra-def-forms . (\"defelem\"))
+        (write-region "((clojure-ts-mode . ((clojure-ts-indent-style . fixed)
+                     (clojure-ts-align-forms-automatically . t)
+                     (clojure-ts-extra-def-forms . (\"defelem\"))
                      (clojure-ts-comment-macro-font-lock-body . t))))"
                       nil (expand-file-name ".dir-locals.el" project-dir))
         (dolist (dir (list project-dir other-dir))
@@ -186,13 +188,22 @@ y)
                   (expect (clojure-ts-test--face-at "defelem")
                           :to-equal 'font-lock-keyword-face)
                   (expect (clojure-ts-test--face-at "(foo)")
-                          :to-equal 'font-lock-comment-face))
+                          :to-equal 'font-lock-comment-face)
+                  (indent-region (point-min) (point-max))
+                  ;; Fixed indentation and aligned map values.
+                  (expect (buffer-string) :to-match "(foo\n  bar)")
+                  (expect (buffer-string) :to-match "(my-block x\n  y)")
+                  (expect (buffer-string) :to-match "{:a   1\n :bbb 2}"))
                 (with-current-buffer other-buffer
                   (font-lock-ensure)
                   (expect (clojure-ts-test--face-at "defelem")
                           :not :to-equal 'font-lock-keyword-face)
                   (expect (clojure-ts-test--face-at "(foo)")
-                          :not :to-equal 'font-lock-comment-face)))
+                          :not :to-equal 'font-lock-comment-face)
+                  (indent-region (point-min) (point-max))
+                  (expect (buffer-string) :to-match "(foo\n bar)")
+                  (expect (buffer-string) :to-match "(my-block x\n          y)")
+                  (expect (buffer-string) :to-match "{:a 1\n :bbb 2}")))
             (kill-buffer project-buffer)
             (kill-buffer other-buffer)))))))
 
@@ -205,15 +216,19 @@ y)
             (progn
               (with-temp-buffer
                 (setopt clojure-ts-extra-def-forms '("defelem")
-                        clojure-ts-comment-macro-font-lock-body t))
+                        clojure-ts-comment-macro-font-lock-body t
+                        clojure-ts-indent-style 'fixed))
               (with-current-buffer clojure-buffer
                 (font-lock-ensure)
                 (expect (clojure-ts-test--face-at "defelem")
                         :to-equal 'font-lock-keyword-face)
                 (expect (clojure-ts-test--face-at "(foo)")
-                        :to-equal 'font-lock-comment-face)))
+                        :to-equal 'font-lock-comment-face)
+                (indent-region (point-min) (point-max))
+                (expect (buffer-string) :to-match "(foo\n  bar)")))
           (setopt clojure-ts-extra-def-forms nil
-                  clojure-ts-comment-macro-font-lock-body nil)))))
+                  clojure-ts-comment-macro-font-lock-body nil
+                  clojure-ts-indent-style 'semantic)))))
 
   (it "should keep the font lock features turned off in a buffer"
     (with-clojure-ts-buffer "(defelem file-upload
