@@ -1668,12 +1668,7 @@ used."
      ;; https://guide.clojure.style/#one-space-indent
      ((parent-is "^list_lit$") parent 1)
      ((parent-is "^anon_fn_lit$") parent 2)
-     (clojure-ts--match-with-metadata parent 0)
-     ;; This is slow and only matches when point is inside of a docstring and
-     ;; only when Markdown grammar is disabled.  `indent-region' tries to match
-     ;; all the rules from top to bottom, so order matters here (the slowest
-     ;; rules should be at the bottom).
-     (clojure-ts--match-docstring parent 0))))
+     (clojure-ts--match-with-metadata parent 0))))
 
 (defun clojure-ts--configured-indent-rules ()
   "Return the configured indent rules."

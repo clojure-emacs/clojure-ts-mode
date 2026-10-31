@@ -5,6 +5,7 @@
 
 ## main (unreleased)
 
+- [#NNN](https://github.com/clojure-emacs/clojure-ts-mode/pull/NNN): Stop `indent-region` from changing the text of docstrings, which it did differently with and without `clojure-ts-use-markdown-inline`.
 - Fix indentation of namespaced maps in `fixed` indentation style.
 - Add project root detection for ClojureCLR project.
 - Add missing `defstruct` semantic indentation rule.
