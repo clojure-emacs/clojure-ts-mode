@@ -151,6 +151,76 @@ DESCRIPTION is a string with the description of the spec."
      ((string-equal symbol-name "my.alias/my-letfn") '(1 ((:defn)) :form)))))
 
 
+(describe "Docstring indentation"
+  (dolist (markdown-inline '(nil t))
+    (describe (format "with markdown-inline %s" markdown-inline)
+      (it "should preserve every docstring line"
+        (when markdown-inline
+          (assume (treesit-ready-p 'markdown-inline t)))
+        (let ((clojure-ts-use-markdown-inline markdown-inline))
+          (with-clojure-ts-buffer "(defn example
+  \"Summary.
+content
+    (code example)
+
+\"
+  []
+  :ok)
+"
+            (font-lock-ensure)
+            (indent-region (point-min) (point-max))
+            (expect (buffer-string) :to-equal "(defn example
+  \"Summary.
+content
+    (code example)
+
+\"
+  []
+  :ok)
+"))))
+      (it "should preserve protocol-method docstrings"
+        (when markdown-inline
+          (assume (treesit-ready-p 'markdown-inline t)))
+        (let ((clojure-ts-use-markdown-inline markdown-inline))
+          (with-clojure-ts-buffer "(defprotocol Example
+  (method [this]
+    \"Summary.
+content
+    (code example)
+
+\"))
+"
+            (font-lock-ensure)
+            (indent-region (point-min) (point-max))
+            (expect (buffer-string) :to-equal "(defprotocol Example
+  (method [this]
+    \"Summary.
+content
+    (code example)
+
+\"))
+"))))
+      (it "should preserve ordinary strings"
+        (when markdown-inline
+          (assume (treesit-ready-p 'markdown-inline t)))
+        (let ((clojure-ts-use-markdown-inline markdown-inline))
+          (with-clojure-ts-buffer "(def value
+  \"Ordinary string.
+content
+    (code example)
+
+\")
+"
+            (font-lock-ensure)
+            (indent-region (point-min) (point-max))
+            (expect (buffer-string) :to-equal "(def value
+  \"Ordinary string.
+content
+    (code example)
+
+\")
+")))))))
+
 (describe "indentation"
   (it "should not hang on end of buffer"
     (with-clojure-ts-buffer "(let [a b]"
