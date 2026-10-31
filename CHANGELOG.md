@@ -47,6 +47,7 @@
 - [#172](https://github.com/clojure-emacs/clojure-ts-mode/pull/172): Stop marking `clojure-ts-ensure-grammars`, `clojure-ts-auto-remap` and the options that turn the embedded parsers on and off as safe in `.dir-locals.el`, where they have no effect.
 - [#169](https://github.com/clojure-emacs/clojure-ts-mode/pull/169): Add `clojure-ts-remove-unused-keys` (`C-c C-r k`), which removes the names the top-level form at point destructures from maps but never uses, along with their `:or` defaults.
 - [#164](https://github.com/clojure-emacs/clojure-ts-mode/pull/164): Support `setopt-local` for `clojure-ts-indent-style`, `clojure-ts-extra-def-forms` and `clojure-ts-comment-macro-font-lock-body`, which Emacs 31 refused to set locally and Emacs 32 warned about in `.dir-locals.el`.
+- [#168](https://github.com/clojure-emacs/clojure-ts-mode/pull/168): Indent docstrings like `clojure-mode`, moving the lines indented less than `clojure-ts-docstring-fill-prefix-width` to that column and keeping deeper ones, instead of leaving them alone with `clojure-ts-use-markdown-inline` and flattening them without it.
 
 ## 0.6.0 (2025-12-02)
 
