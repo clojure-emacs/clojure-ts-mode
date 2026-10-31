@@ -118,7 +118,7 @@ itself."
   :package-version '(clojure-ts-mode . "0.2.3"))
 
 (defcustom clojure-ts-docstring-fill-prefix-width 2
-  "Width of `fill-prefix' when filling a docstring.
+  "Width of `fill-prefix' when filling or indenting a docstring.
 The default value conforms with the de facto convention for
 Clojure docstrings, aligning the second line with the opening
 double quotes on the third column."
@@ -1667,6 +1667,20 @@ too.  If NODE is nil, use BOL instead."
   (when-let* ((prev-sibling (treesit-node-prev-sibling node)))
     (clojure-ts--metadata-node-p prev-sibling)))
 
+(defun clojure-ts--match-docstring-line (_node _parent bol)
+  "Match a continuation line of a docstring at BOL, using the Clojure parser."
+  ;; Markdown nodes cannot identify the enclosing Clojure docstring.
+  (when-let* ((string (treesit-parent-until (treesit-node-at bol 'clojure)
+                                            #'clojure-ts--string-node-p t)))
+    (and (> bol (treesit-node-start string))
+         (clojure-ts--match-docstring nil string bol))))
+
+(defun clojure-ts--docstring-indent-offset (_node _parent bol)
+  "Return the docstring indentation at BOL, preserving deeper indentation."
+  (save-excursion
+    (goto-char bol)
+    (max (current-indentation) clojure-ts-docstring-fill-prefix-width)))
+
 (defun clojure-ts--anchor-parent-opening-paren (_node parent _bol)
   "Return position of PARENT start for NODE.
 
@@ -1717,11 +1731,12 @@ used."
      ((parent-is "^list_lit$") parent 1)
      ((parent-is "^anon_fn_lit$") parent 2)
      (clojure-ts--match-with-metadata parent 0)
-     ;; This is slow and only matches when point is inside of a docstring and
-     ;; only when Markdown grammar is disabled.  `indent-region' tries to match
-     ;; all the rules from top to bottom, so order matters here (the slowest
-     ;; rules should be at the bottom).
-     (clojure-ts--match-docstring parent 0))))
+     ;; This is slow, and `indent-region' tries the rules from top to bottom,
+     ;; so it goes last.
+     (clojure-ts--match-docstring-line column-0 clojure-ts--docstring-indent-offset))
+    ;; The lines of a docstring belong to this parser when Markdown is used.
+    (markdown-inline
+     (clojure-ts--match-docstring-line column-0 clojure-ts--docstring-indent-offset))))
 
 (defun clojure-ts--configured-indent-rules ()
   "Return the configured indent rules."
