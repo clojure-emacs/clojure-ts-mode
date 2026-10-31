@@ -1618,6 +1618,23 @@ according to the rule.  If NODE is nil, use next node after BOL."
   (when-let* ((prev-sibling (treesit-node-prev-sibling node)))
     (clojure-ts--metadata-node-p prev-sibling)))
 
+(defun clojure-ts--match-docstring-line (_node _parent bol)
+  "Match a continuation line of a docstring at BOL, using the Clojure parser."
+  ;; Markdown nodes cannot identify the enclosing Clojure docstring.
+  (when-let* ((string (treesit-parent-until
+                       (treesit-node-at bol 'clojure) "^str_lit$" t)))
+    (and (> bol (treesit-node-start string))
+         (clojure-ts--match-docstring nil string bol))))
+
+(defun clojure-ts--docstring-indent-offset (_node _parent bol)
+  "Return the docstring indentation at BOL, preserving deeper indentation."
+  (save-excursion
+    (goto-char bol)
+    (if (eolp)
+        0
+      (max (current-indentation)
+           (length (clojure-ts--docstring-fill-prefix))))))
+
 (defun clojure-ts--anchor-parent-opening-paren (_node parent _bol)
   "Return position of PARENT start for NODE.
 
@@ -1669,16 +1686,18 @@ used."
      ((parent-is "^list_lit$") parent 1)
      ((parent-is "^anon_fn_lit$") parent 2)
      (clojure-ts--match-with-metadata parent 0)
-     ;; This is slow and only matches when point is inside of a docstring and
-     ;; only when Markdown grammar is disabled.  `indent-region' tries to match
-     ;; all the rules from top to bottom, so order matters here (the slowest
-     ;; rules should be at the bottom).
-     (clojure-ts--match-docstring parent 0))))
+     (clojure-ts--match-docstring-line column-0 clojure-ts--docstring-indent-offset))))
 
-(defun clojure-ts--configured-indent-rules ()
-  "Return the configured indent rules."
+(defun clojure-ts--configured-indent-rules (&optional markdown-available)
+  "Return the configured indent rules, including Markdown if MARKDOWN-AVAILABLE."
   (cond
-   ((eq clojure-ts-indent-style 'semantic) (clojure-ts--semantic-indent-rules))
+   ((eq clojure-ts-indent-style 'semantic)
+    (let ((rules (clojure-ts--semantic-indent-rules)))
+      (when markdown-available
+        (push '(markdown-inline
+                (clojure-ts--match-docstring-line column-0 clojure-ts--docstring-indent-offset))
+              rules))
+      rules))
    ((eq clojure-ts-indent-style 'fixed) clojure-ts--fixed-indent-rules)
    (t (error
        (format
@@ -3465,7 +3484,7 @@ REGEX-AVAILABLE."
               #'clojure-ts--standard-definition-node-name)
 
   (setq-local treesit-simple-indent-rules
-              (clojure-ts--configured-indent-rules))
+              (clojure-ts--configured-indent-rules markdown-available))
   (setq-local fill-paragraph-function #'clojure-ts--fill-paragraph)
 
   (setq-local treesit-simple-imenu-settings

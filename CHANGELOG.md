@@ -5,6 +5,7 @@
 
 ## main (unreleased)
 
+- [#NNN](https://github.com/clojure-emacs/clojure-ts-mode/pull/NNN): Indent docstring lines like clojure-mode (lines indented less than `clojure-ts-docstring-fill-prefix-width` move to it, deeper lines stay), the same with and without `clojure-ts-use-markdown-inline`.
 - Fix indentation of namespaced maps in `fixed` indentation style.
 - Add project root detection for ClojureCLR project.
 - Add missing `defstruct` semantic indentation rule.
