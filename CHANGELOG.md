@@ -40,6 +40,7 @@
 - [#166](https://github.com/clojure-emacs/clojure-ts-mode/pull/166): Indent function literals, reader conditionals and tagged literals in the `fixed` indentation style, and lists whose head symbol has metadata, which got 1 space instead of 2.
 - [#170](https://github.com/clojure-emacs/clojure-ts-mode/pull/170): Indent forms like `if`, `when` or `let` as function calls when their body starts on the first line, like cljfmt and `clojure-mode` do, instead of indenting the rest of the body by 2 spaces.
 - [#170](https://github.com/clojure-emacs/clojure-ts-mode/pull/170): Count forms discarded with `#_` as arguments of forms like `when` or `let` when indenting them, like `clojure-mode` does.
+- [#170](https://github.com/clojure-emacs/clojure-ts-mode/pull/170): Add the `let*` semantic indentation rule from cljfmt.
 
 ## 0.6.0 (2025-12-02)
 
