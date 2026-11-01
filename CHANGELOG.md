@@ -45,6 +45,7 @@
 - [#171](https://github.com/clojure-emacs/clojure-ts-mode/pull/171): Highlight Markdown in the docstrings of the forms in `clojure-ts-extra-def-forms`.
 - [#172](https://github.com/clojure-emacs/clojure-ts-mode/pull/172): Fix `clojure-ts-outline-variant` and `clojure-ts-completion-enabled` being ignored in `.dir-locals.el`.
 - [#172](https://github.com/clojure-emacs/clojure-ts-mode/pull/172): Stop marking `clojure-ts-ensure-grammars`, `clojure-ts-auto-remap` and the options that turn the embedded parsers on and off as safe in `.dir-locals.el`, where they have no effect.
+- [#169](https://github.com/clojure-emacs/clojure-ts-mode/pull/169): Add `clojure-ts-remove-unused-keys` (`C-c C-r k`), which removes the names the top-level form at point destructures from maps but never uses, along with their `:or` defaults.
 
 ## 0.6.0 (2025-12-02)
 

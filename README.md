@@ -629,6 +629,30 @@ multi-arity function or macro. Function can be defined using `defn`, `fn` or
 `defmethod` form. This command also supports functions defined inside forms like
 `letfn`, `defprotocol`, `reify`, `extend-protocol` or `proxy`.
 
+### Remove unused destructured keys
+
+`clojure-ts-remove-unused-keys`: Remove what the top-level form at point
+destructures from maps but doesn't use: names in `:keys`, `:strs` and `:syms`,
+`:as` names and names bound to keys, along with their `:or` defaults. That
+covers arglists (`defn`, `fn`, `defmethod`, `letfn`, `reify` and the like) and
+the bindings of `let`, `loop`, `for`, `doseq` and the like. A map with nothing
+left becomes `_`.
+
+```clojure
+(defn handle [{:keys [id user] :or {user "anon"} :as req}]
+  (process id))
+
+;; becomes
+
+(defn handle [{:keys [id]}]
+  (process id))
+```
+
+A name stays when a symbol with that name appears anywhere in its scope, even
+if it's a local that shadows it, and so does one starting with `_`, which marks
+it unused on purpose. Positional args and vector destructuring are left alone,
+as removing one would change what the others bind.
+
 ### Default keybindings
 
 | Keybinding                  | Command                                        |
@@ -648,6 +672,7 @@ multi-arity function or macro. Function can be defined using `defn`, `fn` or
 | `C-c C-r c` / `C-c C-r C-c` | `clojure-ts-cycle-conditional`                 |
 | `C-c C-r o` / `C-c C-r C-o` | `clojure-ts-cycle-not`                         |
 | `C-c C-r a` / `C-c C-r C-a` | `clojure-ts-add-arity`                         |
+| `C-c C-r k` / `C-c C-r C-k` | `clojure-ts-remove-unused-keys`                |
 
 ### Customize refactoring commands prefix
 
