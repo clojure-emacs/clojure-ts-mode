@@ -163,7 +163,7 @@ double quotes on the third column."
 If set to the symbol `comments', then top-level comments starting with
 three or more semicolons will be treated as outline headings.  If set to
 `imenu', then def-like forms are treated as outline headings."
-  :safe #'symbolp
+  :safe (lambda (value) (memq value '(comments imenu)))
   :type '(choice (const :tag "Use special comments" comments)
                  (const :tag "Use imenu" imenu))
   :package-version '(clojure-ts-mode . "0.4"))
@@ -3431,6 +3431,23 @@ the same features enabled in MODE."
     ;;               (plist-get configs :simple-indent)))
     ))
 
+(defun clojure-ts--setup-outline ()
+  "Set up `outline-minor-mode' for the variant in `clojure-ts-outline-variant'."
+  (if (eq clojure-ts-outline-variant 'comments)
+      (setq-local treesit-outline-predicate #'clojure-ts--outline-predicate
+                  outline-level #'clojure-ts--outline-level)
+    (setq-local treesit-outline-predicate #'treesit-outline-predicate--from-imenu
+                outline-level #'treesit-outline-level))
+  (setq-local outline-search-function #'treesit-outline-search))
+
+(defun clojure-ts--setup-completion ()
+  "Add or remove the completion function, following `clojure-ts-completion-enabled'."
+  (if clojure-ts-completion-enabled
+      (add-hook 'completion-at-point-functions
+                #'clojure-ts-completion-at-point-function nil 'local)
+    (remove-hook 'completion-at-point-functions
+                 #'clojure-ts-completion-at-point-function 'local)))
+
 (defun clojure-ts-mode-variables (&optional markdown-available regex-available)
   "Initialize buffer-local variables for `clojure-ts-mode'.
 
@@ -3439,13 +3456,7 @@ REGEX-AVAILABLE."
   (setq-local indent-tabs-mode nil)
   (setq-local comment-add 1)
   (setq-local comment-start ";")
-  (when (equal clojure-ts-outline-variant 'comments)
-    ;; NOTE: If `imenu' option is selected for `clojure-ts-outline-variant', all
-    ;; necessary variables will be set automatically by
-    ;; `treesit-major-mode-setup'.
-    (setq-local treesit-outline-predicate #'clojure-ts--outline-predicate
-                outline-search-function #'treesit-outline-search
-                outline-level #'clojure-ts--outline-level))
+  (clojure-ts--setup-outline)
 
   (setq-local clojure-ts-expected-ns-function #'clojure-ts-expected-ns)
 
@@ -3480,15 +3491,17 @@ REGEX-AVAILABLE."
   (when (boundp 'treesit-thing-settings) ;; Emacs 30+
     (setq-local treesit-thing-settings clojure-ts--thing-settings))
 
-  (when clojure-ts-completion-enabled
-    (add-hook 'completion-at-point-functions
-              #'clojure-ts-completion-at-point-function nil 'local)))
+  (clojure-ts--setup-completion))
 
 (defun clojure-ts--apply-local-variables ()
   "Redo the parts of the setup that depend on file or directory-local variables.
 Those are set after the major mode."
   (when (local-variable-p 'clojure-ts-indent-style)
-    (setq-local treesit-simple-indent-rules (clojure-ts--configured-indent-rules))))
+    (setq-local treesit-simple-indent-rules (clojure-ts--configured-indent-rules)))
+  (when (local-variable-p 'clojure-ts-outline-variant)
+    (clojure-ts--setup-outline))
+  (when (local-variable-p 'clojure-ts-completion-enabled)
+    (clojure-ts--setup-completion)))
 
 (defun clojure-ts--major-mode-setup ()
   "Run `treesit-major-mode-setup', then override some of its settings.
