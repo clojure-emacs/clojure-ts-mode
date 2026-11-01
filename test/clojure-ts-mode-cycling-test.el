@@ -273,9 +273,9 @@
 
   (when-refactoring-with-point-it "should move metadata along with its branch past a comment"
     "(if |a ^String ;; comment
-  b c)"
+    b c)"
     "(if-not |a c ^String ;; comment
-  b)"
+        b)"
 
     (clojure-ts-cycle-conditional))
 

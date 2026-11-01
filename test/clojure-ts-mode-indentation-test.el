@@ -697,15 +697,29 @@ DESCRIPTION is a string with the description of the spec."
        (str x)
   \"a\" 1)")
 
-  (when-indenting-it "should not take metadata or a comment for the body of block 0 forms"
+  (when-indenting-it "should not take a comment for the body of block 0 forms"
     "
 (comment ;; scratch
   (start-server)
-  (stop-server))"
+  (stop-server))")
+
+  (when-indenting-it "should indent a block form like a call when its body starts on the first line"
+    "
+(if (pos? x) :pos
+    :neg)"
 
     "
+(let [a 1] (foo a)
+     (bar a))"
+
+    "
+(defprotocol P (foo [this])
+             (bar [this]))"
+
+    ;; The metadata starts the body.
+    "
 (do ^:foo
-  (a))")
+ (a))")
 
   (when-indenting-it "should not count metadata and comments for inner rules with an index"
     "

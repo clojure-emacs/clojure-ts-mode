@@ -1432,18 +1432,6 @@ changes."
                  clojure-ts-semantic-indent-rules))))
   (cdr clojure-ts--semantic-indent-rules-cache))
 
-(defun clojure-ts--match-block-0-body (bol first-child)
-  "Match if expression body is not at the same line as FIRST-CHILD.
-
-If there is no body, check that BOL is not at the same line.  Metadata
-and comments after FIRST-CHILD are not the body."
-  (let* ((body-pos (if-let* ((body (clojure-ts--node-child-skip-metadata
-                                    (treesit-node-parent first-child) 1)))
-                       (treesit-node-start body)
-                     bol)))
-    (< (line-number-at-pos (treesit-node-start first-child))
-       (line-number-at-pos body-pos))))
-
 (defun clojure-ts--value-position (node)
   "Return how many value children of NODE's parent come before NODE.
 
@@ -1459,19 +1447,26 @@ value it belongs to."
       (setq sibling (treesit-node-prev-sibling sibling)))
     pos))
 
-(defun clojure-ts--node-pos-match-block (node parent bol block)
-  "Return non-nil if NODE index in the PARENT matches requested BLOCK.
+(defun clojure-ts--match-block-body (node parent bol block)
+  "Return non-nil if NODE is in the body of PARENT.
 
-NODE might be nil (when we insert an empty line for example), in this
-case we look for next available child node in the PARENT after BOL
-position.
+PARENT is a form with BLOCK special arguments.  NODE might be nil (when
+we insert an empty line for example), in this case we look for next
+available child node in the PARENT after BOL position.
 
-The first value in the expression is the matched symbol, and the next
-BLOCK values are its special arguments, so NODE is in the body when
-more than BLOCK values come before it.  Metadata and comments are not
-counted (see `clojure-ts--value-position')."
-  (when-let* ((node (or node (treesit-node-first-child-for-pos parent bol))))
-    (> (clojure-ts--value-position node) block)))
+The first value in PARENT is the matched symbol and the next BLOCK
+values are its special arguments, so NODE is in the body when more than
+BLOCK values come before it.  Like in cljfmt and `clojure-mode', a form
+whose body doesn't start on a line of its own is indented like a call
+instead."
+  (when-let* ((node (or node (treesit-node-first-child-for-pos parent bol)))
+              ((> (clojure-ts--value-position node) block)))
+    (let ((body (clojure-ts--node-child-skip-metadata parent (1+ block))))
+      (or (null body)
+          (save-excursion
+            (goto-char (clojure-ts--node-start-with-metadata body))
+            (skip-chars-backward " \t,")
+            (bolp))))))
 
 (defvar clojure-ts-get-indent-function nil
   "Function to get the indent spec of a symbol.
@@ -1624,17 +1619,11 @@ indentation rule in `clojure-ts--semantic-indent-rules-defaults' or
 according to the rule.  If NODE is nil, use next node after BOL."
   (and (or (clojure-ts--list-node-p parent)
            (clojure-ts--anon-fn-node-p parent))
-       (let* ((first-child (clojure-ts--first-value-child parent)))
-         (when-let* ((rule (clojure-ts--find-semantic-rule node parent 0)))
-           (let ((rule-type (car rule))
-                 (rule-value (cadr rule)))
-             (if (equal rule-type :block)
-                 (if (zerop rule-value)
-                     ;; Special treatment for block 0 rule.
-                     (clojure-ts--match-block-0-body bol first-child)
-                   (clojure-ts--node-pos-match-block node parent bol rule-value))
-               ;; Return true for any inner rule.
-               t))))))
+       (when-let* ((rule (clojure-ts--find-semantic-rule node parent 0)))
+         (pcase rule
+           (`(:block ,block . ,_) (clojure-ts--match-block-body node parent bol block))
+           ;; Return true for any inner rule.
+           (_ t)))))
 
 (defun clojure-ts--first-call-arg (node)
   "Return the first argument of the call NODE.

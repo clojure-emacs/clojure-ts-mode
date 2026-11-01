@@ -257,9 +257,10 @@ customization option.
 
 Two types of rules are supported: `:block` and `:inner`, mirroring those in
 cljfmt. When a rule is defined as `:block n`, `n` represents the number of
-arguments preceding the body. When a rule is defined as `:inner n`, each form
-within the expression's body, nested `n` levels deep, is indented by two
-spaces. These rule definitions fully reflect the [cljfmt rules](https://github.com/weavejester/cljfmt/blob/0.13.0/docs/INDENTS.md).
+arguments preceding the body. If the body doesn't start on a line of its own,
+the form is indented like a function call instead. When a rule is
+defined as `:inner n`, each form within the expression's body, nested `n`
+levels deep, is indented by two spaces. These rule definitions fully reflect the [cljfmt rules](https://github.com/weavejester/cljfmt/blob/0.13.0/docs/INDENTS.md).
 
 For example:
 
