@@ -978,6 +978,29 @@ If COUNT-DISCARDED is non-nil, a form discarded with #_ counts too."
   (or (equal "value" (treesit-node-field-name node))
       (and count-discarded (equal "dis_expr" (treesit-node-type node)))))
 
+(defun clojure-ts--value-children (node)
+  "Return the value children of NODE.
+That leaves out comments, metadata and discarded forms."
+  (seq-filter (lambda (child) (clojure-ts--counted-child-p child nil))
+              (treesit-node-children node t)))
+
+(defun clojure-ts--element-children (node)
+  "Return the value children of NODE, with its comments and discarded forms.
+Metadata and the prefix of a namespaced map are left out, and so are the
+comments and discarded forms between metadata and its form, which go
+with the form."
+  (let (children after-metadata)
+    (dolist (child (treesit-node-children node t))
+      (cond
+       ((clojure-ts--metadata-node-p child) (setq after-metadata t))
+       ((clojure-ts--counted-child-p child nil)
+        (setq after-metadata nil)
+        (push child children))
+       ((and (not after-metadata)
+             (member (treesit-node-type child) '("comment" "dis_expr")))
+        (push child children))))
+    (nreverse children)))
+
 (defun clojure-ts--node-child-skip-metadata (node n &optional count-discarded)
   "Return the Nth value-field child of NODE, skipping metadata children.
 If COUNT-DISCARDED is non-nil, forms discarded with #_ count as children
@@ -2056,18 +2079,21 @@ Forms between BEG and END are aligned according to
 
 ;;; Refactoring
 
+(defun clojure-ts--top-level-node (node)
+  "Return the top-level form NODE is in."
+  (treesit-parent-until node
+                        (lambda (n)
+                          (equal (treesit-node-type (treesit-node-parent n))
+                                 "source"))
+                        t))
+
 (defun clojure-ts--node-at-point (&optional named)
   "Return the Clojure node at point, or nil if point isn't on a form.
 NAMED is passed on to `treesit-node-at', which returns the next node
 when point is between forms, or the last one when point is past them.
 Only a node whose top-level form spans point counts here."
   (when-let* ((node (treesit-node-at (point) 'clojure named))
-              (top-level (treesit-parent-until
-                          node
-                          (lambda (n)
-                            (equal (treesit-node-type (treesit-node-parent n))
-                                   "source"))
-                          t))
+              (top-level (clojure-ts--top-level-node node))
               ((<= (treesit-node-start top-level)
                    (point)
                    (treesit-node-end top-level))))
@@ -2212,9 +2238,7 @@ THREAD-LAST is non-nil."
 NODE is a threading form.  Unwinding moves the threaded form into the
 next step, to its end when THREAD-LAST is non-nil, and right after its
 head otherwise."
-  (let* ((values (seq-filter (lambda (child)
-                               (equal "value" (treesit-node-field-name child)))
-                             (treesit-node-children node t)))
+  (let* ((values (clojure-ts--value-children node))
          ;; The threading symbol and the threaded form come first.
          (steps (seq-take (nthcdr 2 values) n)))
     (or (clojure-ts--threading-unsupported-p
@@ -2818,6 +2842,372 @@ before DELIM-OPEN."
         (goto-char pos))
     (user-error "Must be invoked inside a list")))
 
+(defun clojure-ts--paired-children (node)
+  "Return the value children of NODE in pairs, or nil if it splices any in.
+A splicing reader conditional would throw the pairs off."
+  (let ((children (clojure-ts--value-children node)))
+    (unless (seq-some (lambda (child)
+                        (equal (treesit-node-type child) "splicing_read_cond_lit"))
+                      children)
+      (seq-split children 2))))
+
+(defun clojure-ts--core-form-name (node)
+  "Return the name of the clojure.core form NODE is, or nil."
+  (when-let* ((name (clojure-ts--list-node-sym-text node))
+              ((member (clojure-ts--node-namespace-text
+                        (clojure-ts--first-value-child node))
+                       '(nil "clojure.core" "cljs.core"))))
+    name))
+
+(defun clojure-ts--parse-pattern (node)
+  "Return the destructuring pattern NODE as a list, or nil.
+That's (sym NODE), (vec NODE PATTERN...) or (map NODE UNIT...), each
+UNIT being a key of the map and its value:
+
+  (keys KEY VEC ((NAME . NODE)...)) for :keys, :strs and :syms, NAME
+    being nil for what doesn't bind a name
+  (as KEY SYM NAME)
+  (or KEY MAP ((NAME KEY DEFAULT)...))
+  (pair KEY VAL NAME) for a symbol bound to the value of a key
+  (nested KEY VAL PATTERN) for a map or a vector bound to it
+  (other KEY VAL) for anything else."
+  (pcase (treesit-node-type node)
+    ("sym_lit" (list 'sym node))
+    ("vec_lit"
+     (cons 'vec (cons node (delq nil (mapcar #'clojure-ts--parse-pattern
+                                             (clojure-ts--value-children node))))))
+    ((and (or "map_lit" "ns_map_lit")
+          (let pairs (clojure-ts--paired-children node))
+          (guard pairs))
+     (cons 'map
+           (cons node
+                 (mapcar
+                  (pcase-lambda ((seq key val))
+                    (let ((name (and (clojure-ts--keyword-node-p key)
+                                     (not (clojure-ts--node-namespace-text key))
+                                     (clojure-ts--named-node-text key))))
+                      (cond
+                       ((null val) (list 'other key val))
+                       ((and (clojure-ts--keyword-node-p key)
+                             (member (clojure-ts--named-node-text key) '("keys" "strs" "syms"))
+                             (clojure-ts--vec-node-p val))
+                        (list 'keys key val
+                              (mapcar (lambda (elem)
+                                        (cons (and (member (treesit-node-type elem)
+                                                           '("sym_lit" "kwd_lit"))
+                                                   (clojure-ts--named-node-text elem))
+                                              elem))
+                                      (clojure-ts--value-children val))))
+                       ((and (equal name "as") (clojure-ts--symbol-node-p val))
+                        (list 'as key val (clojure-ts--named-node-text val)))
+                       ((and (equal name "or") (equal (treesit-node-type val) "map_lit"))
+                        (list 'or key val
+                              (seq-keep (pcase-lambda ((seq entry-key default))
+                                          (and default (clojure-ts--symbol-node-p entry-key)
+                                               (list (clojure-ts--named-node-text entry-key)
+                                                     entry-key default)))
+                                        (clojure-ts--paired-children val))))
+                       ((clojure-ts--symbol-node-p key)
+                        (list 'pair key val (clojure-ts--named-node-text key)))
+                       ((member (treesit-node-type key) '("map_lit" "ns_map_lit" "vec_lit"))
+                        (list 'nested key val (clojure-ts--parse-pattern key)))
+                       (t (list 'other key val)))))
+                  pairs))))))
+
+(defun clojure-ts--pattern-declarations (pattern)
+  "Return the nodes of the names PATTERN binds, and of its :or keys."
+  (pcase pattern
+    (`(sym ,node) (list node))
+    (`(vec ,_ . ,patterns) (mapcan #'clojure-ts--pattern-declarations patterns))
+    (`(map ,_ . ,units)
+     (mapcan (lambda (unit)
+               (pcase unit
+                 (`(keys ,_ ,_ ,elems) (mapcar #'cdr (seq-filter #'car elems)))
+                 (`(as ,_ ,sym ,_) (list sym))
+                 (`(or ,_ ,_ ,entries) (mapcar #'cadr entries))
+                 (`(pair ,key ,_ ,_) (list key))
+                 (`(nested ,_ ,_ ,sub) (clojure-ts--pattern-declarations sub))))
+             units))))
+
+(defun clojure-ts--let-binding-forms (bindings)
+  "Return the binding forms of the BINDINGS vector of a let-like form.
+The bindings of a :let in a for or doseq count too."
+  (mapcan (pcase-lambda ((seq form init))
+            (if (clojure-ts--keyword-node-p form)
+                (and (equal (treesit-node-text form t) ":let")
+                     init
+                     (clojure-ts--vec-node-p init)
+                     (clojure-ts--let-binding-forms init))
+              (list form)))
+          (clojure-ts--paired-children bindings)))
+
+(defun clojure-ts--fn-tail-sites (children end)
+  "Return the binding sites of the arities of a fn.
+CHILDREN are the value nodes of the fn that come after its name, and
+END is the end of the fn."
+  (when-let* ((tail (seq-drop-while (lambda (child)
+                                      (not (or (clojure-ts--vec-node-p child)
+                                               (clojure-ts--list-node-p child))))
+                                    children)))
+    (if (clojure-ts--vec-node-p (car tail))
+        (list (list (car tail) (clojure-ts--parse-pattern (car tail)) end))
+      (seq-keep (lambda (arity)
+                  (when-let* (((clojure-ts--list-node-p arity))
+                              (arglist (clojure-ts--first-value-child arity))
+                              ((clojure-ts--vec-node-p arglist)))
+                    (list arglist (clojure-ts--parse-pattern arglist)
+                          (treesit-node-end arity))))
+                tail))))
+
+(defun clojure-ts--binding-sites (top-level)
+  "Return the places in the TOP-LEVEL node that bind names.
+Each is a list (VEC PATTERN END) of an arglist or the bindings of a
+let-like form, the vector pattern of what it binds, and the end of the
+form, the names being in scope from VEC to END.  Quoted and
+syntax-quoted forms don't count, as they're data or a macro's template."
+  (let ((methods (make-hash-table))
+        sites)
+    (dolist (node (treesit-query-capture top-level '((list_lit) @list) nil nil t))
+      (when-let* (((not (gethash (treesit-node-start node) methods)))
+                  ((not (treesit-parent-until
+                         node
+                         (lambda (n)
+                           (member (treesit-node-type n)
+                                   '("quoting_lit" "syn_quoting_lit"))))))
+                  (name (clojure-ts--core-form-name node))
+                  (args (cdr (clojure-ts--value-children node)))
+                  (end (treesit-node-end node)))
+        (pcase name
+          ((or "let" "loop" "if-let" "when-let" "if-some" "when-some" "when-first"
+               "for" "doseq")
+           (when (clojure-ts--vec-node-p (car args))
+             (push (list (car args)
+                         `(vec ,(car args)
+                               ,@(delq nil (mapcar #'clojure-ts--parse-pattern
+                                                   (clojure-ts--let-binding-forms (car args)))))
+                         end)
+                   sites)))
+          ((or "letfn" "reify" "proxy" "deftype" "defrecord" "extend-type"
+               "extend-protocol" "defprotocol" "definterface")
+           ;; A method named like a core form, as in (letfn [(for [x] x)]),
+           ;; isn't one.
+           (dolist (method (if (equal name "letfn")
+                               (and (clojure-ts--vec-node-p (car args))
+                                    (clojure-ts--value-children (car args)))
+                             args))
+             (when-let* (((clojure-ts--list-node-p method))
+                         (children (clojure-ts--value-children method))
+                         ((clojure-ts--symbol-node-p (car children))))
+               (puthash (treesit-node-start method) t methods)
+               ;; Protocol and interface methods have no bodies.
+               (unless (member name '("defprotocol" "definterface"))
+                 (setq sites (append (clojure-ts--fn-tail-sites
+                                      (cdr children) (treesit-node-end method))
+                                     sites))))))
+          ;; The dispatch value can be a vector too.
+          ("defmethod"
+           (setq sites (append (clojure-ts--fn-tail-sites (nthcdr 2 args) end) sites)))
+          ((or "fn" "bound-fn" "defn" "defn-" "defmacro")
+           (setq sites (append (clojure-ts--fn-tail-sites args end) sites))))))
+    sites))
+
+(defun clojure-ts--symbol-names (top-level declared beg end)
+  "Return the names the symbols in the TOP-LEVEL node use from BEG to END.
+DECLARED is a hash table of the positions of the symbols that bind a
+name rather than use one."
+  (mapcan (lambda (sym)
+            (let ((name (clojure-ts--named-node-text sym)))
+              (unless (or (null name)
+                          (gethash (treesit-node-start sym) declared)
+                          (clojure-ts--node-namespace-text sym))
+                ;; ClojureScript reads obj.prop as the prop of the local obj.
+                (if (string-match (rx bos (group (+ (not "."))) ".") name)
+                    (list name (match-string 1 name))
+                  (list name)))))
+          (treesit-query-capture top-level '((sym_lit) @sym) beg end t)))
+
+(defun clojure-ts--unused-pattern-edits (pattern used-p)
+  "Return how to remove what PATTERN binds from maps but doesn't use.
+USED-P tells if a name is used.  The value is a list of (remove COLL
+NODE...) and (replace NODE TEXT) edits, or `empty' for a map with
+nothing left, which it's for the caller to replace or remove.  Comments
+and discarded forms count as something left, but an empty :keys and an
+:or with nothing but defaults don't, as they bind nothing."
+  (pcase pattern
+    (`(vec ,_ . ,subs)
+     (mapcan (lambda (sub)
+               (let ((edits (clojure-ts--unused-pattern-edits sub used-p)))
+                 (if (eq edits 'empty) `((replace ,(cadr sub) "_")) edits)))
+             subs))
+    (`(map ,map . ,units)
+     (let ((droppable 0) removed edits)
+       (dolist (unit units)
+         (pcase unit
+           (`(keys ,key ,vec ,elems)
+            (let ((unused (seq-filter (lambda (elem)
+                                        (and (car elem) (not (funcall used-p (car elem)))))
+                                      elems))
+                  (children (clojure-ts--element-children vec)))
+              (cond
+               ((null children) (setq droppable (+ droppable 2)))
+               ((null unused))
+               ((length= unused (length children))
+                (setq removed `(,key ,vec ,@removed)))
+               (t (push `(remove ,vec ,@(mapcar #'cdr unused)) edits)))))
+           ((or `(as ,key ,val ,name) `(pair ,key ,val ,name))
+            (unless (funcall used-p name)
+              (setq removed `(,key ,val ,@removed))))
+           (`(nested ,key ,val ,sub)
+            (let ((sub-edits (clojure-ts--unused-pattern-edits sub used-p)))
+              (if (eq sub-edits 'empty)
+                  (setq removed `(,key ,val ,@removed))
+                (setq edits (append sub-edits edits)))))
+           ;; The :or defaults of the names removed go with them.
+           (`(or ,key ,val ,entries)
+            (let ((unused (seq-remove (lambda (entry) (funcall used-p (car entry)))
+                                      entries))
+                  (children (clojure-ts--element-children val)))
+              (if (and unused (length= children (* 2 (length unused))))
+                  (setq removed `(,key ,val ,@removed))
+                (when unused
+                  (push `(remove ,val ,@(seq-mapcat #'cdr unused)) edits))
+                (when (length= children (length (clojure-ts--value-children val)))
+                  (setq droppable (+ droppable 2))))))))
+       (cond
+        ((and removed
+              (length= (clojure-ts--element-children map) (+ (length removed) droppable)))
+         'empty)
+        (removed (cons `(remove ,map ,@removed) edits))
+        (t edits))))))
+
+(defun clojure-ts--removal-regions (coll nodes)
+  "Return the regions to delete to remove NODES from the collection COLL.
+The whitespace between them and the elements left goes too, but the
+comments and discarded forms among them stay, and the closing bracket
+never ends up on the line of a comment."
+  (let (regions run)
+    (dolist (child (append (clojure-ts--element-children coll) (list nil)))
+      (if (and child (seq-some (lambda (node) (treesit-node-eq node child)) nodes))
+          (push child run)
+        (when run
+          (let ((beg (clojure-ts--node-start-with-metadata (car (last run))))
+                (end (treesit-node-end (car run))))
+            (save-excursion
+              (if child
+                  (progn (goto-char end)
+                         (skip-chars-forward " \t\n,")
+                         (push (cons beg (point)) regions))
+                (goto-char beg)
+                (skip-chars-backward " \t\n,")
+                (when (equal (treesit-node-type (treesit-node-at (1- (point)) 'clojure))
+                             "comment")
+                  (forward-line 1))
+                (push (cons (point) end) regions))))
+          (setq run nil))))
+    regions))
+
+(defun clojure-ts--remove-unused-keys-once (top-level)
+  "Remove what the TOP-LEVEL node destructures from maps but doesn't use.
+Return the names removed."
+  (let ((sites (clojure-ts--binding-sites top-level))
+        (declared (make-hash-table))
+        changes names vecs)
+    (pcase-dolist (`(,_ ,pattern ,_) sites)
+      (dolist (node (clojure-ts--pattern-declarations pattern))
+        (puthash (treesit-node-start node) t declared)))
+    (pcase-dolist (`(,vec ,pattern ,end) sites)
+      (let* ((in-scope (clojure-ts--symbol-names top-level declared
+                                                 (treesit-node-start vec) end))
+             (edits (clojure-ts--unused-pattern-edits
+                     pattern (lambda (name)
+                               ;; A leading _ marks a name unused on purpose.
+                               (or (string-prefix-p "_" name)
+                                   (member name in-scope)
+                                   (ignore (push name names)))))))
+        (when edits
+          (push (cons (copy-marker (treesit-node-start vec))
+                      (copy-marker (treesit-node-end vec)))
+                vecs))
+        (pcase-dolist (`(,kind ,node . ,args) edits)
+          (if (eq kind 'replace)
+              (push (list (treesit-node-start node) (treesit-node-end node) (car args))
+                    changes)
+            (pcase-dolist (`(,beg . ,end) (clojure-ts--removal-regions node args))
+              (push (list beg end "") changes))))))
+    ;; A change inside another one, like in an :or default that goes,
+    ;; goes with it.
+    (let (kept)
+      (dolist (change (sort changes (lambda (a b)
+                                      (if (= (car a) (car b))
+                                          (> (cadr a) (cadr b))
+                                        (< (car a) (car b))))))
+        (cond
+         ((or (null kept) (>= (car change) (cadr (car kept))))
+          (push change kept))
+         ((> (cadr change) (cadr (car kept)))
+          (error "Overlapping edits at %d and %d" (caar kept) (car change)))))
+      (setq changes kept))
+    ;; From the end, so that the positions of the changes still to make
+    ;; don't move.
+    (pcase-dolist (`(,beg ,end ,text) changes)
+      (goto-char beg)
+      (delete-region beg end)
+      (insert text))
+    (pcase-dolist (`(,beg . ,end) vecs)
+      ;; The line the vector starts on is the form's, which wasn't edited.
+      (goto-char beg)
+      (forward-line 1)
+      (when (< (point) end)
+        (indent-region (point) (marker-position end)))
+      (set-marker beg nil)
+      (set-marker end nil))
+    (nreverse names)))
+
+(defun clojure-ts-remove-unused-keys ()
+  "Remove what the top-level form at point destructures from maps but doesn't use.
+That's the names of :keys, :strs and :syms, :as names and names bound
+to keys, in the arglists of fn, defn, defmethod, letfn, reify and the
+like, and in the bindings of let, loop, for, doseq and the like.  The
+:or defaults of the names removed go too, and a map with nothing left
+becomes _.
+
+A name stays when a symbol with that name appears anywhere in its scope,
+even one that shadows it, and so does one starting with _, which marks
+it unused on purpose.  A macro that uses a local without its name
+appearing in the code, through &env, isn't something this can tell."
+  (interactive)
+  (let ((top-level (clojure-ts--top-level-node
+                    ;; Not just named nodes, or with point at the start of a
+                    ;; form, a comment on the line before would do, as it
+                    ;; ends there.
+                    (or (clojure-ts--node-at-point)
+                        (user-error "No form at point"))))
+        start names)
+    ;; The metadata in front of a top-level form sits next to it, not in it.
+    (when (clojure-ts--metadata-node-p top-level)
+      (while (and top-level
+                  (or (clojure-ts--metadata-node-p top-level)
+                      (member (treesit-node-type top-level) '("comment" "dis_expr"))))
+        (setq top-level (treesit-node-next-sibling top-level t))))
+    (unless (and top-level (not (equal (treesit-node-type top-level) "comment")))
+      (user-error "No form at point"))
+    (when (treesit-node-check top-level 'has-error)
+      (user-error "The form at point doesn't parse"))
+    (setq start (copy-marker (treesit-node-start top-level)))
+    (save-excursion
+      ;; Removing a name can leave another one unused, like one that only
+      ;; the :or default of the first used.
+      (while-let ((tick (buffer-chars-modified-tick))
+                  (removed (clojure-ts--remove-unused-keys-once
+                            (clojure-ts--top-level-node
+                             (treesit-node-at (marker-position start) 'clojure))))
+                  ((/= tick (buffer-chars-modified-tick))))
+        (setq names (append names removed))))
+    (set-marker start nil)
+    (if names
+        (message "Removed %s" (string-join (delete-dups names) ", "))
+      (message "Nothing unused to remove"))))
+
 (defvar clojure-ts-refactor-map
   (let ((map (make-sparse-keymap)))
     (keymap-set map "C-t" #'clojure-ts-thread)
@@ -2846,6 +3236,8 @@ before DELIM-OPEN."
     (keymap-set map "o" #'clojure-ts-cycle-not)
     (keymap-set map "C-a" #'clojure-ts-add-arity)
     (keymap-set map "a" #'clojure-ts-add-arity)
+    (keymap-set map "C-k" #'clojure-ts-remove-unused-keys)
+    (keymap-set map "k" #'clojure-ts-remove-unused-keys)
     map)
   "Keymap for `clojure-ts-mode' refactoring commands.")
 
@@ -2965,6 +3357,7 @@ The command will prompt you to select one of the available sections."
         ["Cycle conditional" clojure-ts-cycle-conditional]
         ["Cycle not" clojure-ts-cycle-not]
         ["Add function/macro arity" clojure-ts-add-arity]
+        ["Remove unused destructured keys" clojure-ts-remove-unused-keys]
         ("Convert collection"
          ["Convert to list" clojure-ts-convert-collection-to-list]
          ["Convert to quoted list" clojure-ts-convert-collection-to-quoted-list]
