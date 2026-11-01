@@ -721,7 +721,25 @@ DESCRIPTION is a string with the description of the spec."
 (do ^:foo
  (a))")
 
-  (when-indenting-it "should not count metadata and comments for inner rules with an index"
+  (when-indenting-it "should count discarded forms as elements of block forms"
+    "
+(when #_debug c
+      a)"
+
+    "
+(let [a 1] #_x
+     a)"
+
+    "
+(do #_x
+    a)"
+
+    "
+(when c
+  #_x
+  a)")
+
+  (when-indenting-it "should not count metadata, comments or discarded forms for inner rules with an index"
     "
 (letfn ;; local fns
  [(f [x]
@@ -732,7 +750,12 @@ DESCRIPTION is a string with the description of the spec."
 (letfn ^:foo
  [(f [x]
     x)]
-  (f 1))")
+  (f 1))"
+
+    "
+(letfn #_[(g [] 1)] [(f [x]
+                       x)]
+       (f 1))")
 
   (it "should indent a form on the line after its reader prefix"
     ;; No rule used to match these lines, so they kept whatever indentation

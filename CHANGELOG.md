@@ -39,6 +39,7 @@
 - [#165](https://github.com/clojure-emacs/clojure-ts-mode/pull/165): Fix `clojure-ts-indent-style` and `clojure-ts-align-forms-automatically` being ignored in `.dir-locals.el`, and `setopt` of `clojure-ts-indent-style` not reaching open buffers.
 - [#166](https://github.com/clojure-emacs/clojure-ts-mode/pull/166): Indent function literals, reader conditionals and tagged literals in the `fixed` indentation style, and lists whose head symbol has metadata, which got 1 space instead of 2.
 - [#170](https://github.com/clojure-emacs/clojure-ts-mode/pull/170): Indent forms like `if`, `when` or `let` as function calls when their body starts on the first line, like cljfmt and `clojure-mode` do, instead of indenting the rest of the body by 2 spaces.
+- [#170](https://github.com/clojure-emacs/clojure-ts-mode/pull/170): Count forms discarded with `#_` as arguments of forms like `when` or `let` when indenting them, like `clojure-mode` does.
 
 ## 0.6.0 (2025-12-02)
 
