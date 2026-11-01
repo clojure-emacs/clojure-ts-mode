@@ -217,6 +217,16 @@ y)
             (kill-buffer project-buffer)
             (kill-buffer other-buffer)))))))
 
+(describe "options read when the mode starts"
+  (it "should not be safe as directory-local variables, as they can't apply there"
+    (dolist (option '(clojure-ts-ensure-grammars
+                      clojure-ts-use-markdown-inline
+                      clojure-ts-use-regex-parser
+                      clojure-ts-clojurescript-use-js-parser
+                      clojure-ts-jank-use-cpp-parser
+                      clojure-ts-auto-remap))
+      (expect (safe-local-variable-p option nil) :not :to-be-truthy))))
+
 (describe "clojure-ts-outline-variant"
   (it "should only be safe as a directory-local variable with a valid value"
     (expect (safe-local-variable-p 'clojure-ts-outline-variant 'imenu) :to-be-truthy)
