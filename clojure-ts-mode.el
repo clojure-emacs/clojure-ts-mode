@@ -102,7 +102,6 @@ itself."
 
 (defcustom clojure-ts-ensure-grammars t
   "When non-nil, ensure required Tree-sitter grammars are installed."
-  :safe #'booleanp
   :type 'boolean
   :package-version '(clojure-ts-mode . "0.2.0"))
 
@@ -130,30 +129,25 @@ double quotes on the third column."
 (defcustom clojure-ts-use-markdown-inline t
   "When non-nil, use Markdown inline grammar for docstrings."
   :type 'boolean
-  :safe #'booleanp
   :package-version '(clojure-ts-mode . "0.2.3"))
 
 (defcustom clojure-ts-use-regex-parser t
   "When non-nil, use separate grammar to highlight regex syntax."
   :type 'boolean
-  :safe #'booleanp
   :package-version '(clojure-ts-mode . "0.4"))
 
 (defcustom clojure-ts-clojurescript-use-js-parser t
   "When non-nil, use JS grammar to highlight syntax in js* forms."
   :type 'boolean
-  :safe #'booleanp
   :package-version '(clojure-ts-mode . "0.5"))
 
 (defcustom clojure-ts-jank-use-cpp-parser t
   "When non-nil, use C++ grammar to highlight syntax in cpp/raw forms."
   :type 'boolean
-  :safe #'booleanp
   :package-version '(clojure-ts-mode . "0.5"))
 
 (defcustom clojure-ts-auto-remap t
   "When non-nil, redirect all `clojure-mode' buffers to `clojure-ts-mode'."
-  :safe #'booleanp
   :type 'boolean
   :package-version '(clojure-ts-mode . "0.3"))
 
