@@ -666,13 +666,6 @@ OVERRIDE, START and END are passed to `treesit-fontify-with-override'."
      ((sym_name) @font-lock-builtin-face
       (:match ,clojure-ts--builtin-dynamic-var-regexp @font-lock-builtin-face)))
 
-   ;; Any function calls, not built-ins.
-   ;; This can give false positives (macros, quoted lists, namespace imports)
-   ;; but is a level 4 feature and never enabled by default.
-   :feature 'function
-   :language 'clojure
-   '((list_lit :anchor (sym_lit (sym_name) @font-lock-function-call-face)))
-
    :feature 'symbol
    :language 'clojure
    '((sym_ns) @font-lock-type-face)
@@ -747,6 +740,14 @@ OVERRIDE, START and END are passed to `treesit-fontify-with-override'."
                 :anchor [(comment) (meta_lit) (old_meta_lit)] :*
                 :anchor (sym_lit (sym_name) @font-lock-variable-name-face))
       (:match ,clojure-ts--variable-definition-symbol-regexp @font-lock-keyword-face)))
+
+   ;; Any function calls, not built-ins.
+   ;; This can give false positives (macros, quoted lists, namespace imports)
+   ;; but is a level 4 feature and never enabled by default.  It comes after
+   ;; the definition rules, so that they win.
+   :feature 'function
+   :language 'clojure
+   '((list_lit :anchor (sym_lit (sym_name) @font-lock-function-call-face)))
 
    ;; Can we support declarations in the namespace form?
    :feature 'type
