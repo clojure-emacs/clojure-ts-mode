@@ -1025,15 +1025,23 @@ If there is no namespace, returns nil."
   (and (clojure-ts--symbol-node-p node)
        (string-equal expected-symbol-name (clojure-ts--named-node-text node))))
 
-(defun clojure-ts--node-child-skip-metadata (node n)
-  "Return the Nth value-field child of NODE, skipping metadata children."
+(defun clojure-ts--counted-child-p (node count-discarded)
+  "Return non-nil if NODE is a value child of its parent.
+If COUNT-DISCARDED is non-nil, a form discarded with #_ counts too."
+  (or (equal "value" (treesit-node-field-name node))
+      (and count-discarded (equal "dis_expr" (treesit-node-type node)))))
+
+(defun clojure-ts--node-child-skip-metadata (node n &optional count-discarded)
+  "Return the Nth value-field child of NODE, skipping metadata children.
+If COUNT-DISCARDED is non-nil, forms discarded with #_ count as children
+too."
   ;; Walks siblings directly via C-level tree-sitter calls to avoid
   ;; allocating intermediate lists, as this is called frequently on hot paths.
   (let ((child (treesit-node-child-by-field-name node "value"))
         (remaining n))
     (while (and child (> remaining 0))
       (setq child (treesit-node-next-sibling child t))
-      (when (and child (equal "value" (treesit-node-field-name child)))
+      (when (and child (clojure-ts--counted-child-p child count-discarded))
         (setq remaining (1- remaining))))
     child))
 
@@ -1432,17 +1440,18 @@ changes."
                  clojure-ts-semantic-indent-rules))))
   (cdr clojure-ts--semantic-indent-rules-cache))
 
-(defun clojure-ts--value-position (node)
+(defun clojure-ts--value-position (node &optional count-discarded)
   "Return how many value children of NODE's parent come before NODE.
 
 Only children in the value field count, so metadata, comments and the
 parens don't: in (when ^boolean x y), y is at position 2, after the
 symbol (0) and x (1).  For a metadata node this is the position of the
-value it belongs to."
+value it belongs to.  If COUNT-DISCARDED is non-nil, forms discarded
+with #_ count too."
   (let ((pos 0)
         (sibling (treesit-node-prev-sibling node)))
     (while sibling
-      (when (equal "value" (treesit-node-field-name sibling))
+      (when (clojure-ts--counted-child-p sibling count-discarded)
         (setq pos (1+ pos)))
       (setq sibling (treesit-node-prev-sibling sibling)))
     pos))
@@ -1458,10 +1467,11 @@ The first value in PARENT is the matched symbol and the next BLOCK
 values are its special arguments, so NODE is in the body when more than
 BLOCK values come before it.  Like in cljfmt and `clojure-mode', a form
 whose body doesn't start on a line of its own is indented like a call
-instead."
+instead.  Forms discarded with #_ count as values here, like in
+`clojure-mode'."
   (when-let* ((node (or node (treesit-node-first-child-for-pos parent bol)))
-              ((> (clojure-ts--value-position node) block)))
-    (let ((body (clojure-ts--node-child-skip-metadata parent (1+ block))))
+              ((> (clojure-ts--value-position node t) block)))
+    (let ((body (clojure-ts--node-child-skip-metadata parent (1+ block) t)))
       (or (null body)
           (save-excursion
             (goto-char (clojure-ts--node-start-with-metadata body))
