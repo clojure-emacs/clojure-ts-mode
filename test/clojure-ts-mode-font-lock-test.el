@@ -523,6 +523,25 @@ https://github.com/tree-sitter/tree-sitter/issues/5759."
       (expect (get-text-property 10 'face)
               :to-equal 'font-lock-function-name-face))))
 
+;;;; Function calls
+
+(describe "function call highlighting"
+  (it "should not take the names in definitions for calls at font-lock level 4"
+    (with-clojure-ts-buffer "(defrecord Foo [] P (bar [this] 1))
+(letfn [(baz [x] x)] (baz 1))"
+      (let ((treesit-font-lock-level 4))
+        (clojure-ts-mode))
+      (font-lock-ensure)
+      (dolist (name '("bar" "baz"))
+        (goto-char (point-min))
+        (search-forward name)
+        (expect (get-text-property (match-beginning 0) 'face)
+                :to-equal 'font-lock-function-name-face))
+      (goto-char (point-max))
+      (search-backward "baz")
+      (expect (get-text-property (point) 'face)
+              :to-equal 'font-lock-function-call-face))))
+
 ;;;; Docstrings in various def forms
 
 (describe "docstring-highlighting"
