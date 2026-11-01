@@ -353,6 +353,10 @@ DESCRIPTION is a string with the description of the spec."
   (+ a b))"
 
     "
+(let* [a 1]
+  a)"
+
+    "
 (if (pos? x)
   (inc x)
   (dec x))"
