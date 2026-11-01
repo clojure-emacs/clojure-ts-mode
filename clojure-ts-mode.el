@@ -1785,12 +1785,6 @@ function literal."
   "Return non-nil if NODE is a function or a var definition."
   (clojure-ts--list-node-sym-match-p node clojure-ts--defun-symbols-regex))
 
-(defconst clojure-ts--markdown-inline-sexp-nodes
-  '("inline_link" "full_reference_link" "collapsed_reference_link"
-    "uri_autolink" "email_autolink" "shortcut_link" "image"
-    "code_span")
-  "Nodes representing s-expressions in the `markdown-inline' parser.")
-
 (defun clojure-ts--default-sexp-node-p (node)
   "Return non-nil if point is after the # marker of set or function literal NODE."
   (and (eq (char-before) ?\#)
@@ -1808,10 +1802,7 @@ function literal."
       ;; For `C-M-f' in "#|(a)" or "#|{1 2 3}"
       (,(rx (or "(" "{")) . ,#'clojure-ts--default-sexp-node-p))
      (text ,(regexp-opt '("comment")))
-     (defun ,#'clojure-ts--defun-node-p))
-    (when clojure-ts-use-markdown-inline
-      (markdown-inline
-       (sexp ,(regexp-opt clojure-ts--markdown-inline-sexp-nodes))))))
+     (defun ,#'clojure-ts--defun-node-p))))
 
 ;;; Vertical alignment
 
