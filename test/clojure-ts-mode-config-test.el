@@ -174,7 +174,9 @@ y)
         (write-region "((clojure-ts-mode . ((clojure-ts-indent-style . fixed)
                      (clojure-ts-align-forms-automatically . t)
                      (clojure-ts-extra-def-forms . (\"defelem\"))
-                     (clojure-ts-comment-macro-font-lock-body . t))))"
+                     (clojure-ts-comment-macro-font-lock-body . t)
+                     (clojure-ts-outline-variant . imenu)
+                     (clojure-ts-completion-enabled . nil))))"
                       nil (expand-file-name ".dir-locals.el" project-dir))
         (dolist (dir (list project-dir other-dir))
           (write-region clojure-ts-test--options-source nil
@@ -193,7 +195,11 @@ y)
                   ;; Fixed indentation and aligned map values.
                   (expect (buffer-string) :to-match "(foo\n  bar)")
                   (expect (buffer-string) :to-match "(my-block x\n  y)")
-                  (expect (buffer-string) :to-match "{:a   1\n :bbb 2}"))
+                  (expect (buffer-string) :to-match "{:a   1\n :bbb 2}")
+                  (expect treesit-outline-predicate
+                          :to-be #'treesit-outline-predicate--from-imenu)
+                  (expect completion-at-point-functions
+                          :not :to-contain #'clojure-ts-completion-at-point-function))
                 (with-current-buffer other-buffer
                   (font-lock-ensure)
                   (expect (clojure-ts-test--face-at "defelem")
@@ -203,9 +209,18 @@ y)
                   (indent-region (point-min) (point-max))
                   (expect (buffer-string) :to-match "(foo\n bar)")
                   (expect (buffer-string) :to-match "(my-block x\n          y)")
-                  (expect (buffer-string) :to-match "{:a 1\n :bbb 2}")))
+                  (expect (buffer-string) :to-match "{:a 1\n :bbb 2}")
+                  (expect treesit-outline-predicate
+                          :to-be #'clojure-ts--outline-predicate)
+                  (expect completion-at-point-functions
+                          :to-contain #'clojure-ts-completion-at-point-function)))
             (kill-buffer project-buffer)
             (kill-buffer other-buffer)))))))
+
+(describe "clojure-ts-outline-variant"
+  (it "should only be safe as a directory-local variable with a valid value"
+    (expect (safe-local-variable-p 'clojure-ts-outline-variant 'imenu) :to-be-truthy)
+    (expect (safe-local-variable-p 'clojure-ts-outline-variant 'imenus) :not :to-be-truthy)))
 
 (describe "options set with setopt"
   (it "should apply to the open buffers, even when set from another buffer"
