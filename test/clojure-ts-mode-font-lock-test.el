@@ -521,7 +521,24 @@ https://github.com/tree-sitter/tree-sitter/issues/5759."
       (expect (get-text-property 2 'face)
               :to-equal 'font-lock-keyword-face)
       (expect (get-text-property 10 'face)
-              :to-equal 'font-lock-function-name-face))))
+              :to-equal 'font-lock-function-name-face)))
+
+  (it "should highlight Markdown in the docstrings of extra def forms"
+    (unless (treesit-ready-p 'markdown-inline t)
+      (signal 'buttercup-pending "tree-sitter Markdown grammar not available"))
+    (with-clojure-ts-buffer "(defelem file-upload
+  \"Creates a `file` input.\"
+  [name])"
+      (font-lock-ensure)
+      (unwind-protect
+          (progn
+            (setopt clojure-ts-extra-def-forms '("defelem"))
+            (font-lock-ensure)
+            (goto-char (point-min))
+            (search-forward "`file`")
+            (expect (get-text-property (match-beginning 0) 'face)
+                    :to-equal '(font-lock-constant-face font-lock-doc-face)))
+        (setopt clojure-ts-extra-def-forms nil)))))
 
 ;;;; Function calls
 
