@@ -228,22 +228,7 @@ y)
                 (expect (buffer-string) :to-match "(foo\n  bar)")))
           (setopt clojure-ts-extra-def-forms nil
                   clojure-ts-comment-macro-font-lock-body nil
-                  clojure-ts-indent-style 'semantic)))))
-
-  (it "should keep the font lock features turned off in a buffer"
-    (with-clojure-ts-buffer "(defelem file-upload
-  \"Creates a file upload input.\"
-  [name])"
-      (treesit-font-lock-recompute-features nil '(doc))
-      (unwind-protect
-          (progn
-            (setopt clojure-ts-extra-def-forms '("defelem"))
-            (font-lock-ensure)
-            (expect (clojure-ts-test--face-at "defelem")
-                    :to-equal 'font-lock-keyword-face)
-            (expect (clojure-ts-test--face-at "Creates")
-                    :not :to-equal 'font-lock-doc-face))
-        (setopt clojure-ts-extra-def-forms nil)))))
+                  clojure-ts-indent-style 'semantic))))))
 
 (describe "clojure-ts-semantic-indent-rules"
   (it "should apply however it's set"

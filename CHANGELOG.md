@@ -42,6 +42,7 @@
 - [#170](https://github.com/clojure-emacs/clojure-ts-mode/pull/170): Count forms discarded with `#_` as arguments of forms like `when` or `let` when indenting them, like `clojure-mode` does.
 - [#170](https://github.com/clojure-emacs/clojure-ts-mode/pull/170): Add the `let*` semantic indentation rule from cljfmt.
 - [#171](https://github.com/clojure-emacs/clojure-ts-mode/pull/171): Highlight the names of methods (in `defrecord`, `reify` and the like) and of `letfn` functions as definitions at `treesit-font-lock-level` 4, where they were colored as function calls.
+- [#171](https://github.com/clojure-emacs/clojure-ts-mode/pull/171): Highlight Markdown in the docstrings of the forms in `clojure-ts-extra-def-forms`.
 
 ## 0.6.0 (2025-12-02)
 

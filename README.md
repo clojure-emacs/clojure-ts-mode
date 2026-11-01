@@ -456,7 +456,8 @@ or set this variable using `setopt`:
 (setopt clojure-ts-extra-def-forms '("defelem"))
 ```
 
-This setting will highlight `defelem` symbol, function name and the docstring.
+This setting will highlight `defelem` symbol, function name and the docstring,
+including the Markdown in it.
 
 > [!IMPORTANT]
 >
@@ -705,10 +706,6 @@ and `clojure-mode` (this is very helpful when dealing with `derived-mode-p` chec
 - Navigation by sexp/lists might work differently on Emacs versions lower
   than 31. Starting with version 31, Emacs uses Tree-sitter 'things' settings, if
   available, to rebind some commands.
-- If you set `clojure-ts-extra-def-forms`, `clojure-ts-mode` will highlight the
-  specified forms, including their docstrings, in a manner similar to Clojure's
-  `defn`.  However, Markdown syntax will not be highlighted within these custom
-  docstrings.
 
 ## Frequently Asked Questions
 

@@ -92,6 +92,14 @@ itself."
   :initialize #'custom-initialize-default
   :set #'clojure-ts--set-font-lock-option)
 
+(defcustom clojure-ts-extra-def-forms nil
+  "List of forms that should be fontified the same way as defn."
+  :package-version '(clojure-ts-mode . "0.5")
+  :safe #'listp
+  :type '(repeat string)
+  :initialize #'custom-initialize-default
+  :set #'clojure-ts--set-font-lock-option)
+
 (defcustom clojure-ts-ensure-grammars t
   "When non-nil, ensure required Tree-sitter grammars are installed."
   :safe #'booleanp
@@ -486,6 +494,28 @@ if a third argument (the value) is provided.
   (rx line-start (or "defprotocol" "definterface") line-end)
   "A regular expression matching a symbol used to define an interface.")
 
+(defconst clojure-ts--defn-like-symbol-regexp
+  (rx line-start
+      (or "fn" "defn" "defn-" "defmulti" "defmethod" "deftest" "deftest-"
+          "defmacro" "definline" "defonce")
+      line-end)
+  "A regular expression matching a symbol used like defn.")
+
+(defun clojure-ts--def-symbol-p (regexp node)
+  "Return non-nil if NODE matches REGEXP or `clojure-ts-extra-def-forms'."
+  (let ((name (treesit-node-text node t))
+        (case-fold-search nil))
+    (or (string-match-p regexp name)
+        (member name clojure-ts-extra-def-forms))))
+
+(defun clojure-ts--defn-like-p (node)
+  "Return non-nil if NODE names a form that's fontified like defn."
+  (clojure-ts--def-symbol-p clojure-ts--defn-like-symbol-regexp node))
+
+(defun clojure-ts--function-docstring-symbol-p (node)
+  "Return non-nil if NODE names a form that takes a docstring like defn."
+  (clojure-ts--def-symbol-p clojure-ts-function-docstring-symbols node))
+
 (defun clojure-ts--docstring-query (capture-symbol &optional capture-quotes)
   "Return a query that captures docstrings with CAPTURE-SYMBOL.
 
@@ -533,8 +563,7 @@ captured including quotes."
                  :anchor (sym_lit)
                  :anchor [(comment) (meta_lit) (old_meta_lit)] :*
                  :anchor (str_lit (str_content) ,capture-symbol) ,quotes-symbol)
-       (:match ,clojure-ts-function-docstring-symbols
-               @_def_symbol))
+       (:pred clojure-ts--function-docstring-symbol-p @_def_symbol))
       ;; Captures docstrings in defprotocol, definterface
       ((list_lit :anchor [(comment) (meta_lit) (old_meta_lit)] :*
                  :anchor (sym_lit) @_def_symbol
@@ -680,21 +709,7 @@ OVERRIDE, START and END are passed to `treesit-fontify-with-override'."
                 :anchor (sym_lit (sym_name) @font-lock-keyword-face)
                 :anchor [(comment) (meta_lit) (old_meta_lit)] :*
                 :anchor (sym_lit (sym_name) @font-lock-function-name-face))
-      (:match ,(rx-to-string
-                `(seq bol
-                      (or
-                       "fn"
-                       "defn"
-                       "defn-"
-                       "defmulti"
-                       "defmethod"
-                       "deftest"
-                       "deftest-"
-                       "defmacro"
-                       "definline"
-                       "defonce")
-                      eol))
-              @font-lock-keyword-face))
+      (:pred clojure-ts--defn-like-p @font-lock-keyword-face))
      ((anon_fn_lit
        marker: "#" @font-lock-punctuation-face))
      ;; Methods implementation
@@ -824,60 +839,6 @@ OVERRIDE, START and END are passed to `treesit-fontify-with-override'."
    '((derefing_lit
       marker: "@" @font-lock-punctuation-face))))
 
-(defvar clojure-ts-extra-def-forms)
-
-(defun clojure-ts--extra-def-form-p (node)
-  "Return non-nil if NODE is named like a form in `clojure-ts-extra-def-forms'."
-  (and clojure-ts-extra-def-forms
-       (member (treesit-node-text node t) clojure-ts-extra-def-forms)))
-
-(defconst clojure-ts--extra-def-font-lock-queries
-  (treesit-font-lock-rules
-   :feature 'definition
-   :language 'clojure
-   :override t
-   '(((list_lit :anchor [(comment) (meta_lit) (old_meta_lit)] :*
-                :anchor (sym_lit (sym_name) @font-lock-keyword-face)
-                :anchor [(comment) (meta_lit) (old_meta_lit)] :*
-                :anchor (sym_lit (sym_name) @font-lock-function-name-face))
-      (:pred clojure-ts--extra-def-form-p @font-lock-keyword-face)))
-
-   ;; NOTE: Here we also define queries to fontify docstrings in custom extra
-   ;; defn forms, but Markdown syntax won't work here, because it's not a part
-   ;; of range settings.
-   :feature 'doc
-   :language 'clojure
-   :override t
-   '(((list_lit :anchor [(comment) (meta_lit) (old_meta_lit)] :*
-                :anchor (sym_lit) @_def_symbol
-                :anchor [(comment) (meta_lit) (old_meta_lit)] :*
-                ;; Function_name
-                :anchor (sym_lit)
-                :anchor [(comment) (meta_lit) (old_meta_lit)] :*
-                :anchor (str_lit) @font-lock-doc-face)
-      (:pred clojure-ts--extra-def-form-p @_def_symbol))))
-  "Font lock rules for the forms in `clojure-ts-extra-def-forms'.")
-
-(defvar-local clojure-ts--extra-def-font-lock-p nil
-  "Non-nil if the font lock rules for extra def forms are in use.")
-
-(defun clojure-ts--add-extra-def-font-lock ()
-  "Use the font lock rules for `clojure-ts-extra-def-forms', if there are any.
-They're left out until then, as they slow down font lock."
-  (when (and clojure-ts-extra-def-forms
-             (not clojure-ts--extra-def-font-lock-p))
-    (setq clojure-ts--extra-def-font-lock-p t)
-    (let ((disabled (seq-remove (lambda (feature)
-                                  (seq-some (lambda (setting)
-                                              (and (eq (nth 2 setting) feature)
-                                                   (nth 1 setting)))
-                                            treesit-font-lock-settings))
-                                '(definition doc))))
-      (treesit-add-font-lock-rules clojure-ts--extra-def-font-lock-queries)
-      ;; The rules are added enabled.
-      (when disabled
-        (treesit-font-lock-recompute-features nil disabled)))))
-
 (defun clojure-ts--set-font-lock-option (symbol value)
   "Set the default value of SYMBOL to VALUE and refontify Clojure buffers.
 
@@ -885,16 +846,7 @@ NOTE: This function is not meant to be called directly."
   (set-default-toplevel-value symbol value)
   (dolist (buf (match-buffers '(derived-mode . clojure-ts-mode)))
     (with-current-buffer buf
-      (clojure-ts--add-extra-def-font-lock)
       (font-lock-flush))))
-
-(defcustom clojure-ts-extra-def-forms nil
-  "List of forms that should be fontified the same way as defn."
-  :package-version '(clojure-ts-mode . "0.5")
-  :safe #'listp
-  :type '(repeat string)
-  :initialize #'custom-initialize-default
-  :set #'clojure-ts--set-font-lock-option)
 
 (defconst clojure-ts--markdown-font-lock-queries
   (treesit-font-lock-rules
@@ -3544,7 +3496,6 @@ REGEX-AVAILABLE."
 (defun clojure-ts--apply-local-variables ()
   "Redo the parts of the setup that depend on file or directory-local variables.
 Those are set after the major mode."
-  (clojure-ts--add-extra-def-font-lock)
   (when (local-variable-p 'clojure-ts-indent-style)
     (setq-local treesit-simple-indent-rules (clojure-ts--configured-indent-rules))))
 
