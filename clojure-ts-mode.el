@@ -833,14 +833,22 @@ OVERRIDE, START and END are passed to `treesit-fontify-with-override'."
    '((derefing_lit
       marker: "@" @font-lock-punctuation-face))))
 
-(defun clojure-ts--set-font-lock-option (symbol value)
+(defun clojure-ts--set-font-lock-option (symbol value &optional scope)
   "Set the default value of SYMBOL to VALUE and refontify Clojure buffers.
 
+When SCOPE is `buffer-local' (Emacs's `setopt-local' / dir-locals path),
+set VALUE buffer-locally and recompute the cache for the current buffer
+only.  Otherwise set the global SYMBOL value and recompute the cache in
+every `clojure-ts-mode' buffer from that buffer's own effective value,
+so a buffer carrying a local override is left untouched.
+
 NOTE: This function is not meant to be called directly."
-  (set-default-toplevel-value symbol value)
-  (dolist (buf (match-buffers '(derived-mode . clojure-ts-mode)))
-    (with-current-buffer buf
-      (font-lock-flush))))
+  (if (eq scope 'buffer-local)
+      (set (make-local-variable symbol) value)
+    (set-default-toplevel-value symbol value)
+    (dolist (buf (match-buffers '(derived-mode . clojure-ts-mode)))
+      (with-current-buffer buf
+        (font-lock-flush)))))
 
 (defconst clojure-ts--markdown-font-lock-queries
   (treesit-font-lock-rules
@@ -1170,17 +1178,25 @@ See `clojure-ts--standard-definition-node-name' for the implementation used.")
     (string-match ";;\\(;+\\) " node-text)
     (- (match-end 1) (match-beginning 1))))
 
-(defun clojure-ts--set-indent-style (symbol value)
+(defun clojure-ts--set-indent-style (symbol value &optional scope)
   "Set the default value of SYMBOL to VALUE and reconfigure Clojure buffers.
 A buffer with its own indentation style keeps it.
 
+When SCOPE is `buffer-local' (Emacs's `setopt-local' / dir-locals path),
+set VALUE buffer-locally and recompute the cache for the current buffer
+only.  Otherwise set the global SYMBOL value and recompute the cache in
+every `clojure-ts-mode' buffer from that buffer's own effective value,
+so a buffer carrying a local override is left untouched.
+
 NOTE: This function is not meant to be called directly."
-  (set-default-toplevel-value symbol value)
-  (dolist (buf (match-buffers '(derived-mode . clojure-ts-mode)))
-    (with-current-buffer buf
-      (unless (local-variable-p 'clojure-ts-indent-style)
-        (setq-local treesit-simple-indent-rules
-                    (clojure-ts--configured-indent-rules))))))
+  (if (eq scope 'buffer-local)
+      (set (make-local-variable symbol) value)
+    (set-default-toplevel-value symbol value)
+    (dolist (buf (match-buffers '(derived-mode . clojure-ts-mode)))
+      (with-current-buffer buf
+        (unless (local-variable-p 'clojure-ts-indent-style)
+          (setq-local treesit-simple-indent-rules
+                      (clojure-ts--configured-indent-rules)))))))
 
 (defcustom clojure-ts-indent-style 'semantic
   "Automatic indentation style to use when mode `clojure-ts-mode' is run.
