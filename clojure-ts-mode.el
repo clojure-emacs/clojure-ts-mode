@@ -933,7 +933,7 @@ literals with regex grammar."
 
 (defun clojure-ts--opening-paren-node-p (node)
   "Return non-nil if NODE is an opening paren."
-  (string-equal "(" (treesit-node-text node)))
+  (string-equal "(" (treesit-node-type node)))
 
 (defun clojure-ts--symbol-node-p (node)
   "Return non-nil if NODE is a Clojure symbol."
