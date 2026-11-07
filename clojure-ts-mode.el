@@ -1835,12 +1835,6 @@ children of the rich comment form are also considered as top-level."
                  parent-source-p))
       parent-source-p)))
 
-(defconst clojure-ts--markdown-inline-sexp-nodes
-  '("inline_link" "full_reference_link" "collapsed_reference_link"
-    "uri_autolink" "email_autolink" "shortcut_link" "image"
-    "code_span")
-  "Nodes representing s-expressions in the `markdown-inline' parser.")
-
 (defun clojure-ts--default-sexp-node-p (node)
   "Return non-nil if point is after the # marker of set or function literal NODE."
   (and (eq (char-before) ?\#)
