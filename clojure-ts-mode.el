@@ -1438,17 +1438,18 @@ changes."
                  clojure-ts-semantic-indent-rules))))
   (cdr clojure-ts--semantic-indent-rules-cache))
 
-(defun clojure-ts--value-position (node &optional count-discarded)
+(defun clojure-ts--value-position (node &optional count-discarded limit)
   "Return how many value children of NODE's parent come before NODE.
 
 Only children in the value field count, so metadata, comments and the
 parens don't: in (when ^boolean x y), y is at position 2, after the
 symbol (0) and x (1).  For a metadata node this is the position of the
 value it belongs to.  If COUNT-DISCARDED is non-nil, forms discarded
-with #_ count too."
+with #_ count too.  If LIMIT is non-nil, stop counting once past it: the
+result then only tells whether the position is greater than LIMIT."
   (let ((pos 0)
         (sibling (treesit-node-prev-sibling node)))
-    (while sibling
+    (while (and sibling (or (null limit) (<= pos limit)))
       (when (clojure-ts--counted-child-p sibling count-discarded)
         (setq pos (1+ pos)))
       (setq sibling (treesit-node-prev-sibling sibling)))
@@ -1468,7 +1469,7 @@ whose body doesn't start on a line of its own is indented like a call
 instead.  Forms discarded with #_ count as values here, like in
 `clojure-mode'."
   (when-let* ((node (or node (treesit-node-first-child-for-pos parent bol)))
-              ((> (clojure-ts--value-position node t) block)))
+              ((> (clojure-ts--value-position node t block) block)))
     (let ((body (clojure-ts--node-child-skip-metadata parent (1+ block) t)))
       (or (null body)
           (save-excursion
@@ -1600,23 +1601,27 @@ syntax tree and recursively attempts to find a rule, incrementally
 increasing the CURRENT-DEPTH.  If a rule is not found upon reaching the
 root of the syntax tree, it returns nil.  A rule is considered a match
 only if the CURRENT-DEPTH matches the rule's required depth."
-  (let* ((idx (1- (clojure-ts--value-position node))))
-    (if-let* ((rule-set (clojure-ts--find-semantic-rules-for-node parent))
-              ((not (equal rule-set :not-found))))
-        (seq-find (lambda (rule)
-                    (pcase-let ((`(,rule-type ,rule-depth ,rule-idx) rule))
-                      (if (equal rule-type :block)
-                          (zerop current-depth)
-                        (and (equal rule-depth current-depth)
-                             (or (null rule-idx)
-                                 (equal rule-idx idx))))))
-                  rule-set)
-      ;; Let's go no more than 3 levels up to avoid performance degradation.
-      (when-let* (((< current-depth 3))
-                  (new-parent (treesit-node-parent parent)))
-        (clojure-ts--find-semantic-rule parent
-                                        new-parent
-                                        (1+ current-depth))))))
+  (if-let* ((rule-set (clojure-ts--find-semantic-rules-for-node parent))
+            ((not (equal rule-set :not-found))))
+      (seq-find (lambda (rule)
+                  (pcase-let ((`(,rule-type ,rule-depth ,rule-idx) rule))
+                    (if (equal rule-type :block)
+                        (zerop current-depth)
+                      (and (equal rule-depth current-depth)
+                           (or (null rule-idx)
+                               ;; Only counted when a rule needs it, and only
+                               ;; as far as needed, as it takes longer the more
+                               ;; forms come before NODE.
+                               (equal rule-idx
+                                      (1- (clojure-ts--value-position
+                                           node nil (1+ rule-idx)))))))))
+                rule-set)
+    ;; Let's go no more than 3 levels up to avoid performance degradation.
+    (when-let* (((< current-depth 3))
+                (new-parent (treesit-node-parent parent)))
+      (clojure-ts--find-semantic-rule parent
+                                      new-parent
+                                      (1+ current-depth)))))
 
 (defun clojure-ts--match-form-body (node parent bol)
   "Match if NODE has to be indented as a form body.
