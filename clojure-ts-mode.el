@@ -3921,8 +3921,6 @@ REGEX-AVAILABLE."
 (defun clojure-ts--apply-local-variables ()
   "Redo the parts of the setup that depend on file or directory-local variables.
 Those are set after the major mode."
-  (when (local-variable-p 'clojure-ts-align-forms-automatically)
-    (setq-local indent-region-function #'clojure-ts-indent-region))
   (when (local-variable-p 'clojure-ts-indent-style)
     (setq-local treesit-simple-indent-rules (clojure-ts--configured-indent-rules)))
   (when (local-variable-p 'clojure-ts-outline-variant)
@@ -3935,8 +3933,9 @@ Those are set after the major mode."
 The modes that embed another language run the setup again once they've
 added its parser, so this is used for every run."
   (treesit-major-mode-setup)
-  (when clojure-ts-align-forms-automatically
-    (setq-local indent-region-function #'clojure-ts-indent-region))
+  ;; It checks `clojure-ts-align-forms-automatically' when it runs, so that
+  ;; turning the option on later, or in .dir-locals.el, works.
+  (setq-local indent-region-function #'clojure-ts-indent-region)
   ;; Workaround for treesit-transpose-sexps not correctly working with
   ;; treesit-thing-settings on Emacs 30.
   ;; Once treesit-transpose-sexps is working again this can be removed
