@@ -834,17 +834,16 @@ OVERRIDE, START and END are passed to `treesit-fontify-with-override'."
       marker: "@" @font-lock-punctuation-face))))
 
 (defun clojure-ts--set-font-lock-option (symbol value &optional scope)
-  "Set the default value of SYMBOL to VALUE and refontify Clojure buffers.
-
-When SCOPE is `buffer-local' (Emacs's `setopt-local' / dir-locals path),
-set VALUE buffer-locally and recompute the cache for the current buffer
-only.  Otherwise set the global SYMBOL value and recompute the cache in
-every `clojure-ts-mode' buffer from that buffer's own effective value,
-so a buffer carrying a local override is left untouched.
+  "Set SYMBOL to VALUE and refontify Clojure buffers.
+When SCOPE is `buffer-local', as with `setopt-local', set VALUE in the
+current buffer and refontify only that one.
 
 NOTE: This function is not meant to be called directly."
   (if (eq scope 'buffer-local)
-      (set (make-local-variable symbol) value)
+      (progn
+        (set (make-local-variable symbol) value)
+        (when (derived-mode-p 'clojure-ts-mode)
+          (font-lock-flush)))
     (set-default-toplevel-value symbol value)
     (dolist (buf (match-buffers '(derived-mode . clojure-ts-mode)))
       (with-current-buffer buf
@@ -1202,18 +1201,18 @@ See `clojure-ts--standard-definition-node-name' for the implementation used.")
     (- (match-end 1) (match-beginning 1))))
 
 (defun clojure-ts--set-indent-style (symbol value &optional scope)
-  "Set the default value of SYMBOL to VALUE and reconfigure Clojure buffers.
-A buffer with its own indentation style keeps it.
-
-When SCOPE is `buffer-local' (Emacs's `setopt-local' / dir-locals path),
-set VALUE buffer-locally and recompute the cache for the current buffer
-only.  Otherwise set the global SYMBOL value and recompute the cache in
-every `clojure-ts-mode' buffer from that buffer's own effective value,
-so a buffer carrying a local override is left untouched.
+  "Set SYMBOL to VALUE and reconfigure Clojure buffers.
+A buffer with its own indentation style keeps it.  When SCOPE is
+`buffer-local', as with `setopt-local', set VALUE in the current buffer
+and reconfigure only that one.
 
 NOTE: This function is not meant to be called directly."
   (if (eq scope 'buffer-local)
-      (set (make-local-variable symbol) value)
+      (progn
+        (set (make-local-variable symbol) value)
+        (when (derived-mode-p 'clojure-ts-mode)
+          (setq-local treesit-simple-indent-rules
+                      (clojure-ts--configured-indent-rules))))
     (set-default-toplevel-value symbol value)
     (dolist (buf (match-buffers '(derived-mode . clojure-ts-mode)))
       (with-current-buffer buf
