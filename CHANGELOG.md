@@ -49,6 +49,7 @@
 - [#164](https://github.com/clojure-emacs/clojure-ts-mode/pull/164): Support `setopt-local` for `clojure-ts-indent-style`, `clojure-ts-extra-def-forms` and `clojure-ts-comment-macro-font-lock-body`, which Emacs 31 refused to set locally and Emacs 32 warned about in `.dir-locals.el`.
 - [#168](https://github.com/clojure-emacs/clojure-ts-mode/pull/168): Indent docstrings like `clojure-mode`, moving the lines indented less than `clojure-ts-docstring-fill-prefix-width` to that column and keeping deeper ones, instead of leaving them alone with `clojure-ts-use-markdown-inline` and flattening them without it.
 - [#174](https://github.com/clojure-emacs/clojure-ts-mode/pull/174): Speed up indentation of forms with many children, like a big `comment` form, which slowed down with the cube of their length.
+- [#175](https://github.com/clojure-emacs/clojure-ts-mode/pull/175): Fix `clojure-ts-align` signalling `treesit-node-outdated` on a line that ends in a form after metadata and more than one space.
 
 ## 0.6.0 (2025-12-02)
 
