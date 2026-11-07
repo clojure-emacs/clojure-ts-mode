@@ -7,7 +7,7 @@
 ;; Maintainer: Bozhidar Batsov <bozhidar@batsov.dev>
 ;; URL: http://github.com/clojure-emacs/clojure-ts-mode
 ;; Keywords: languages clojure clojurescript lisp
-;; Version: 0.6.0
+;; Version: 0.7.0
 ;; Package-Requires: ((emacs "30.1"))
 
 ;; This file is not part of GNU Emacs.
@@ -75,7 +75,7 @@
   :link '(emacs-commentary-link :tag "Commentary" "clojure-ts-mode"))
 
 (defconst clojure-ts-mode-version
-  "0.6.0"
+  "0.7.0"
   "The current version of `clojure-ts-mode'.")
 
 (defcustom clojure-ts-comment-macro-font-lock-body nil

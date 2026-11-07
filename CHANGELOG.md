@@ -5,13 +5,15 @@
 
 ## main (unreleased)
 
-- Fix indentation of namespaced maps in `fixed` indentation style.
-- Add project root detection for ClojureCLR project.
-- Add missing `defstruct` semantic indentation rule.
-- Fix font-lock issues: duplicate query, missing `definline` metadata docstring.
-- Fix missing builtin symbols in font-lock regexp.
-- Improve performance for imenu, font-lock and indentation.
-- Improve performance for `clojure-ts-align` by caching indentation rules.
+## 0.7.0 (2026-11-07)
+
+- [#133](https://github.com/clojure-emacs/clojure-ts-mode/pull/133): Fix indentation of namespaced maps in `fixed` indentation style.
+- [#130](https://github.com/clojure-emacs/clojure-ts-mode/pull/130): Add project root detection for ClojureCLR project.
+- [88e92ee](https://github.com/clojure-emacs/clojure-ts-mode/commit/88e92ee2f06182a7d3420ff988723569f6b181d6): Add missing `defstruct` semantic indentation rule.
+- [c695836](https://github.com/clojure-emacs/clojure-ts-mode/commit/c69583645f8276d224d78a1f2d9b65b5287c7eeb): Fix font-lock issues: duplicate query, missing `definline` metadata docstring.
+- [68e98ed](https://github.com/clojure-emacs/clojure-ts-mode/commit/68e98edf3de86abdc8fdd72574e086a0244b46fd): Fix missing builtin symbols in font-lock regexp.
+- [#132](https://github.com/clojure-emacs/clojure-ts-mode/pull/132): Improve performance for imenu, font-lock and indentation.
+- [#145](https://github.com/clojure-emacs/clojure-ts-mode/pull/145): Improve performance for `clojure-ts-align` by caching indentation rules.
 - [#161](https://github.com/clojure-emacs/clojure-ts-mode/pull/161): Fix `clojure-ts-clojurescript-mode` asking to install the jsdoc grammar on Emacs 31, and failing to start without it.
 - [#161](https://github.com/clojure-emacs/clojure-ts-mode/pull/161): Stop running the hooks of `js-ts-mode` and `c++-ts-mode` (and `prog-mode-hook`) in a hidden buffer when `clojure-ts-clojurescript-mode` or `clojure-ts-jank-mode` starts.
 - [#147](https://github.com/clojure-emacs/clojure-ts-mode/issues/147): Fix `clojure-ts-align-forms-automatically` having no effect in `clojure-ts-clojurescript-mode` and `clojure-ts-jank-mode`.
