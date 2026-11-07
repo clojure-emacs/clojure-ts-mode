@@ -981,9 +981,21 @@ If there is no namespace, returns nil."
 
 (defun clojure-ts--counted-child-p (node count-discarded)
   "Return non-nil if NODE is a value child of its parent.
-If COUNT-DISCARDED is non-nil, a form discarded with #_ counts too."
-  (or (equal "value" (treesit-node-field-name node))
-      (and count-discarded (equal "dis_expr" (treesit-node-type node)))))
+The parent has to be a collection, like a list, a map or a reader
+conditional.  If COUNT-DISCARDED is non-nil, a form discarded with #_
+counts too."
+  ;; Getting the field walks the siblings before NODE, which adds up in a
+  ;; form with many children, so it's told from the type where it can be.
+  (pcase (treesit-node-type node)
+    ("dis_expr" count-discarded)
+    ((or "comment" "meta_lit" "old_meta_lit" "ERROR") nil)
+    ;; The prefix of a namespaced map comes right after its #, or after an
+    ;; error in broken code, and only then is the field worth getting.
+    ((or "kwd_lit" "auto_res_mark")
+     (or (not (member (treesit-node-type (treesit-node-prev-sibling node))
+                      '("#" "ERROR")))
+         (equal "value" (treesit-node-field-name node))))
+    (_ (treesit-node-check node 'named))))
 
 (defun clojure-ts--value-children (node)
   "Return the value children of NODE.

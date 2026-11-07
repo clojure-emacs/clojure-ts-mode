@@ -1475,4 +1475,11 @@ c)
   (when-aligning-it "should support namespaced maps"
     "#:hello {:world          true
          :foo            \"bar\"
-         :some-very-long \"value\"}"))
+         :some-very-long \"value\"}")
+
+  (when-aligning-it "should support auto-resolved namespaced maps"
+    "#::{:world true
+    :foo   \"bar\"}"
+
+    "#::alias{:a   1
+         :bbb 2}"))
