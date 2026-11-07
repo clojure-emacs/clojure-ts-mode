@@ -255,6 +255,34 @@ y)
                   clojure-ts-comment-macro-font-lock-body nil
                   clojure-ts-indent-style 'semantic))))))
 
+(describe "options set with setopt-local"
+  (it "should apply to the current buffer, and only to that one"
+    (assume (fboundp 'setopt-local) "setopt-local needs Emacs 31")
+    (with-clojure-ts-buffer clojure-ts-test--options-source
+      (with-clojure-ts-buffer clojure-ts-test--options-source
+        (font-lock-ensure)
+        (spy-on 'font-lock-flush :and-call-through)
+        (setopt-local clojure-ts-extra-def-forms '("defelem")
+                      clojure-ts-comment-macro-font-lock-body t
+                      clojure-ts-indent-style 'fixed)
+        ;; `font-lock-ensure' refontifies everything in batch mode, so it
+        ;; can't tell whether the old faces would have stayed on screen.
+        (expect 'font-lock-flush :to-have-been-called)
+        (font-lock-ensure)
+        (expect (clojure-ts-test--face-at "defelem")
+                :to-equal 'font-lock-keyword-face)
+        (expect (clojure-ts-test--face-at "(foo)")
+                :to-equal 'font-lock-comment-face)
+        (indent-region (point-min) (point-max))
+        (expect (buffer-string) :to-match "(foo\n  bar)"))
+      (font-lock-ensure)
+      (expect (clojure-ts-test--face-at "defelem")
+              :not :to-equal 'font-lock-keyword-face)
+      (expect (clojure-ts-test--face-at "(foo)")
+              :not :to-equal 'font-lock-comment-face)
+      (indent-region (point-min) (point-max))
+      (expect (buffer-string) :to-match "(foo\n bar)"))))
+
 (describe "clojure-ts-semantic-indent-rules"
   (it "should apply however it's set"
     (with-clojure-ts-buffer "(my-block x\ny)"
