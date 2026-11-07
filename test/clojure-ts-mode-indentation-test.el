@@ -1276,6 +1276,12 @@ c)
   :a     1
   :bbbbb 2)"))))
 
+  (it "should align when the option is turned on after the mode starts"
+    (with-clojure-ts-buffer "{:a 1\n:bbb 2}"
+      (setq-local clojure-ts-align-forms-automatically t)
+      (indent-region (point-min) (point-max))
+      (expect (buffer-string) :to-equal "{:a   1\n :bbb 2}")))
+
   (when-aligning-it "should handle trailing commas"
     "
 {:a {:a  :a,
