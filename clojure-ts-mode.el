@@ -1929,8 +1929,17 @@ BOUND bounds the whitespace search."
             (progn
               (search-forward-regexp regex bound)
               (point))
-          (when-let* ((cur-sexp (treesit-node-first-child-for-pos
-                                 (funcall root-node-fn) (point) t)))
+          (when-let* ((cur-sexp (let ((node (treesit-node-first-child-for-pos
+                                             (funcall root-node-fn) (point) t)))
+                                  ;; Comments aren't forms to align.  A comment
+                                  ;; at the end of a line takes its newline, so
+                                  ;; the search starts in one when
+                                  ;; `align-region' steps back to the end of
+                                  ;; the line.
+                                  (while (and node (string= (treesit-node-type node)
+                                                            "comment"))
+                                    (setq node (treesit-node-next-sibling node t)))
+                                  node)))
             (goto-char (treesit-node-start cur-sexp))
             (if (clojure-ts--metadata-node-p cur-sexp)
                 (progn

@@ -1451,6 +1451,27 @@ c)
         aa); comment
   :aa 2)")
 
+  (when-aligning-it "should handle a margin comment before a blank line at the end"
+    "
+{:a 1 ;; comment
+
+ }"
+
+    "
+(are [x y]
+     (= x y)
+  1 2 ;; one
+  3 4 ;; three
+
+  )")
+
+  (when-aligning-it "should align a binding with metadata after a line comment"
+    "
+(let [a              1
+      ;; comment
+      ^String string 2]
+  a)")
+
   (when-aligning-it "should work correctly when there are discard forms"
     "{:map  \"with\"
  :some #_\"ignored\" \"form\"}"
