@@ -1482,4 +1482,12 @@ c)
     :foo   \"bar\"}"
 
     "#::alias{:a   1
-         :bbb 2}"))
+         :bbb 2}")
+
+  (it "should align a line ending in a form after metadata and extra spaces"
+    ;; Fixing the space after the metadata used to leave the node it
+    ;; searched outdated for the next line.
+    (let ((clojure-ts-align-forms-automatically t))
+      (with-clojure-ts-buffer "{:a ^:m  b\n:ccc d}"
+        (indent-region (point-min) (point-max))
+        (expect (buffer-string) :to-equal "{:a   ^:m b\n :ccc d}")))))

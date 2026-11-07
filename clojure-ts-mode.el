@@ -1896,19 +1896,21 @@ children of the rich comment form are also considered as top-level."
   "Return the point that represents the end of the current defun."
   (treesit-node-end (treesit-defun-at-point)))
 
-(defun clojure-ts--search-whitespace-after-next-sexp (root-node bound)
+(defun clojure-ts--search-whitespace-after-next-sexp (root-node-fn bound)
   "Move the point after all whitespace following the next s-expression.
 
 Set match data group 1 to this region of whitespace and return the
 point.
 
 To move over the next s-expression, fetch the next node after the
-current cursor position that is a direct child of ROOT-NODE and navigate
-to its end.  The most complex aspect here is handling nodes with
-metadata.  Some forms are represented in the syntax tree as a single
-s-expression (for example, ^long my-var or ^String (str \"Hello\"
-\"world\")), while other forms are two separate s-expressions (for
-example, ^long 123 or ^String \"Hello\").  Expressions with two nodes
+current cursor position that is a direct child of the node ROOT-NODE-FN
+returns and navigate to its end.  It's called again for every line, as
+fixing the space after metadata on the way leaves the old node outdated.
+The most complex aspect here is handling nodes with metadata.  Some
+forms are represented in the syntax tree as a single s-expression (for
+example, ^long my-var or ^String (str \"Hello\" \"world\")), while
+other forms are two separate s-expressions (for example, ^long 123 or
+^String \"Hello\").  Expressions with two nodes
 share some common features:
 
 - The top-level node type is usually sym_lit
@@ -1927,7 +1929,8 @@ BOUND bounds the whitespace search."
             (progn
               (search-forward-regexp regex bound)
               (point))
-          (when-let* ((cur-sexp (treesit-node-first-child-for-pos root-node (point) t)))
+          (when-let* ((cur-sexp (treesit-node-first-child-for-pos
+                                 (funcall root-node-fn) (point) t)))
             (goto-char (treesit-node-start cur-sexp))
             (if (clojure-ts--metadata-node-p cur-sexp)
                 (progn
@@ -1943,7 +1946,7 @@ BOUND bounds the whitespace search."
               ;; End-of-line, try again on next line.
               (`(12) (progn
                        (forward-char 1)
-                       (clojure-ts--search-whitespace-after-next-sexp root-node bound)))
+                       (clojure-ts--search-whitespace-after-next-sexp root-node-fn bound)))
               ;; Closing paren, stop here.
               (`(5 . ,_) nil)
               ;; Anything else is something to align.
@@ -2112,8 +2115,10 @@ between BEG and END."
           (clojure-ts--point-to-align-position sexp-type node)
           (align-region (point) node-end nil
                         `((clojure-align (regexp . ,(lambda (&optional bound _noerror)
-                                                      (let ((updated-node (clojure-ts--node-from-sexp-data beg (marker-position end) sexp)))
-                                                        (clojure-ts--search-whitespace-after-next-sexp updated-node bound))))
+                                                      (clojure-ts--search-whitespace-after-next-sexp
+                                                       (lambda ()
+                                                         (clojure-ts--node-from-sexp-data beg (marker-position end) sexp))
+                                                       bound)))
                                          (group . 1)
                                          (separate . ,clojure-ts-align-separator)
                                          (repeat . t)))
